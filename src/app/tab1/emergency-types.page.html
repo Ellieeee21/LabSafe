@@ -1,0 +1,57 @@
+<!-- emergency-types.page.html -->
+<ion-header [translucent]="true">
+  <ion-toolbar color="danger">
+    <ion-title>Emergency Types</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Search Bar -->
+  <ion-searchbar
+    [(ngModel)]="searchQuery"
+    (ionInput)="onSearchChange($event)"
+    placeholder="Search for chemical or emergency"
+    show-clear-button="focus"
+    (ionClear)="clearSearch()">
+  </ion-searchbar>
+
+  <!-- Emergency Types List -->
+  <div class="emergency-types-container">
+    <ion-card 
+      *ngFor="let emergencyType of filteredEmergencyTypes" 
+      (click)="navigateToSteps(emergencyType)"
+      class="emergency-card">
+      <ion-card-content class="emergency-card-content">
+        <div class="emergency-item">
+          <ion-icon [name]="emergencyType.icon" class="emergency-icon"></ion-icon>
+          <span class="emergency-text">{{ emergencyType.name }}</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <ion-tabs slot="bottom">
+    <ion-tab-bar>
+      <ion-tab-button tab="home" class="active">
+        <ion-icon name="home-outline"></ion-icon>
+        <ion-label>Home</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="chemicals" (click)="navigateToChemicals()">
+        <ion-icon name="list-outline"></ion-icon>
+        <ion-label>Chemicals</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="history" (click)="navigateToHistory()">
+        <ion-icon name="time-outline"></ion-icon>
+        <ion-label>History</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="profile" (click)="navigateToProfile()">
+        <ion-icon name="person-outline"></ion-icon>
+        <ion-label>Profile</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
+</ion-content>

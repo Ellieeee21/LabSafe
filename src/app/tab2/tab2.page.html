@@ -1,17 +1,69 @@
+<!-- emergency-steps.page.html -->
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+  <ion-toolbar color="danger">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ emergencyType }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="steps-container" *ngIf="steps.length > 0; else noSteps">
+    <div 
+      *ngFor="let step of steps; let i = index; let isLast = last" 
+      class="step-wrapper">
+      
+      <!-- Step Card -->
+      <ion-card class="step-card">
+        <ion-card-content>
+          <h3 class="step-title">{{ step.title }}</h3>
+          <p class="step-description">{{ step.description }}</p>
+        </ion-card-content>
+      </ion-card>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+      <!-- Arrow (except for last step) -->
+      <div class="arrow-container" *ngIf="!isLast">
+        <ion-icon name="chevron-down-outline" class="step-arrow"></ion-icon>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Steps Message -->
+  <ng-template #noSteps>
+    <div class="no-steps-container">
+      <ion-card class="step-card">
+        <ion-card-content class="text-center">
+          <p>No emergency steps available for {{ emergencyType }}</p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </ng-template>
+
+  <!-- Bottom Navigation -->
+  <ion-tabs slot="bottom">
+    <ion-tab-bar>
+      <ion-tab-button tab="home" (click)="navigateToHome()">
+        <ion-icon name="home-outline"></ion-icon>
+        <ion-label>Home</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="chemicals" (click)="navigateToChemicals()">
+        <ion-icon name="list-outline"></ion-icon>
+        <ion-label>Chemicals</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="history" (click)="navigateToHistory()">
+        <ion-icon name="time-outline"></ion-icon>
+        <ion-label>History</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="profile" (click)="navigateToProfile()">
+        <ion-icon name="person-outline"></ion-icon>
+        <ion-label>Profile</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
 </ion-content>
