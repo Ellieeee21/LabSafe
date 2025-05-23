@@ -1,0 +1,7 @@
+{
+  "name": "LabSafe",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
