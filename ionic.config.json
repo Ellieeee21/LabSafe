@@ -1,0 +1,8 @@
+{
+  "name": "LabSafe",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular",
+  "id": "de96d75c"
+}
