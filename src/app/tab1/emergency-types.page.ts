@@ -20,7 +20,7 @@ import {
 export interface EmergencyType {
   id: string;
   name: string;
-  icon: string; // Now points to PNG files
+  icon: string;
 }
 
 @Component({
@@ -48,13 +48,14 @@ export interface EmergencyType {
 export class EmergencyTypesPage implements OnInit {
   searchQuery: string = '';
   emergencyTypes: EmergencyType[] = [
+    // Updated to match your renamed icon files
     { id: 'eye_contact', name: 'Eye Contact', icon: 'Eye.png' },
-    { id: 'fire_fighting', name: 'Fire Fighting', icon: 'Fire Fighting.png' },
+    { id: 'fire_fighting', name: 'Fire Fighting', icon: 'Fire-fighting.png' },
     { id: 'flammability', name: 'Flammability', icon: 'Flammability.png' },
     { id: 'ingestion', name: 'Ingestion', icon: 'Ingestion.png' },
     { id: 'inhalation', name: 'Inhalation', icon: 'Inhalation.png' },
     { id: 'instability', name: 'Instability or Reactivity', icon: 'Instability.png' },
-    { id: 'skin_contact', name: 'Skin Contact', icon: 'Skin contact.jpg' }
+    { id: 'skin_contact', name: 'Skin Contact', icon: 'Skin-contact.png' }
   ];
 
   filteredEmergencyTypes: EmergencyType[] = [];
@@ -63,6 +64,34 @@ export class EmergencyTypesPage implements OnInit {
 
   ngOnInit() {
     this.filteredEmergencyTypes = [...this.emergencyTypes];
+    
+    // Debug logging to check icon paths
+    console.log('Emergency types with icons:', this.emergencyTypes);
+    this.emergencyTypes.forEach(type => {
+      console.log(`${type.name}: assets/icon/${type.icon}`);
+    });
+  }
+
+  // Method to get full icon path for debugging
+  getIconPath(iconName: string): string {
+    const fullPath = `assets/icon/${iconName}`;
+    console.log('Icon path for', iconName, ':', fullPath);
+    return fullPath;
+  }
+
+  // Method to handle image load errors
+  onImageError(event: any, emergencyType: EmergencyType) {
+    console.error('Failed to load image for', emergencyType.name, ':', event);
+    console.log('Attempted path:', `assets/icon/${emergencyType.icon}`);
+    
+    // Try alternative path or set a fallback
+    const img = event.target;
+    if (img.src.includes('assets/icon/')) {
+      // Try without spaces in filename
+      const newIcon = emergencyType.icon.replace(/\s+/g, '');
+      console.log('Trying alternative path:', `assets/icon/${newIcon}`);
+      img.src = `assets/icon/${newIcon}`;
+    }
   }
 
   onSearchChange(event: any) {
