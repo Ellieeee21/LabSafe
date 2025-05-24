@@ -23,9 +23,9 @@ export interface EmergencyStepData {
 }
 
 @Component({
-  selector: 'app-tab2',
+  selector: 'app-emergency-steps',
   templateUrl: './emergency-steps.page.html',
-  styleUrls: ['./emergency-steps.page.html'],
+  styleUrls: ['./emergency-steps.page.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -44,7 +44,7 @@ export interface EmergencyStepData {
     IonLabel
   ]
 })
-export class Tab2Page implements OnInit {
+export class EmergencyStepsPage implements OnInit {
   emergencyType: string = '';
   emergencyId: string = '';
   steps: EmergencyStepData[] = [];
