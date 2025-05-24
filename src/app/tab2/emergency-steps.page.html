@@ -1,16 +1,16 @@
 <!-- emergency-steps.page.html -->
 <ion-header [translucent]="true">
-  <ion-toolbar color="danger">
+  <ion-toolbar>
     <ion-buttons slot="start">
       <ion-button (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>{{ emergencyType }}</ion-title>
+    <ion-title class="centered-red-title">{{ emergencyType }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
+<ion-content [fullscreen]="true" class="ion-padding white-background">
   <div class="steps-container" *ngIf="steps.length > 0; else noSteps">
     <div 
       *ngFor="let step of steps; let i = index; let isLast = last" 
