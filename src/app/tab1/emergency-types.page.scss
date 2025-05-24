@@ -1,4 +1,25 @@
 /* emergency-types.page.scss */
+
+// White background for the content
+.white-background {
+  --background: white !important;
+  background: white !important;
+}
+
+// Centered red title
+.centered-red-title {
+  text-align: center !important;
+  color: #dc2626 !important; // Red color
+  font-weight: 600;
+  font-size: 20px;
+}
+
+// Header styling with white background
+ion-header ion-toolbar {
+  --background: white !important;
+  --color: #dc2626 !important; // Red text color
+}
+
 .emergency-types-container {
   margin-top: 16px;
   padding-bottom: 60px; // Space for bottom navigation
@@ -7,6 +28,7 @@
 .emergency-card {
   margin-bottom: 12px;
   border-radius: 12px;
+  background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
@@ -25,6 +47,7 @@
   min-height: 60px;
   display: flex;
   align-items: center;
+  background: white;
 }
 
 .emergency-item {
@@ -33,6 +56,23 @@
   width: 100%;
 }
 
+// SVG Icon container
+.emergency-icon-container {
+  margin-right: 16px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// SVG Icon styling
+.emergency-icon-svg {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+// Fallback for regular icons (if needed)
 .emergency-icon {
   font-size: 28px;
   margin-right: 16px;
@@ -43,7 +83,7 @@
 .emergency-text {
   font-size: 18px;
   font-weight: 500;
-  color: var(--ion-color-dark);
+  color: #333333; // Dark text for better visibility on white
   line-height: 1.4;
 }
 
@@ -76,22 +116,12 @@ ion-tab-button {
   }
 }
 
-// Header styling
-ion-header ion-toolbar {
-  --background: var(--ion-color-danger);
-  --color: white;
-}
-
-ion-title {
-  font-weight: 600;
-  font-size: 20px;
-}
-
-// Search bar styling
+// Search bar styling with white background
 ion-searchbar {
-  --background: var(--ion-color-light);
+  --background: white;
   --border-radius: 12px;
   margin-bottom: 8px;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 // Content padding adjustment for bottom navigation

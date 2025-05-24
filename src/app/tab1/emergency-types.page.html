@@ -1,11 +1,11 @@
 <!-- emergency-types.page.html -->
 <ion-header [translucent]="true">
-  <ion-toolbar color="danger">
-    <ion-title>Emergency Types</ion-title>
+  <ion-toolbar>
+    <ion-title class="centered-red-title">Emergency Types</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
+<ion-content [fullscreen]="true" class="ion-padding white-background">
   <!-- Search Bar -->
   <ion-searchbar
     [(ngModel)]="searchQuery"
@@ -23,7 +23,11 @@
       class="emergency-card">
       <ion-card-content class="emergency-card-content">
         <div class="emergency-item">
-          <ion-icon [name]="emergencyType.icon" class="emergency-icon"></ion-icon>
+          <div class="emergency-icon-container">
+            <img [src]="'assets/icons/' + emergencyType.icon + '.svg'" 
+                 [alt]="emergencyType.name + ' icon'" 
+                 class="emergency-icon-svg">
+          </div>
           <span class="emergency-text">{{ emergencyType.name }}</span>
         </div>
       </ion-card-content>

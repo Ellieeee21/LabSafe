@@ -20,7 +20,7 @@ import {
 export interface EmergencyType {
   id: string;
   name: string;
-  icon: string;
+  icon: string; // This will now reference SVG file names
 }
 
 @Component({
@@ -48,14 +48,13 @@ export interface EmergencyType {
 export class EmergencyTypesPage implements OnInit {
   searchQuery: string = '';
   emergencyTypes: EmergencyType[] = [
-    { id: 'eye_contact', name: 'Eye Contact', icon: 'eye-outline' },
-    { id: 'fire_fighting', name: 'Fire Fighting', icon: 'flame-outline' },
-    { id: 'flammability', name: 'Flammability', icon: 'warning-outline' },
-    { id: 'ingestion', name: 'Ingestion', icon: 'restaurant-outline' },
-    { id: 'inhalation', name: 'Inhalation', icon: 'nose-outline' },
-    { id: 'instability', name: 'Instability or Reactivity', icon: 'alert-circle-outline' },
-    { id: 'skin_contact', name: 'Skin Contact', icon: 'hand-left-outline' },
-    { id: 'spill', name: 'Spill', icon: 'water-outline' }
+    { id: 'eye_contact', name: 'Eye Contact', icon: 'eye-contact' },
+    { id: 'fire_fighting', name: 'Fire Fighting', icon: 'fire-fighting' },
+    { id: 'flammability', name: 'Flammability', icon: 'flammability' },
+    { id: 'ingestion', name: 'Ingestion', icon: 'ingestion' },
+    { id: 'inhalation', name: 'Inhalation', icon: 'inhalation' },
+    { id: 'instability', name: 'Instability or Reactivity', icon: 'instability-reactivity' },
+    { id: 'skin_contact', name: 'Skin Contact', icon: 'skin-contact' }
   ];
 
   filteredEmergencyTypes: EmergencyType[] = [];
