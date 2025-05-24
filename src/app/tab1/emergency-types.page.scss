@@ -1,28 +1,28 @@
 /* emergency-types.page.scss */
 
-// White background for the content
+// White/bone background for the content
 .white-background {
-  --background: white !important;
-  background: white !important;
+  --background: #FAFAFA !important;
+  background: #FAFAFA !important;
 }
 
-// Centered red title
+// Centered white title
 .centered-red-title {
   text-align: center !important;
-  color: #dc2626 !important; // Red color
+  color: white !important;
   font-weight: 600;
   font-size: 20px;
 }
 
-// Header styling with white background
+// Header styling with red background
 ion-header ion-toolbar {
-  --background: white !important;
-  --color: #dc2626 !important; // Red text color
+  --background: #C00000 !important;
+  --color: white !important;
 }
 
 .emergency-types-container {
   margin-top: 16px;
-  padding-bottom: 60px; // Space for bottom navigation
+  padding-bottom: 60px;
 }
 
 .emergency-card {
@@ -56,7 +56,7 @@ ion-header ion-toolbar {
   width: 100%;
 }
 
-// SVG Icon container
+// Icon container
 .emergency-icon-container {
   margin-right: 16px;
   min-width: 32px;
@@ -65,25 +65,18 @@ ion-header ion-toolbar {
   justify-content: center;
 }
 
-// SVG Icon styling
-.emergency-icon-svg {
+// PNG Icon styling (renamed from svg to img)
+.emergency-icon-img {
   width: 28px;
   height: 28px;
   object-fit: contain;
-}
-
-// Fallback for regular icons (if needed)
-.emergency-icon {
-  font-size: 28px;
-  margin-right: 16px;
-  color: var(--ion-color-dark);
-  min-width: 32px;
+  background: transparent;
 }
 
 .emergency-text {
   font-size: 18px;
   font-weight: 500;
-  color: #333333; // Dark text for better visibility on white
+  color: #000000;
   line-height: 1.4;
 }
 
@@ -116,15 +109,17 @@ ion-tab-button {
   }
 }
 
-// Search bar styling with white background
+// Search bar styling
 ion-searchbar {
   --background: white;
   --border-radius: 12px;
   margin-bottom: 8px;
   --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --color: #000000;
+  --placeholder-color: #666666;
 }
 
-// Content padding adjustment for bottom navigation
+// Content padding adjustment
 ion-content {
   --padding-bottom: 80px;
 }

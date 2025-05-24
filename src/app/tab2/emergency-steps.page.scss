@@ -1,4 +1,12 @@
 /* emergency-steps.page.scss */
+
+// White/bone background for the content
+ion-content {
+  --background: #FAFAFA !important; // Slightly off-white (bone color)
+  background: #FAFAFA !important;
+  --padding-bottom: 80px;
+}
+
 .steps-container {
   padding-bottom: 80px; // Space for bottom navigation
   margin-top: 16px;
@@ -21,19 +29,20 @@ ion-card-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: white; // Ensure card content is white
 }
 
 .step-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--ion-color-dark);
+  color: #000000; // Pure black text
   margin: 0 0 8px 0;
   line-height: 1.3;
 }
 
 .step-description {
   font-size: 16px;
-  color: var(--ion-color-dark-shade);
+  color: #000000; // Pure black text for better visibility
   margin: 0;
   line-height: 1.4;
   text-align: justify;
@@ -58,17 +67,23 @@ ion-card-content {
 
 .text-center {
   text-align: center;
+  
+  p {
+    color: #000000; // Pure black text
+  }
 }
 
-// Header styling
+// Header styling with red background and centered white title
 ion-header ion-toolbar {
-  --background: var(--ion-color-danger);
-  --color: white;
+  --background: #C00000 !important; // Red background
+  --color: white !important; // White text
 }
 
 ion-title {
   font-weight: 600;
   font-size: 20px;
+  color: white !important; // White title text
+  text-align: center !important; // Centered title
 }
 
 ion-button {
@@ -98,11 +113,6 @@ ion-tab-button {
     font-size: 12px;
     margin-top: 4px;
   }
-}
-
-// Content padding adjustment for bottom navigation
-ion-content {
-  --padding-bottom: 80px;
 }
 
 // Responsive design
