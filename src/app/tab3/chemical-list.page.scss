@@ -1,32 +1,122 @@
-.chemical-item {
-  --background: white;
-  --border-radius: 12px;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  margin: 8px 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
-  ion-label {
-    h2 {
-      color: #333;
-      font-weight: 500;
-      font-size: 16px;
-      margin: 12px 0;
-    }
-  }
+/* chemical-list.page.scss */
 
-  ion-icon {
-    color: #666;
-  }
+// White/bone background for the content
+.white-background {
+  --background: #FAFAFA !important;
+  background: #FAFAFA !important;
+}
+
+// Centered red title - properly centered accounting for back button
+.centered-red-title {
+  text-align: center !important;
+  color: white !important;
+  font-weight: 600;
+  font-size: 20px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 120px); // Account for back button space
+}
+
+// Header styling with red background
+ion-header ion-toolbar {
+  --background: #C00000 !important;
+  --color: white !important;
+  position: relative;
+}
+
+// Ensure back button stays on the left with proper styling
+ion-buttons[slot="start"] {
+  position: relative;
+  z-index: 10;
+}
+
+ion-button {
+  --color: white;
+}
+
+.chemicals-container {
+  margin-top: 16px;
+  padding-bottom: 60px;
+}
+
+.chemical-card {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
-    --background: #f8f8f8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.chemical-card-content {
+  padding: 20px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  background: white;
+}
+
+.chemical-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+// Icon container
+.chemical-icon-container {
+  margin-right: 16px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Chemical Icon styling
+.chemical-icon {
+  font-size: 36px;
+  color: #C00000;
+}
+
+.chemical-text {
+  font-size: 17px;
+  font-weight: 500;
+  color: #000000;
+  line-height: 1.4;
+}
+
+// Loading container
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  text-align: center;
+
+  ion-spinner {
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 16px;
+    color: #666;
+    margin: 0;
   }
 }
 
 .no-results,
 .empty-state {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 200px;
@@ -34,28 +124,66 @@
 
   p {
     font-size: 16px;
-    margin: 0;
+    margin: 0 0 16px 0;
   }
 }
 
+// Search bar styling
 ion-searchbar {
   --background: white;
   --border-radius: 12px;
-  padding: 8px 16px;
+  margin-bottom: 8px;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --color: #000000;
+  --placeholder-color: #666666;
 }
 
-ion-tabs {
-  ion-tab-bar {
-    --background: white;
-    --border: 1px solid #e0e0e0;
-    
-    ion-tab-button {
-      --color: #666;
-      --color-selected: #dc3545;
-      
-      &.active {
-        --color: #dc3545;
-      }
-    }
+// Bottom Navigation Styles
+ion-tab-bar {
+  --background: var(--ion-color-light);
+  --border: 1px solid var(--ion-color-medium);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+ion-tab-button {
+  --color: var(--ion-color-medium-shade);
+  --color-selected: var(--ion-color-danger);
+  
+  &.active {
+    --color: var(--ion-color-danger);
+  }
+
+  ion-icon {
+    font-size: 24px;
+  }
+
+  ion-label {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+}
+
+// Content padding adjustment
+ion-content {
+  --padding-bottom: 80px;
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .chemical-text {
+    font-size: 16px;
+  }
+  
+  ion-card-content {
+    padding: 16px;
+  }
+
+  .centered-red-title {
+    width: calc(100% - 100px);
+    font-size: 18px;
   }
 }

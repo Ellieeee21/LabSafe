@@ -6,18 +6,23 @@
   background: #FAFAFA !important;
 }
 
-// Centered red title - matching Emergency Types styling exactly
+// Centered red title - properly centered accounting for back button
 .centered-red-title {
   text-align: center !important;
   color: white !important;
   font-weight: 600;
   font-size: 20px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 120px); // Account for back button space
 }
 
-// Header styling with red background - matching Emergency Types
+// Header styling with red background
 ion-header ion-toolbar {
   --background: #C00000 !important;
   --color: white !important;
+  position: relative;
 }
 
 // Ensure back button stays on the left with proper styling
@@ -91,7 +96,7 @@ ion-card-content {
   text-align: center;
 }
 
-// Bottom Navigation Styles - matching Emergency Types
+// Bottom Navigation Styles
 ion-tab-bar {
   --background: var(--ion-color-light);
   --border: 1px solid var(--ion-color-medium);
@@ -133,5 +138,10 @@ ion-content {
   
   ion-card-content {
     padding: 16px;
+  }
+
+  .centered-red-title {
+    width: calc(100% - 100px); // Adjust for smaller screens
+    font-size: 18px;
   }
 }
