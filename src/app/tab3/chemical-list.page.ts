@@ -3,8 +3,20 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { DatabaseService } from '../services/database.service';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
+import { 
+  IonHeader, 
+  IonToolbar, 
+  IonTitle, 
+  IonContent, 
+  IonSearchbar, 
+  IonCard, 
+  IonCardContent, 
+  IonIcon, 
+  IonSpinner,
+  IonText,
+  IonButton
+} from "@ionic/angular/standalone";
 
 interface Chemical {
   id: number;
@@ -16,7 +28,21 @@ interface Chemical {
   templateUrl: './chemical-list.page.html',
   styleUrls: ['./chemical-list.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule]
+  imports: [
+    CommonModule, 
+    FormsModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonSearchbar,
+    IonCard,
+    IonCardContent,
+    IonIcon,
+    IonSpinner,
+    IonText,
+    IonButton
+  ]
 })
 export class ChemicalListPage implements OnInit {
   chemicals: Chemical[] = [];
@@ -31,12 +57,14 @@ export class ChemicalListPage implements OnInit {
   ) {}
 
   async ngOnInit() {
+    console.log('ChemicalListPage initialized');
     await this.loadChemicals();
   }
 
   async loadChemicals() {
     try {
       this.isLoading = true;
+      console.log('Loading chemicals...');
       
       // First try to load from database service
       this.chemicals = await this.databaseService.getChemicals();
@@ -47,6 +75,7 @@ export class ChemicalListPage implements OnInit {
       }
       
       this.filteredChemicals = [...this.chemicals];
+      console.log(`Loaded ${this.chemicals.length} chemicals`);
     } catch (error) {
       console.error('Error loading chemicals:', error);
       // Try to load from JSON file as fallback
@@ -194,6 +223,8 @@ export class ChemicalListPage implements OnInit {
       },
       error => {
         console.error('Navigation to home failed:', error);
+        // Force reload if navigation fails
+        window.location.href = '/tabs/tab1';
       }
     );
   }

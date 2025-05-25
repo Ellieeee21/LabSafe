@@ -122,34 +122,31 @@ export class EmergencyTypesPage implements OnInit {
       }
     });
   }
-
-navigateToChemicals() {
+   navigateToChemicals() {
     console.log('Navigating to chemicals...');
-    // Use the correct tab route
+    
+    // Use the correct tab route and handle any potential errors
     this.router.navigate(['/tabs/tab3']).then(
       success => {
         console.log('Navigation to chemicals successful:', success);
       },
       error => {
         console.error('Navigation to chemicals failed:', error);
+        // Force reload if navigation fails
+        window.location.href = '/tabs/tab3';
       }
-    );
+    ).catch(err => {
+      console.error('Navigation catch error:', err);
+      // Last resort - direct URL change
+      window.location.href = '/tabs/tab3';
+    });
   }
 
   navigateToHistory() {
     console.log('History feature coming soon');
-    // TODO: Implement when ready
-    // this.router.navigate(['/tabs/history']);
   }
 
   navigateToProfile() {
     console.log('Profile feature coming soon');
-    // TODO: Implement when ready  
-    // this.router.navigate(['/tabs/profile']);
-  }
-
-  navigateToHome() {
-    console.log('Already on home page');
-    // Already on home - do nothing or refresh
   }
 }
