@@ -60,28 +60,28 @@
     </ion-text>
   </div>
 
-  <!-- Bottom Navigation -->
-  <ion-tabs slot="bottom">
-    <ion-tab-bar>
-      <ion-tab-button tab="home" (click)="goBack()">
+  <!-- Bottom Navigation - Fixed to use proper navigation -->
+  <div class="bottom-navigation">
+    <div class="nav-bar">
+      <div class="nav-button" (click)="goBack()">
         <ion-icon name="home-outline"></ion-icon>
-        <ion-label>Home</ion-label>
-      </ion-tab-button>
+        <span class="nav-label">Home</span>
+      </div>
 
-      <ion-tab-button tab="chemicals" class="active">
+      <div class="nav-button active">
         <ion-icon name="list-outline"></ion-icon>
-        <ion-label>Chemicals</ion-label>
-      </ion-tab-button>
+        <span class="nav-label">Chemicals</span>
+      </div>
 
-      <ion-tab-button tab="history" (click)="navigateToHistory()">
+      <div class="nav-button" (click)="navigateToHistory()">
         <ion-icon name="time-outline"></ion-icon>
-        <ion-label>History</ion-label>
-      </ion-tab-button>
+        <span class="nav-label">History</span>
+      </div>
 
-      <ion-tab-button tab="profile" (click)="navigateToProfile()">
+      <div class="nav-button" (click)="navigateToProfile()">
         <ion-icon name="person-outline"></ion-icon>
-        <ion-label>Profile</ion-label>
-      </ion-tab-button>
-    </ion-tab-bar>
-  </ion-tabs>
+        <span class="nav-label">Profile</span>
+      </div>
+    </div>
+  </div>
 </ion-content>
