@@ -186,18 +186,6 @@ export class ChemicalListPage implements OnInit {
     this.filteredChemicals = [...this.chemicals];
   }
 
-  onChemicalClick(chemical: Chemical) {
-    console.log('Navigating to chemical details for:', chemical.name);
-    this.router.navigate(['/chemical-details', chemical.id]).then(
-      success => console.log('Navigation successful:', success),
-      error => {
-        console.error('Navigation failed, trying fallback:', error);
-        this.router.navigate(['/tabs/tab4', chemical.id]);
-      }
-    );
-  }
-
-  // Bottom Navigation Methods - EXACTLY like Emergency Types
   navigateToHome() {
     console.log('Navigating to Emergency Types (Home)...');
     this.router.navigate(['/tabs/tab1']).then(
@@ -211,23 +199,37 @@ export class ChemicalListPage implements OnInit {
   }
 
   navigateToChemicals() {
-    // Already on chemicals page - do nothing or refresh
     console.log('Already on chemicals page');
+    // Already on chemicals page - do nothing
   }
 
   navigateToHistory() {
     console.log('History feature coming soon');
-    // TODO: Implement history navigation when ready
+    // TODO: Implement when ready
+    // this.router.navigate(['/tabs/history']);
   }
 
   navigateToProfile() {
     console.log('Profile feature coming soon');
-    // TODO: Implement profile navigation when ready
+    // TODO: Implement when ready
+    // this.router.navigate(['/tabs/profile']);
   }
 
-  // Keep the old method for backward compatibility
+  // Keep backward compatibility
   goBack() {
     this.navigateToHome();
+  }
+
+  onChemicalClick(chemical: Chemical) {
+    console.log('Navigating to chemical details for:', chemical.name);
+    this.router.navigate(['/tabs/tab4', chemical.id]).then(
+      success => console.log('Navigation successful:', success),
+      error => {
+        console.error('Navigation failed:', error);
+        // Try fallback route from app.routes.ts
+        this.router.navigate(['/chemical-details', chemical.id]);
+      }
+    );
   }
 
   async loadOWLDatabase() {

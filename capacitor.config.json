@@ -1,5 +1,5 @@
 {
-  "appId": "io.ionic.starter",
+  "appId": "com.labsafe.app",
   "appName": "LabSafe",
   "webDir": "dist",
   "server": {
@@ -7,11 +7,10 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 1500,
+      "launchShowDuration": 2000,
       "launchAutoHide": true,
       "launchFadeOutDuration": 500,
       "backgroundColor": "#ffffff",
-      "androidSplashResourceName": "splash_screen",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
       "splashFullScreen": true,

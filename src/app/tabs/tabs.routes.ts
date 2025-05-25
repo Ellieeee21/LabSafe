@@ -22,7 +22,7 @@ export const routes: Routes = [
           import('../tab3/chemical-list.page').then((m) => m.ChemicalListPage),
       },
       {
-        path: 'tab4/:id',
+        path: 'tab4',
         loadComponent: () =>
           import('../tab4/chemical-details.page').then((m) => m.ChemicalDetailsPage),
       },
@@ -32,22 +32,6 @@ export const routes: Routes = [
         pathMatch: 'full',
       },
     ],
-  },
-  // Standalone routes (accessible directly without tab structure)
-  {
-    path: 'emergency-steps',
-    loadComponent: () =>
-      import('../tab2/emergency-steps.page').then((m) => m.EmergencyStepsPage),
-  },
-  {
-    path: 'chemical-list',
-    loadComponent: () =>
-      import('../tab3/chemical-list.page').then((m) => m.ChemicalListPage),
-  },
-  {
-    path: 'chemical-details/:id',
-    loadComponent: () =>
-      import('../tab4/chemical-details.page').then((m) => m.ChemicalDetailsPage),
   },
   {
     path: '',
