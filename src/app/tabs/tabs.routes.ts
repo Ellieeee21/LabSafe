@@ -19,7 +19,7 @@ export const routes: Routes = [
       {
         path: 'tab3',
         loadComponent: () =>
-          import('../tab3/chemical-list.page').then((m) => m.Tab3Page),
+          import('../tab3/chemical-list.page').then((m) => m.ChemicalListPage),
       },
       {
         path: 'tab4/:id',
@@ -42,7 +42,7 @@ export const routes: Routes = [
   {
     path: 'chemical-list',
     loadComponent: () =>
-      import('../tab3/chemical-list.page').then((m) => m.Tab3Page),
+      import('../tab3/chemical-list.page').then((m) => m.ChemicalListPage),
   },
   {
     path: 'chemical-details/:id',

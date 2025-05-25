@@ -197,9 +197,37 @@ export class ChemicalListPage implements OnInit {
     );
   }
 
+  // Bottom Navigation Methods - EXACTLY like Emergency Types
+  navigateToHome() {
+    console.log('Navigating to Emergency Types (Home)...');
+    this.router.navigate(['/tabs/tab1']).then(
+      success => {
+        console.log('Navigation to home successful:', success);
+      },
+      error => {
+        console.error('Navigation to home failed:', error);
+      }
+    );
+  }
+
+  navigateToChemicals() {
+    // Already on chemicals page - do nothing or refresh
+    console.log('Already on chemicals page');
+  }
+
+  navigateToHistory() {
+    console.log('History feature coming soon');
+    // TODO: Implement history navigation when ready
+  }
+
+  navigateToProfile() {
+    console.log('Profile feature coming soon');
+    // TODO: Implement profile navigation when ready
+  }
+
+  // Keep the old method for backward compatibility
   goBack() {
-    console.log('Navigating back to home (Emergency Types)');
-    this.router.navigate(['/tabs/tab1']);
+    this.navigateToHome();
   }
 
   async loadOWLDatabase() {

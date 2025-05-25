@@ -1,19 +1,11 @@
+<!-- chemical-details.page.html -->
 <ion-header [translucent]="true">
-  <ion-toolbar color="danger">
-    <ion-buttons slot="start">
-      <ion-back-button (click)="goBack()" defaultHref="/chemical-list"></ion-back-button>
-    </ion-buttons>
-    <ion-title>{{ chemical?.name || 'Chemical Details' }}</ion-title>
+  <ion-toolbar>
+    <ion-title class="centered-red-title">{{ chemical?.name || 'Chemical Details' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">{{ chemical?.name || 'Chemical Details' }}</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
+<ion-content [fullscreen]="true" class="ion-padding white-background">
   <!-- Loading Spinner -->
   <div *ngIf="isLoading" class="loading-container">
     <ion-spinner name="crescent"></ion-spinner>
@@ -72,5 +64,30 @@
         </ion-text>
       </ion-card-content>
     </ion-card>
+  </div>
+
+  <!-- Bottom Navigation - EXACTLY like Emergency Types -->
+  <div class="bottom-navigation">
+    <div class="nav-bar">
+      <div class="nav-button" (click)="navigateToHome()">
+        <ion-icon name="home-outline"></ion-icon>
+        <span class="nav-label">Home</span>
+      </div>
+
+      <div class="nav-button" (click)="navigateToChemicals()">
+        <ion-icon name="list-outline"></ion-icon>
+        <span class="nav-label">Chemicals</span>
+      </div>
+
+      <div class="nav-button" (click)="navigateToHistory()">
+        <ion-icon name="time-outline"></ion-icon>
+        <span class="nav-label">History</span>
+      </div>
+
+      <div class="nav-button" (click)="navigateToProfile()">
+        <ion-icon name="person-outline"></ion-icon>
+        <span class="nav-label">Profile</span>
+      </div>
+    </div>
   </div>
 </ion-content>

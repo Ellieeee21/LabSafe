@@ -93,53 +93,71 @@ export class ChemicalDetailsPage implements OnInit {
     }
   }
 
-  // Replace the navigation methods in your chemical-details.page.ts with these:
-
-goBack() {
-  // Navigate back to chemical list
-  this.router.navigate(['/chemical-list']).then(
-    success => console.log('Navigation back successful:', success),
-    error => {
-      console.error('Navigation back failed, trying fallback:', error);
-      this.router.navigate(['/tabs/tab3']);
-    }
-  );
-}
-
-navigateToHome() {
-  this.router.navigate(['/tabs/tab1']);
-}
-
-navigateToChemicalList() {
-  this.router.navigate(['/chemical-list']).then(
-    success => console.log('Navigation to chemical list successful:', success),
-    error => {
-      console.error('Navigation failed, trying fallback:', error);
-      this.router.navigate(['/tabs/tab3']);
-    }
-  );
-}
-
-getEmergencyIcon(emergencyType: string): string {
-  switch (emergencyType.toLowerCase()) {
-    case 'eye contact':
-      return 'eye';
-    case 'fire fighting':
-      return 'flame';
-    case 'flammability':
-      return 'warning';
-    case 'ingestion':
-      return 'medical';
-    case 'inhalation':
-      return 'cloud';
-    case 'instability or reactivity':
-      return 'nuclear';
-    case 'skin contact':
-      return 'hand-left';
-    case 'spill':
-      return 'water';
-    default:
-      return 'alert-circle';
+  // Bottom Navigation Methods - EXACTLY like Emergency Types
+  navigateToHome() {
+    console.log('Navigating to Emergency Types (Home)...');
+    this.router.navigate(['/tabs/tab1']).then(
+      success => {
+        console.log('Navigation to home successful:', success);
+      },
+      error => {
+        console.error('Navigation to home failed:', error);
+      }
+    );
   }
-}
+
+  navigateToChemicals() {
+    console.log('Navigating to chemicals...');
+    this.router.navigate(['/chemical-list']).then(
+      success => {
+        console.log('Navigation to chemicals successful:', success);
+      },
+      error => {
+        console.error('Navigation to chemicals failed, trying fallback:', error);
+        this.router.navigate(['/tabs/tab3']);
+      }
+    );
+  }
+
+  navigateToHistory() {
+    console.log('History feature coming soon');
+    // TODO: Implement history navigation when ready
+  }
+
+  navigateToProfile() {
+    console.log('Profile feature coming soon');
+    // TODO: Implement profile navigation when ready
+  }
+
+  // Keep the old methods for backward compatibility
+  goBack() {
+    this.navigateToChemicals();
+  }
+
+  navigateToChemicalList() {
+    this.navigateToChemicals();
+  }
+
+  getEmergencyIcon(emergencyType: string): string {
+    switch (emergencyType.toLowerCase()) {
+      case 'eye contact':
+        return 'eye';
+      case 'fire fighting':
+        return 'flame';
+      case 'flammability':
+        return 'warning';
+      case 'ingestion':
+        return 'medical';
+      case 'inhalation':
+        return 'cloud';
+      case 'instability or reactivity':
+        return 'nuclear';
+      case 'skin contact':
+        return 'hand-left';
+      case 'spill':
+        return 'water';
+      default:
+        return 'alert-circle';
+    }
+  }
 }
