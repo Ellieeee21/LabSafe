@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location, CommonModule } from '@angular/common';
+import { Platform } from '@ionic/angular';
+import { Subscription } from 'rxjs';
 import { 
   IonHeader,
   IonToolbar,
@@ -44,15 +46,17 @@ export interface EmergencyStepData {
     IonLabel
   ]
 })
-export class EmergencyStepsPage implements OnInit {
+export class EmergencyStepsPage implements OnInit, OnDestroy {
   emergencyType: string = '';
   emergencyId: string = '';
   steps: EmergencyStepData[] = [];
+  private backButtonSubscription: Subscription = new Subscription();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private location: Location
+    private location: Location,
+    private platform: Platform
   ) {}
 
   ngOnInit() {
@@ -61,6 +65,18 @@ export class EmergencyStepsPage implements OnInit {
       this.emergencyId = params['emergencyId'] || '';
       this.loadEmergencySteps();
     });
+
+    // Handle Android back button
+    this.backButtonSubscription = this.platform.backButton.subscribeWithPriority(10, () => {
+      this.goBack();
+    });
+  }
+
+  ngOnDestroy() {
+    // Clean up subscription
+    if (this.backButtonSubscription) {
+      this.backButtonSubscription.unsubscribe();
+    }
   }
 
   private loadEmergencySteps() {
@@ -225,30 +241,25 @@ export class EmergencyStepsPage implements OnInit {
   }
 
   goBack() {
-  // Navigate back to emergency types page
-  this.router.navigate(['/tabs/tab1']);
-}
+    // Navigate back to emergency types page (tab1)
+    this.router.navigate(['/tabs/tab1']);
+  }
 
-navigateToHome() {
-  this.router.navigate(['/tabs/tab1']);
-}
+  navigateToHome() {
+    this.router.navigate(['/tabs/tab1']);
+  }
 
-navigateToChemicals() {
-  console.log('Navigating to chemicals from emergency steps...');
-  this.router.navigate(['/chemical-list']).then(
-    success => console.log('Navigation successful:', success),
-    error => {
-      console.error('Navigation failed, trying fallback:', error);
-      this.router.navigate(['/tabs/tab3']);
-    }
-  );
-}
+  navigateToChemicals() {
+    console.log('Navigating to chemicals from emergency steps...');
+    // Use the correct route for chemical list
+    this.router.navigate(['/tabs/tab3']);
+  }
 
-navigateToHistory() {
-  console.log('History feature coming soon');
-}
+  navigateToHistory() {
+    console.log('History feature coming soon');
+  }
 
-navigateToProfile() {
-  console.log('Profile feature coming soon');
-}
+  navigateToProfile() {
+    console.log('Profile feature coming soon');
+  }
 }

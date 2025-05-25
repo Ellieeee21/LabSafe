@@ -118,30 +118,25 @@ export class EmergencyTypesPage implements OnInit {
   }
 
   navigateToSteps(emergencyType: EmergencyType) {
-  this.router.navigate(['/emergency-steps'], {
-    queryParams: {
-      emergencyType: emergencyType.name,
-      emergencyId: emergencyType.id
-    }
-  });
-}
+    this.router.navigate(['/tabs/tab2'], {
+      queryParams: {
+        emergencyType: emergencyType.name,
+        emergencyId: emergencyType.id
+      }
+    });
+  }
 
-navigateToChemicals() {
-  console.log('Navigating to chemicals...');
-  this.router.navigate(['/chemical-list']).then(
-    success => console.log('Navigation successful:', success),
-    error => {
-      console.error('Navigation failed, trying fallback:', error);
-      this.router.navigate(['/tabs/tab3']);
-    }
-  );
-}
+  navigateToChemicals() {
+    console.log('Navigating to chemicals...');
+    // Use tab3 route which should be the chemical list
+    this.router.navigate(['/tabs/tab3']);
+  }
 
-navigateToHistory() {
-  console.log('History feature coming soon');
-}
+  navigateToHistory() {
+    console.log('History feature coming soon');
+  }
 
-navigateToProfile() {
-  console.log('Profile feature coming soon');
-}
+  navigateToProfile() {
+    console.log('Profile feature coming soon');
+  }
 }

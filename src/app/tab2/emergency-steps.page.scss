@@ -7,6 +7,7 @@
 }
 
 // Centered red title - properly centered accounting for back button
+// Adjusted to match Emergency Types positioning
 .centered-red-title {
   text-align: center !important;
   color: white !important;
@@ -16,6 +17,8 @@
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 120px); // Account for back button space
+  top: 50%; // Added to center vertically like Emergency Types
+  transform: translate(-50%, -50%); // Center both horizontally and vertically
 }
 
 // Header styling with red background
@@ -23,6 +26,7 @@ ion-header ion-toolbar {
   --background: #C00000 !important;
   --color: white !important;
   position: relative;
+  height: 56px; // Ensure consistent height
 }
 
 // Ensure back button stays on the left with proper styling
