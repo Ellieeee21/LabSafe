@@ -68,7 +68,10 @@
               "namedChunks": true
             },
             "ci": {
-              "progress": false
+              "optimization": true,
+              "outputHashing": "all",
+              "extractLicenses": false,
+              "sourceMap": false
             }
           },
           "defaultConfiguration": "production"
@@ -83,7 +86,7 @@
               "buildTarget": "app:build:development"
             },
             "ci": {
-              "progress": false
+              "buildTarget": "app:build:ci"
             }
           },
           "defaultConfiguration": "development"
