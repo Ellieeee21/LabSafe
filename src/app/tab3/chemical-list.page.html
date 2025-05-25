@@ -1,11 +1,6 @@
 <!-- chemical-list.page.html -->
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-button (click)="goBack()">
-        <ion-icon name="arrow-back-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
     <ion-title class="centered-red-title">Chemical List</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -60,28 +55,18 @@
     </ion-text>
   </div>
 
-  <!-- Bottom Navigation - Fixed to use proper navigation -->
-  <div class="bottom-navigation">
-    <div class="nav-bar">
-      <div class="nav-button" (click)="goBack()">
+  <!-- Bottom Navigation -->
+  <ion-tabs slot="bottom">
+    <ion-tab-bar>
+      <ion-tab-button tab="home" (click)="goBack()">
         <ion-icon name="home-outline"></ion-icon>
-        <span class="nav-label">Home</span>
-      </div>
+        <ion-label>Home</ion-label>
+      </ion-tab-button>
 
-      <div class="nav-button active">
+      <ion-tab-button tab="chemicals" class="active">
         <ion-icon name="list-outline"></ion-icon>
-        <span class="nav-label">Chemicals</span>
-      </div>
-
-      <div class="nav-button" (click)="navigateToHistory()">
-        <ion-icon name="time-outline"></ion-icon>
-        <span class="nav-label">History</span>
-      </div>
-
-      <div class="nav-button" (click)="navigateToProfile()">
-        <ion-icon name="person-outline"></ion-icon>
-        <span class="nav-label">Profile</span>
-      </div>
-    </div>
-  </div>
+        <ion-label>Chemicals</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
 </ion-content>

@@ -198,6 +198,7 @@ export class ChemicalListPage implements OnInit {
   }
 
   goBack() {
+    console.log('Navigating back to home (Emergency Types)');
     this.router.navigate(['/tabs/tab1']);
   }
 
@@ -212,14 +213,6 @@ export class ChemicalListPage implements OnInit {
       await this.loadFromJSONFile();
       this.isLoading = false;
     }
-  }
-
-  navigateToHistory() {
-    console.log('History feature coming soon');
-  }
-
-  navigateToProfile() {
-    console.log('Profile feature coming soon');
   }
 }
 

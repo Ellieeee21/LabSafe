@@ -37,8 +37,6 @@ export interface EmergencyStepData {
     IonContent,
     IonCard,
     IonCardContent,
-    IonButton,
-    IonButtons,
     IonIcon,
     IonTabs,
     IonTabBar,
