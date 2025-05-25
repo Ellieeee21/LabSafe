@@ -11,36 +11,28 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding white-background">
-  <div class="steps-container" *ngIf="steps.length > 0; else noSteps">
-    <div 
-      *ngFor="let step of steps; let i = index; let isLast = last" 
-      class="step-wrapper">
+  <div class="steps-container">
+    <div *ngFor="let step of steps; let i = index">
+      <div class="step-wrapper">
+        <ion-card class="step-card">
+          <ion-card-content>
+            <h3 class="step-title">{{ step.title }}</h3>
+            <p class="step-description">{{ step.description }}</p>
+          </ion-card-content>
+        </ion-card>
+      </div>
       
-      <!-- Step Card -->
-      <ion-card class="step-card">
-        <ion-card-content>
-          <h3 class="step-title">{{ step.title }}</h3>
-          <p class="step-description">{{ step.description }}</p>
-        </ion-card-content>
-      </ion-card>
-
-      <!-- Arrow (except for last step) -->
-      <div class="arrow-container" *ngIf="!isLast">
+      <!-- Arrow between steps (except after last step) -->
+      <div *ngIf="i < steps.length - 1" class="arrow-container">
         <ion-icon name="chevron-down-outline" class="step-arrow"></ion-icon>
       </div>
     </div>
-  </div>
 
-  <!-- No Steps Message -->
-  <ng-template #noSteps>
-    <div class="no-steps-container">
-      <ion-card class="step-card">
-        <ion-card-content class="text-center">
-          <p>No emergency steps available for {{ emergencyType }}</p>
-        </ion-card-content>
-      </ion-card>
+    <!-- No steps message -->
+    <div *ngIf="steps.length === 0" class="no-steps-container">
+      <p class="text-center">No emergency steps available for this type.</p>
     </div>
-  </ng-template>
+  </div>
 
   <!-- Bottom Navigation -->
   <ion-tabs slot="bottom">

@@ -93,36 +93,53 @@ export class ChemicalDetailsPage implements OnInit {
     }
   }
 
-  goBack() {
-    this.router.navigate(['/tabs/tab3']);
-  }
+  // Replace the navigation methods in your chemical-details.page.ts with these:
 
-  navigateToHome() {
-    this.router.navigate(['/tabs/tab1']);
-  }
-
-  navigateToChemicalList() {
-    this.router.navigate(['/tabs/tab3']);
-  }
-
-  getEmergencyIcon(emergencyType: string): string {
-    switch (emergencyType.toLowerCase()) {
-      case 'eye contact':
-        return 'eye';
-      case 'fire fighting':
-        return 'flame';
-      case 'flammability':
-        return 'warning';
-      case 'ingestion':
-        return 'medical';
-      case 'inhalation':
-        return 'cloud';
-      case 'instability or reactivity':
-        return 'nuclear';
-      case 'skin contact':
-        return 'hand-left';
-      default:
-        return 'alert-circle';
+goBack() {
+  // Navigate back to chemical list
+  this.router.navigate(['/chemical-list']).then(
+    success => console.log('Navigation back successful:', success),
+    error => {
+      console.error('Navigation back failed, trying fallback:', error);
+      this.router.navigate(['/tabs/tab3']);
     }
+  );
+}
+
+navigateToHome() {
+  this.router.navigate(['/tabs/tab1']);
+}
+
+navigateToChemicalList() {
+  this.router.navigate(['/chemical-list']).then(
+    success => console.log('Navigation to chemical list successful:', success),
+    error => {
+      console.error('Navigation failed, trying fallback:', error);
+      this.router.navigate(['/tabs/tab3']);
+    }
+  );
+}
+
+getEmergencyIcon(emergencyType: string): string {
+  switch (emergencyType.toLowerCase()) {
+    case 'eye contact':
+      return 'eye';
+    case 'fire fighting':
+      return 'flame';
+    case 'flammability':
+      return 'warning';
+    case 'ingestion':
+      return 'medical';
+    case 'inhalation':
+      return 'cloud';
+    case 'instability or reactivity':
+      return 'nuclear';
+    case 'skin contact':
+      return 'hand-left';
+    case 'spill':
+      return 'water';
+    default:
+      return 'alert-circle';
   }
+}
 }

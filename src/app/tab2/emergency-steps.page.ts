@@ -225,22 +225,30 @@ export class EmergencyStepsPage implements OnInit {
   }
 
   goBack() {
-    this.location.back();
-  }
+  // Navigate back to emergency types page
+  this.router.navigate(['/tabs/tab1']);
+}
 
-  navigateToHome() {
-    this.router.navigate(['/emergency-types']);
-  }
+navigateToHome() {
+  this.router.navigate(['/tabs/tab1']);
+}
 
-  navigateToChemicals() {
-    this.router.navigate(['/chemical-list']);
-  }
+navigateToChemicals() {
+  console.log('Navigating to chemicals from emergency steps...');
+  this.router.navigate(['/chemical-list']).then(
+    success => console.log('Navigation successful:', success),
+    error => {
+      console.error('Navigation failed, trying fallback:', error);
+      this.router.navigate(['/tabs/tab3']);
+    }
+  );
+}
 
-  navigateToHistory() {
-    console.log('History feature coming soon');
-  }
+navigateToHistory() {
+  console.log('History feature coming soon');
+}
 
-  navigateToProfile() {
-    console.log('Profile feature coming soon');
-  }
+navigateToProfile() {
+  console.log('Profile feature coming soon');
+}
 }

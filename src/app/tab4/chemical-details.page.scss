@@ -1,0 +1,153 @@
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+
+  ion-spinner {
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: #666;
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+.chemical-header {
+  margin: 16px;
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+
+  ion-card-title {
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  ion-card-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+  }
+}
+
+.procedure-card {
+  margin: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  .procedure-title {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+
+    ion-icon {
+      margin-right: 8px;
+      font-size: 20px;
+      color: #dc3545;
+    }
+  }
+}
+
+.steps-list {
+  padding: 0;
+  background: transparent;
+
+  .step-item {
+    --background: transparent;
+    --border-color: transparent;
+    --padding-start: 0;
+    --padding-end: 0;
+    margin-bottom: 12px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-label {
+      display: flex;
+      align-items: flex-start;
+      padding: 0;
+
+      .step-number {
+        background: #dc3545;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        margin-right: 12px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .step-text {
+        flex: 1;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #333;
+        padding-top: 2px;
+      }
+    }
+  }
+}
+
+.no-procedures,
+.error-state {
+  margin: 16px;
+  text-align: center;
+
+  ion-card-content {
+    padding: 40px 20px;
+
+    p {
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+}
+
+.error-state {
+  ion-text[color="danger"] p {
+    color: #dc3545;
+  }
+}
+
+// Header styling
+ion-header {
+  ion-toolbar {
+    --background: #dc3545;
+    --color: white;
+
+    ion-title {
+      color: white;
+      font-weight: 600;
+    }
+
+    ion-back-button {
+      --color: white;
+    }
+  }
+}
+
+// Content padding
+ion-content {
+  --background: #fafafa;
+  
+  &[fullscreen="true"] {
+    --padding-top: 0;
+    --padding-bottom: 16px;
+  }
+}

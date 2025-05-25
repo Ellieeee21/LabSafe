@@ -58,26 +58,34 @@ export class Tab3Page implements OnInit {
   }
 
   onChemicalClick(chemical: Chemical) {
-    // Navigate to chemical details page
-    this.router.navigate(['/tabs/tab4', chemical.id]);
-  }
-
-  goBack() {
-    this.router.navigate(['/tabs']);
-  }
-
-  // Method to load OWL data from assets
-  async loadOWLDatabase() {
-    try {
-      this.isLoading = true;
-      await this.databaseService.loadOWLData('/assets/data/json_database');
-      await this.loadChemicals(); // Reload the chemicals list
-    } catch (error) {
-      console.error('Error loading OWL database:', error);
-    } finally {
-      this.isLoading = false;
+  // Navigate to chemical details page
+  console.log('Navigating to chemical details for:', chemical.name);
+  this.router.navigate(['/chemical-details', chemical.id]).then(
+    success => console.log('Navigation successful:', success),
+    error => {
+      console.error('Navigation failed, trying fallback:', error);
+      this.router.navigate(['/tabs/tab4', chemical.id]);
     }
+  );
+}
+
+goBack() {
+  // Navigate back to emergency types (home)
+  this.router.navigate(['/tabs/tab1']);
+}
+
+// Method to load OWL data from assets
+async loadOWLDatabase() {
+  try {
+    this.isLoading = true;
+    await this.databaseService.loadOWLData('/assets/data/json_database');
+    await this.loadChemicals(); // Reload the chemicals list
+  } catch (error) {
+    console.error('Error loading OWL database:', error);
+  } finally {
+    this.isLoading = false;
   }
+}
 }
 
 // Also export as ChemicalListPage for compatibility
