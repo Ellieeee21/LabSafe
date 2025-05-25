@@ -56,25 +56,25 @@ ion-header ion-toolbar {
   width: 100%;
 }
 
-// Icon container
+// Icon container - made bigger
 .emergency-icon-container {
   margin-right: 16px;
-  min-width: 32px;
+  min-width: 40px; // Increased from 32px
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-// PNG Icon styling (renamed from svg to img)
+// PNG Icon styling - made bigger
 .emergency-icon-img {
-  width: 28px;
-  height: 28px;
+  width: 36px; // Increased from 28px
+  height: 36px; // Increased from 28px
   object-fit: contain;
   background: transparent;
 }
 
 .emergency-text {
-  font-size: 18px;
+  font-size: 17px; // Reduced from 18px (1 point)
   font-weight: 500;
   color: #000000;
   line-height: 1.4;
@@ -104,7 +104,7 @@ ion-tab-button {
   }
 
   ion-label {
-    font-size: 12px;
+    font-size: 11px; // Reduced from 12px (1 point)
     margin-top: 4px;
   }
 }

@@ -16,11 +16,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../tab2/emergency-steps.page').then((m) => m.EmergencyStepsPage),
       },
-      {
-        path: 'tab3',
-        loadComponent: () =>
-          import('../tab3/tab3.page').then((m) => m.Tab3Page),
-      },
+      
       {
         path: '',
         redirectTo: '/tabs/tab1',
@@ -28,7 +24,7 @@ export const routes: Routes = [
       },
     ],
   },
-  // Add the emergency-steps as a separate route (not within tabs)
+  
   {
     path: 'emergency-steps',
     loadComponent: () =>

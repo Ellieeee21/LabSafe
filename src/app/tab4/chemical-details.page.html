@@ -1,0 +1,76 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="danger">
+    <ion-buttons slot="start">
+      <ion-back-button (click)="goBack()" defaultHref="/chemical-list"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ chemical?.name || 'Chemical Details' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">{{ chemical?.name || 'Chemical Details' }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading chemical details...</p>
+  </div>
+
+  <!-- Chemical Details Content -->
+  <div *ngIf="!isLoading && chemical">
+    <!-- Chemical Name Header -->
+    <ion-card class="chemical-header">
+      <ion-card-header>
+        <ion-card-title>{{ chemical.name }}</ion-card-title>
+        <ion-card-subtitle>Emergency Procedures</ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
+
+    <!-- Emergency Procedures -->
+    <div *ngIf="emergencyProcedures.length > 0">
+      <ion-card *ngFor="let procedure of emergencyProcedures" class="procedure-card">
+        <ion-card-header>
+          <ion-card-title class="procedure-title">
+            <ion-icon [name]="getEmergencyIcon(procedure.emergencyType.name)"></ion-icon>
+            {{ procedure.emergencyType.name }}
+          </ion-card-title>
+        </ion-card-header>
+        
+        <ion-card-content>
+          <ion-list class="steps-list">
+            <ion-item *ngFor="let step of procedure.steps" class="step-item">
+              <ion-label class="step-label">
+                <div class="step-number">{{ step.step_order }}</div>
+                <div class="step-text">{{ step.step }}</div>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- No Procedures Message -->
+    <ion-card *ngIf="emergencyProcedures.length === 0" class="no-procedures">
+      <ion-card-content>
+        <ion-text color="medium">
+          <p>No emergency procedures available for this chemical.</p>
+        </ion-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!isLoading && !chemical" class="error-state">
+    <ion-card>
+      <ion-card-content>
+        <ion-text color="danger">
+          <p>Chemical not found or error loading details.</p>
+        </ion-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

@@ -55,7 +55,8 @@ export class EmergencyTypesPage implements OnInit {
     { id: 'ingestion', name: 'Ingestion', icon: 'Ingestion.png' },
     { id: 'inhalation', name: 'Inhalation', icon: 'Inhalation.png' },
     { id: 'instability', name: 'Instability or Reactivity', icon: 'Instability.png' },
-    { id: 'skin_contact', name: 'Skin Contact', icon: 'Skin-contact.png' }
+    { id: 'skin_contact', name: 'Skin Contact', icon: 'Skin-contact.png' },
+    { id: 'spill', name: 'Spill', icon: 'Spill.png' }
   ];
 
   filteredEmergencyTypes: EmergencyType[] = [];
