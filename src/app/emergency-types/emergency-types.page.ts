@@ -39,15 +39,15 @@ export class EmergencyTypesPage implements OnInit {
       
       // Complete emergency types as shown in the image
       this.emergencyTypes = [
-  { id: 1, name: 'Eye Contact', icon: 'Eye.png' },
-  { id: 2, name: 'Fire Fighting', icon: 'Fire-fighting.png' },
-  { id: 3, name: 'Flammability', icon: 'Flammability.png' },
-  { id: 4, name: 'Ingestion', icon: 'Ingestion.png' },
-  { id: 5, name: 'Inhalation', icon: 'Inhalation.png' },
-  { id: 6, name: 'Instability or Reactivity', icon: 'Instability.png' },
-  { id: 7, name: 'Skin Contact', icon: 'Skin-contact.png' },
-  { id: 8, name: 'Spill', icon: 'Spill.png' }
-];
+        { id: 1, name: 'Eye Contact', icon: 'Eye.png' },
+        { id: 2, name: 'Fire Fighting', icon: 'Fire-fighting.png' },
+        { id: 3, name: 'Flammability', icon: 'Flammability.png' },
+        { id: 4, name: 'Ingestion', icon: 'Ingestion.png' },
+        { id: 5, name: 'Inhalation', icon: 'Inhalation.png' },
+        { id: 6, name: 'Instability or Reactivity', icon: 'Instability.png' },
+        { id: 7, name: 'Skin Contact', icon: 'Skin-contact.png' },
+        { id: 8, name: 'Spill', icon: 'Spill.png' }
+      ];
       
       this.filteredEmergencyTypes = [...this.emergencyTypes];
       
@@ -81,7 +81,7 @@ export class EmergencyTypesPage implements OnInit {
   navigateToSteps(emergencyType: EmergencyType) {
     console.log('Navigating to steps for:', emergencyType.name);
     // Navigate to emergency steps page with query parameters
-    this.router.navigate(['/emergency-steps'], { 
+    this.router.navigate(['/tabs/emergency-steps'], { 
       queryParams: { 
         emergencyType: emergencyType.name,
         emergencyId: emergencyType.id 
@@ -89,15 +89,16 @@ export class EmergencyTypesPage implements OnInit {
     });
   }
 
-  // Bottom Navigation Methods - Only 4 buttons
+  // Bottom Navigation Methods - Updated with consistent paths
   navigateToHome() {
     console.log('Already on Home (Emergency Types)');
-    // Already on home page - do nothing
+    // Already on home page - do nothing or refresh
+    this.router.navigate(['/tabs/emergency-types']);
   }
 
   navigateToChemicals() {
     console.log('Navigating to chemicals...');
-    this.router.navigate(['/tabs/tab3']);
+    this.router.navigate(['/tabs/chemical-list']);
   }
 
   navigateToHistory() {

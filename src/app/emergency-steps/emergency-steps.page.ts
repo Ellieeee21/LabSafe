@@ -38,7 +38,6 @@ export interface EmergencyStepData {
     IonCard,
     IonCardContent,
     IonIcon,
-   
   ]
 })
 export class EmergencyStepsPage implements OnInit, OnDestroy {
@@ -236,18 +235,18 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   goBack() {
-    // Navigate back to emergency types page (tab1)
-    this.router.navigate(['/tabs/tab1']);
+    // Navigate back to emergency types page (home)
+    this.router.navigate(['/tabs/emergency-types']);
   }
 
+  // Bottom Navigation Methods - Updated with consistent paths
   navigateToHome() {
-    this.router.navigate(['/tabs/tab1']);
+    this.router.navigate(['/tabs/emergency-types']);
   }
 
   navigateToChemicals() {
     console.log('Navigating to chemicals from emergency steps...');
-    // Use the correct route for chemical list
-    this.router.navigate(['/tabs/tab3']);
+    this.router.navigate(['/tabs/chemical-list']);
   }
 
   navigateToHistory() {

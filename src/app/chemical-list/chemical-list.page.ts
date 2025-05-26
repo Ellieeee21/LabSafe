@@ -89,7 +89,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
 
   async onChemicalClick(chemical: Chemical) {
     // Navigate to chemical details with the chemical's ID
-    this.router.navigate(['/chemical-details', chemical.id]);
+    this.router.navigate(['/tabs/chemical-details', chemical.id]);
   }
 
   async reloadFromJsonLd() {
@@ -111,13 +111,14 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     await toast.present();
   }
 
-  // Navigation methods
+  // Navigation methods - Updated with consistent paths
   navigateToHome() {
-    this.router.navigate(['/tabs/tab1']);
+    this.router.navigate(['/tabs/emergency-types']);
   }
 
   navigateToChemicals() {
-    // Already on chemicals page
+    // Already on chemicals page - do nothing or refresh
+    this.router.navigate(['/tabs/chemical-list']);
   }
 
   navigateToHistory() {

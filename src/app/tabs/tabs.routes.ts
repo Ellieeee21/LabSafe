@@ -7,35 +7,35 @@ export const routes: Routes = [
     component: TabsPage,
     children: [
       {
-        path: 'tab1',
+        path: 'emergency-types',
         loadComponent: () =>
           import('../emergency-types/emergency-types.page').then((m) => m.EmergencyTypesPage),
       },
       {
-        path: 'tab2',
+        path: 'emergency-steps',
         loadComponent: () =>
           import('../emergency-steps/emergency-steps.page').then((m) => m.EmergencyStepsPage),
       },
       {
-        path: 'tab3',
+        path: 'chemical-list',
         loadComponent: () =>
           import('../chemical-list/chemical-list.page').then((m) => m.ChemicalListPage),
       },
       {
-        path: 'tab4',
+        path: 'chemical-details/:id',
         loadComponent: () =>
           import('../chemical-details/chemical-details.page').then((m) => m.ChemicalDetailsPage),
       },
       {
         path: '',
-        redirectTo: '/tabs/tab1',
+        redirectTo: '/tabs/emergency-types',
         pathMatch: 'full',
       },
     ],
   },
   {
     path: '',
-    redirectTo: '/tabs/tab1',
+    redirectTo: '/tabs/emergency-types',
     pathMatch: 'full',
   },
 ];
