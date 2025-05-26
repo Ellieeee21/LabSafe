@@ -1,99 +1,62 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { 
-  IonTabs, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
-  IonSearchbar, 
-  IonCard, 
-  IonCardContent, 
-  IonIcon, 
-  IonTabBar, 
-  IonTabButton, 
-  IonLabel 
-} from "@ionic/angular/standalone";
+import { FormsModule } from '@angular/forms'; // Add this import
+import { IonicModule } from '@ionic/angular';
 
-export interface EmergencyType {
-  id: string;
+// Add the missing interfaces if needed
+interface EmergencyType {
+  id: number;
   name: string;
   icon: string;
+  // Add other properties as needed
 }
 
 @Component({
   selector: 'app-emergency-types',
-  templateUrl: './emergency-types.page.html',  
+  templateUrl: './emergency-types.page.html',
   styleUrls: ['./emergency-types.page.scss'],
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
-    IonSearchbar,
-    IonCard,
-    IonCardContent,
-    IonIcon,
-  ]
+  imports: [CommonModule, IonicModule, FormsModule] // Add FormsModule here
 })
 export class EmergencyTypesPage implements OnInit {
   searchQuery: string = '';
-  emergencyTypes: EmergencyType[] = [
-    // Updated to match your renamed icon files
-    { id: 'eye_contact', name: 'Eye Contact', icon: 'Eye.png' },
-    { id: 'fire_fighting', name: 'Fire Fighting', icon: 'Fire-fighting.png' },
-    { id: 'flammability', name: 'Flammability', icon: 'Flammability.png' },
-    { id: 'ingestion', name: 'Ingestion', icon: 'Ingestion.png' },
-    { id: 'inhalation', name: 'Inhalation', icon: 'Inhalation.png' },
-    { id: 'instability', name: 'Instability or Reactivity', icon: 'Instability.png' },
-    { id: 'skin_contact', name: 'Skin Contact', icon: 'Skin-contact.png' },
-    { id: 'spill', name: 'Spill', icon: 'Spill.png' }
-  ];
-
   filteredEmergencyTypes: EmergencyType[] = [];
+  emergencyTypes: EmergencyType[] = [];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router
+  ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Initialize with hardcoded emergency types since this is a standalone tab
+    this.loadEmergencyTypes();
+  }
+
+  loadEmergencyTypes() {
+    // Hardcoded emergency types for standalone tab
+    this.emergencyTypes = [
+      { id: 1, name: 'Chemical Spill', icon: 'chemical-spill.png' },
+      { id: 2, name: 'Fire Emergency', icon: 'fire.png' },
+      { id: 3, name: 'Gas Leak', icon: 'gas-leak.png' },
+      { id: 4, name: 'Electrical Hazard', icon: 'electrical.png' },
+      { id: 5, name: 'Medical Emergency', icon: 'medical.png' },
+      { id: 6, name: 'Equipment Failure', icon: 'equipment.png' }
+    ];
     this.filteredEmergencyTypes = [...this.emergencyTypes];
-    
-    // Debug logging to check icon paths
-    console.log('Emergency types with icons:', this.emergencyTypes);
-    this.emergencyTypes.forEach(type => {
-      console.log(`${type.name}: assets/icon/${type.icon}`);
-    });
-  }
-
-  // Method to get full icon path for debugging
-  getIconPath(iconName: string): string {
-    const fullPath = `assets/icon/${iconName}`;
-    console.log('Icon path for', iconName, ':', fullPath);
-    return fullPath;
-  }
-
-  // Method to handle image load errors
-  onImageError(event: any, emergencyType: EmergencyType) {
-    console.error('Failed to load image for', emergencyType.name, ':', event);
-    console.log('Attempted path:', `assets/icon/${emergencyType.icon}`);
-    
-    // Try alternative path or set a fallback
-    const img = event.target;
-    if (img.src.includes('assets/icon/')) {
-      // Try without spaces in filename
-      const newIcon = emergencyType.icon.replace(/\s+/g, '');
-      console.log('Trying alternative path:', `assets/icon/${newIcon}`);
-      img.src = `assets/icon/${newIcon}`;
-    }
   }
 
   onSearchChange(event: any) {
-    this.searchQuery = event.detail.value;
-    this.filterEmergencyTypes();
+    const query = event.target.value?.toLowerCase() || '';
+    this.searchQuery = query;
+    
+    if (query.trim() === '') {
+      this.filteredEmergencyTypes = [...this.emergencyTypes];
+    } else {
+      this.filteredEmergencyTypes = this.emergencyTypes.filter(emergencyType =>
+        emergencyType.name.toLowerCase().includes(query)
+      );
+    }
   }
 
   clearSearch() {
@@ -101,52 +64,40 @@ export class EmergencyTypesPage implements OnInit {
     this.filteredEmergencyTypes = [...this.emergencyTypes];
   }
 
-  private filterEmergencyTypes() {
-    if (!this.searchQuery.trim()) {
-      this.filteredEmergencyTypes = [...this.emergencyTypes];
-      return;
-    }
-
-    const query = this.searchQuery.toLowerCase();
-    this.filteredEmergencyTypes = this.emergencyTypes.filter(type =>
-      type.name.toLowerCase().includes(query)
-    );
-  }
-
   navigateToSteps(emergencyType: EmergencyType) {
-    console.log('Navigating to emergency steps for:', emergencyType.name);
-    this.router.navigate(['/tabs/tab2'], {
-      queryParams: {
-        emergencyType: emergencyType.name,
-        emergencyId: emergencyType.id
-      }
-    });
+    console.log('Navigating to steps for:', emergencyType.name);
+    // Navigate to emergency steps page
+    this.router.navigate(['/emergency-steps', emergencyType.id]);
   }
-   navigateToChemicals() {
+
+  // Bottom Navigation Methods - All 4 buttons
+  navigateToHome() {
+    console.log('Already on Home (Emergency Types)');
+    // Already on home page - do nothing
+  }
+
+  navigateToChemicals() {
     console.log('Navigating to chemicals...');
-    
-    // Use the correct tab route and handle any potential errors
-    this.router.navigate(['/tabs/tab3']).then(
+    this.router.navigate(['/chemical-list']).then(
       success => {
         console.log('Navigation to chemicals successful:', success);
       },
       error => {
-        console.error('Navigation to chemicals failed:', error);
-        // Force reload if navigation fails
-        window.location.href = '/tabs/tab3';
+        console.error('Navigation to chemicals failed, trying fallback:', error);
+        this.router.navigate(['/tabs/tab3']);
       }
-    ).catch(err => {
-      console.error('Navigation catch error:', err);
-      // Last resort - direct URL change
-      window.location.href = '/tabs/tab3';
-    });
+    );
   }
 
   navigateToHistory() {
     console.log('History feature coming soon');
+    // TODO: Implement history navigation when ready
+    // this.router.navigate(['/history']);
   }
 
   navigateToProfile() {
     console.log('Profile feature coming soon');
+    // TODO: Implement profile navigation when ready
+    // this.router.navigate(['/profile']);
   }
 }

@@ -10,7 +10,7 @@
   <ion-searchbar 
     [(ngModel)]="searchTerm"
     (ionInput)="onSearchChange($event)"
-    placeholder="Search for chemical"
+    placeholder="Search chemicals..."
     show-clear-button="focus"
     (ionClear)="clearSearch()">
   </ion-searchbar>
@@ -21,42 +21,54 @@
     <p>Loading chemicals...</p>
   </div>
 
-  <!-- Chemical List as Cards (similar to Emergency Types) -->
-  <div class="chemicals-container" *ngIf="!isLoading">
+  <!-- Chemical List -->
+  <div *ngIf="!isLoading">
+    <!-- Results count -->
+    <div class="results-info" *ngIf="filteredChemicals.length > 0">
+      <p>{{ filteredChemicals.length }} chemical{{ filteredChemicals.length !== 1 ? 's' : '' }} found</p>
+    </div>
+
+    <!-- Chemical Cards -->
     <ion-card 
       *ngFor="let chemical of filteredChemicals" 
-      (click)="onChemicalClick(chemical)"
-      class="chemical-card">
-      <ion-card-content class="chemical-card-content">
-        <div class="chemical-item">
-          <div class="chemical-icon-container">
-            <ion-icon name="flask-outline" class="chemical-icon"></ion-icon>
+      class="chemical-card"
+      (click)="onChemicalClick(chemical)">
+      <ion-card-content>
+        <div class="chemical-info">
+          <ion-icon name="flask-outline" class="chemical-icon"></ion-icon>
+          <div class="chemical-details">
+            <h3 class="chemical-name">{{ chemical.name }}</h3>
+            <p class="chemical-id">ID: {{ chemical.id }}</p>
           </div>
-          <span class="chemical-text">{{ chemical.name }}</span>
+          <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
         </div>
       </ion-card-content>
     </ion-card>
-  </div>
 
-  <!-- No Results Message -->
-  <div *ngIf="filteredChemicals.length === 0 && searchTerm && !isLoading" class="no-results">
-    <ion-text color="medium">
-      <p>No chemicals found matching "{{ searchTerm }}"</p>
-    </ion-text>
-  </div>
-
-  <!-- Empty State -->
-  <div *ngIf="chemicals.length === 0 && !isLoading" class="empty-state">
-    <ion-text color="medium">
-      <p>No chemicals available</p>
-      <ion-button (click)="loadOWLDatabase()" fill="outline" color="danger">
-        Load Database
-      </ion-button>
-    </ion-text>
+    <!-- No Results Message -->
+    <div *ngIf="filteredChemicals.length === 0 && !isLoading" class="no-results">
+      <ion-card>
+        <ion-card-content>
+          <div class="no-results-content">
+            <ion-icon name="search-outline" class="no-results-icon"></ion-icon>
+            <h3>No chemicals found</h3>
+            <p *ngIf="searchTerm">No chemicals match your search for "{{ searchTerm }}"</p>
+            <p *ngIf="!searchTerm">No chemicals are currently loaded.</p>
+            <ion-button 
+              fill="outline" 
+              color="primary" 
+              (click)="reloadFromJsonLd()">
+              <ion-icon name="refresh-outline" slot="start"></ion-icon>
+              Reload Data
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
   </div>
 </ion-content>
 
-<!-- Bottom Navigation - Single dark bar like in first image -->
+<!-- Bottom Navigation - 4 buttons consistent with other pages -->
 <div class="bottom-navigation">
   <div class="nav-bar">
     <div class="nav-button" (click)="navigateToHome()">
@@ -64,9 +76,19 @@
       <span class="nav-label">Home</span>
     </div>
 
-    <div class="nav-button active">
-      <ion-icon name="list-outline"></ion-icon>
+    <div class="nav-button active" (click)="navigateToChemicals()">
+      <ion-icon name="flask-outline"></ion-icon>
       <span class="nav-label">Chemicals</span>
+    </div>
+
+    <div class="nav-button" (click)="navigateToHistory()">
+      <ion-icon name="time-outline"></ion-icon>
+      <span class="nav-label">History</span>
+    </div>
+
+    <div class="nav-button" (click)="navigateToProfile()">
+      <ion-icon name="person-outline"></ion-icon>
+      <span class="nav-label">Profile</span>
     </div>
   </div>
 </div>

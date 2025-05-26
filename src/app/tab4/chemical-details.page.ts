@@ -1,31 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DatabaseService } from '../services/database.service';
+import { DatabaseService, Chemical } from '../services/database.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-
-interface Chemical {
-  id: number;
-  name: string;
-}
-
-interface EmergencyType {
-  id: number;
-  name: string;
-}
-
-interface FirstAidStep {
-  id: number;
-  chemical_id: number;
-  emergency_type_id: number;
-  step_order: number;
-  step: string;
-}
-
-interface EmergencyProcedure {
-  emergencyType: EmergencyType;
-  steps: FirstAidStep[];
-}
 
 @Component({
   selector: 'app-chemical-details',
@@ -36,7 +13,6 @@ interface EmergencyProcedure {
 })
 export class ChemicalDetailsPage implements OnInit {
   chemical: Chemical | null = null;
-  emergencyProcedures: EmergencyProcedure[] = [];
   isLoading = true;
   error: string | null = null;
 
@@ -61,29 +37,13 @@ export class ChemicalDetailsPage implements OnInit {
       this.isLoading = true;
       this.error = null;
       
-      // Load chemical info
+      // Load chemical info only
       this.chemical = await this.databaseService.getChemicalById(chemicalId);
       
       if (!this.chemical) {
         this.error = 'Chemical not found';
         return;
       }
-      
-      // Load emergency procedures
-      const emergencyTypes = await this.databaseService.getEmergencyTypes();
-      const firstAidSteps = await this.databaseService.getFirstAidStepsByChemical(chemicalId);
-      
-      // Group steps by emergency type
-      this.emergencyProcedures = emergencyTypes.map((emergencyType: EmergencyType) => {
-        const steps = firstAidSteps
-          .filter((step: FirstAidStep) => step.emergency_type_id === emergencyType.id)
-          .sort((a: FirstAidStep, b: FirstAidStep) => a.step_order - b.step_order);
-        
-        return {
-          emergencyType,
-          steps
-        };
-      }).filter((procedure: EmergencyProcedure) => procedure.steps.length > 0);
       
     } catch (error) {
       console.error('Error loading chemical details:', error);
@@ -93,7 +53,7 @@ export class ChemicalDetailsPage implements OnInit {
     }
   }
 
-  // Bottom Navigation Methods - EXACTLY like Emergency Types
+  // Bottom Navigation Methods
   navigateToHome() {
     console.log('Navigating to Emergency Types (Home)...');
     this.router.navigate(['/tabs/tab1']).then(
@@ -136,28 +96,5 @@ export class ChemicalDetailsPage implements OnInit {
 
   navigateToChemicalList() {
     this.navigateToChemicals();
-  }
-
-  getEmergencyIcon(emergencyType: string): string {
-    switch (emergencyType.toLowerCase()) {
-      case 'eye contact':
-        return 'eye';
-      case 'fire fighting':
-        return 'flame';
-      case 'flammability':
-        return 'warning';
-      case 'ingestion':
-        return 'medical';
-      case 'inhalation':
-        return 'cloud';
-      case 'instability or reactivity':
-        return 'nuclear';
-      case 'skin contact':
-        return 'hand-left';
-      case 'spill':
-        return 'water';
-      default:
-        return 'alert-circle';
-    }
   }
 }

@@ -1,6 +1,6 @@
 /* chemical-list.page.scss */
 
-// White/bone background for the content
+// White/bone background for the content - EXACTLY like Emergency Types
 .white-background {
   --background: #FAFAFA !important;
   background: #FAFAFA !important;
@@ -20,80 +20,19 @@ ion-header ion-toolbar {
   --color: white !important;
 }
 
-// Search bar styling - WHITE background like in first image
+// Search bar styling
 ion-searchbar {
-  --background: white !important;
+  --background: white;
   --border-radius: 12px;
-  margin-bottom: 8px;
-  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --color: #000000 !important;
-  --placeholder-color: #666666 !important;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
 }
 
-.chemicals-container {
-  margin-top: 16px;
-  padding-bottom: 80px; // Space for bottom navigation
-}
-
-.chemical-card {
-  margin-bottom: 12px;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-.chemical-card-content {
-  padding: 20px;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  background: white;
-}
-
-.chemical-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-// Icon container
-.chemical-icon-container {
-  margin-right: 16px;
-  min-width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-// Chemical Icon styling
-.chemical-icon {
-  font-size: 36px;
-  color: #C00000;
-}
-
-.chemical-text {
-  font-size: 17px;
-  font-weight: 500;
-  color: #000000;
-  line-height: 1.4;
-}
-
-// Loading container
 .loading-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 200px;
   text-align: center;
 
@@ -102,28 +41,125 @@ ion-searchbar {
   }
 
   p {
+    color: #000000; // Black text like Emergency Types
     font-size: 16px;
-    color: #666;
     margin: 0;
   }
 }
 
-.no-results,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
+.results-info {
+  margin-bottom: 16px;
   text-align: center;
 
   p {
-    font-size: 16px;
-    margin: 0 0 16px 0;
+    color: #666;
+    font-size: 14px;
+    margin: 0;
   }
 }
 
-// Bottom Navigation - SINGLE dark bar like in first image
+.chemical-card {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  ion-card-content {
+    padding: 16px;
+  }
+}
+
+.chemical-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .chemical-icon {
+    font-size: 24px;
+    color: #C00000; // Red color to match theme
+    flex-shrink: 0;
+  }
+
+  .chemical-details {
+    flex: 1;
+
+    .chemical-name {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #000000; // Black text like Emergency Types
+      line-height: 1.3;
+    }
+
+    .chemical-id {
+      margin: 0;
+      font-size: 14px;
+      color: #666;
+    }
+  }
+
+  .arrow-icon {
+    font-size: 18px;
+    color: #666;
+    flex-shrink: 0;
+  }
+}
+
+.no-results {
+  margin-top: 40px;
+
+  ion-card {
+    background: white;
+    text-align: center;
+  }
+
+  .no-results-content {
+    padding: 40px 20px;
+
+    .no-results-icon {
+      font-size: 48px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #000000; // Black text like Emergency Types
+    }
+
+    p {
+      margin: 0 0 20px 0;
+      font-size: 16px;
+      color: #666;
+    }
+
+    ion-button {
+      --border-color: #C00000;
+      --color: #C00000;
+
+      &:hover {
+        --background: #C00000;
+        --color: white;
+      }
+    }
+  }
+}
+
+// Bottom Navigation - 4 buttons consistent with other pages
 .bottom-navigation {
   position: fixed;
   bottom: 0;
@@ -183,7 +219,18 @@ ion-searchbar {
   }
 }
 
-// Adjust content padding for bottom navigation
+// Content padding adjustment
 ion-content {
   --padding-bottom: 80px;
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .chemical-info {
+    gap: 8px;
+
+    .chemical-details .chemical-name {
+      font-size: 16px;
+    }
+  }
 }
