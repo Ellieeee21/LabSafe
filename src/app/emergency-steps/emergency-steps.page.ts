@@ -13,9 +13,6 @@ import {
   IonButton,
   IonButtons,
   IonIcon,
-  IonTabs,
-  IonTabBar,
-  IonTabButton,
   IonLabel
 } from '@ionic/angular/standalone';
 
@@ -38,6 +35,7 @@ export interface EmergencyStepData {
     IonCard,
     IonCardContent,
     IonIcon,
+    IonLabel
   ]
 })
 export class EmergencyStepsPage implements OnInit, OnDestroy {
@@ -236,17 +234,17 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
 
   goBack() {
     // Navigate back to emergency types page (home)
-    this.router.navigate(['/tabs/emergency-types']);
+    this.router.navigate(['/emergency-types']);
   }
 
-  // Bottom Navigation Methods - Updated with consistent paths
+  // Bottom Navigation Methods - Updated paths without tabs
   navigateToHome() {
-    this.router.navigate(['/tabs/emergency-types']);
+    this.router.navigate(['/emergency-types']);
   }
 
   navigateToChemicals() {
     console.log('Navigating to chemicals from emergency steps...');
-    this.router.navigate(['/tabs/chemical-list']);
+    this.router.navigate(['/chemical-list']);
   }
 
   navigateToHistory() {

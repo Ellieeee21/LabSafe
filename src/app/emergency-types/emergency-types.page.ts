@@ -81,7 +81,7 @@ export class EmergencyTypesPage implements OnInit {
   navigateToSteps(emergencyType: EmergencyType) {
     console.log('Navigating to steps for:', emergencyType.name);
     // Navigate to emergency steps page with query parameters
-    this.router.navigate(['/tabs/emergency-steps'], { 
+    this.router.navigate(['/emergency-steps'], { 
       queryParams: { 
         emergencyType: emergencyType.name,
         emergencyId: emergencyType.id 
@@ -89,16 +89,16 @@ export class EmergencyTypesPage implements OnInit {
     });
   }
 
-  // Bottom Navigation Methods - Updated with consistent paths
+  // Bottom Navigation Methods - Updated paths without tabs
   navigateToHome() {
     console.log('Already on Home (Emergency Types)');
     // Already on home page - do nothing or refresh
-    this.router.navigate(['/tabs/emergency-types']);
+    this.router.navigate(['/emergency-types']);
   }
 
   navigateToChemicals() {
     console.log('Navigating to chemicals...');
-    this.router.navigate(['/tabs/chemical-list']);
+    this.router.navigate(['/chemical-list']);
   }
 
   navigateToHistory() {
