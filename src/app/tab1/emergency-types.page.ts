@@ -1,15 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { DatabaseService } from '../services/database.service';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Add this import
 import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
 
-// Add the missing interfaces if needed
 interface EmergencyType {
   id: number;
   name: string;
   icon: string;
-  // Add other properties as needed
 }
 
 @Component({
@@ -17,44 +16,59 @@ interface EmergencyType {
   templateUrl: './emergency-types.page.html',
   styleUrls: ['./emergency-types.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule] // Add FormsModule here
+  imports: [CommonModule, IonicModule, FormsModule]
 })
 export class EmergencyTypesPage implements OnInit {
   searchQuery: string = '';
-  filteredEmergencyTypes: EmergencyType[] = [];
   emergencyTypes: EmergencyType[] = [];
+  filteredEmergencyTypes: EmergencyType[] = [];
+  isLoading = true;
 
   constructor(
-    private router: Router
+    private router: Router,
+    private databaseService: DatabaseService
   ) {}
 
   async ngOnInit() {
-    // Initialize with hardcoded emergency types since this is a standalone tab
-    this.loadEmergencyTypes();
+    await this.loadEmergencyTypes();
   }
 
-  loadEmergencyTypes() {
-    // Hardcoded emergency types for standalone tab
-    this.emergencyTypes = [
-      { id: 1, name: 'Chemical Spill', icon: 'chemical-spill.png' },
-      { id: 2, name: 'Fire Emergency', icon: 'fire.png' },
-      { id: 3, name: 'Gas Leak', icon: 'gas-leak.png' },
-      { id: 4, name: 'Electrical Hazard', icon: 'electrical.png' },
-      { id: 5, name: 'Medical Emergency', icon: 'medical.png' },
-      { id: 6, name: 'Equipment Failure', icon: 'equipment.png' }
-    ];
-    this.filteredEmergencyTypes = [...this.emergencyTypes];
+  async loadEmergencyTypes() {
+    try {
+      this.isLoading = true;
+      
+      // Complete emergency types as shown in the image
+      this.emergencyTypes = [
+        { id: 1, name: 'Eye Contact', icon: 'eye-contact.png' },
+        { id: 2, name: 'Fire Fighting', icon: 'fire-fighting.png' },
+        { id: 3, name: 'Flammability', icon: 'flammability.png' },
+        { id: 4, name: 'Ingestion', icon: 'ingestion.png' },
+        { id: 5, name: 'Inhalation', icon: 'inhalation.png' },
+        { id: 6, name: 'Instability or Reactivity', icon: 'instability.png' },
+        { id: 7, name: 'Skin Contact', icon: 'skin-contact.png' },
+        { id: 8, name: 'Spill', icon: 'spill.png' }
+      ];
+      
+      this.filteredEmergencyTypes = [...this.emergencyTypes];
+      
+    } catch (error) {
+      console.error('Error loading emergency types:', error);
+      this.emergencyTypes = [];
+      this.filteredEmergencyTypes = [];
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   onSearchChange(event: any) {
-    const query = event.target.value?.toLowerCase() || '';
+    const query = event.target.value.toLowerCase().trim();
     this.searchQuery = query;
     
-    if (query.trim() === '') {
+    if (!query) {
       this.filteredEmergencyTypes = [...this.emergencyTypes];
     } else {
-      this.filteredEmergencyTypes = this.emergencyTypes.filter(emergencyType =>
-        emergencyType.name.toLowerCase().includes(query)
+      this.filteredEmergencyTypes = this.emergencyTypes.filter(
+        emergencyType => emergencyType.name.toLowerCase().includes(query)
       );
     }
   }
@@ -66,11 +80,16 @@ export class EmergencyTypesPage implements OnInit {
 
   navigateToSteps(emergencyType: EmergencyType) {
     console.log('Navigating to steps for:', emergencyType.name);
-    // Navigate to emergency steps page
-    this.router.navigate(['/emergency-steps', emergencyType.id]);
+    // Navigate to emergency steps page with query parameters
+    this.router.navigate(['/emergency-steps'], { 
+      queryParams: { 
+        emergencyType: emergencyType.name,
+        emergencyId: emergencyType.id 
+      } 
+    });
   }
 
-  // Bottom Navigation Methods - All 4 buttons
+  // Bottom Navigation Methods - Only 4 buttons
   navigateToHome() {
     console.log('Already on Home (Emergency Types)');
     // Already on home page - do nothing
@@ -78,26 +97,16 @@ export class EmergencyTypesPage implements OnInit {
 
   navigateToChemicals() {
     console.log('Navigating to chemicals...');
-    this.router.navigate(['/chemical-list']).then(
-      success => {
-        console.log('Navigation to chemicals successful:', success);
-      },
-      error => {
-        console.error('Navigation to chemicals failed, trying fallback:', error);
-        this.router.navigate(['/tabs/tab3']);
-      }
-    );
+    this.router.navigate(['/tabs/tab3']);
   }
 
   navigateToHistory() {
     console.log('History feature coming soon');
     // TODO: Implement history navigation when ready
-    // this.router.navigate(['/history']);
   }
 
   navigateToProfile() {
     console.log('Profile feature coming soon');
     // TODO: Implement profile navigation when ready
-    // this.router.navigate(['/profile']);
   }
 }

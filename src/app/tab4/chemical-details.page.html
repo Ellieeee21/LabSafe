@@ -1,4 +1,3 @@
-<!-- chemical-details.page.html -->
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title class="centered-red-title">{{ chemical?.name || 'Chemical Details' }}</ion-title>
@@ -18,49 +17,17 @@
     <ion-card class="chemical-header">
       <ion-card-header>
         <ion-card-title>{{ chemical.name }}</ion-card-title>
-        <ion-card-subtitle>Emergency Procedures</ion-card-subtitle>
+        <ion-card-subtitle>Chemical Information</ion-card-subtitle>
       </ion-card-header>
-    </ion-card>
-
-    <!-- Emergency Procedures -->
-    <div *ngIf="emergencyProcedures.length > 0">
-      <ion-card *ngFor="let procedure of emergencyProcedures" class="procedure-card">
-        <ion-card-header>
-          <ion-card-title class="procedure-title">
-            <ion-icon [name]="getEmergencyIcon(procedure.emergencyType.name)"></ion-icon>
-            {{ procedure.emergencyType.name }}
-          </ion-card-title>
-        </ion-card-header>
-        
-        <ion-card-content>
-          <ion-list class="steps-list">
-            <ion-item *ngFor="let step of procedure.steps" class="step-item">
-              <ion-label class="step-label">
-                <div class="step-number">{{ step.step_order }}</div>
-                <div class="step-text">{{ step.step }}</div>
-              </ion-label>
-            </ion-item>
-          </ion-list>
-        </ion-card-content>
-      </ion-card>
-    </div>
-
-    <!-- No Procedures Message -->
-    <ion-card *ngIf="emergencyProcedures.length === 0" class="no-procedures">
-      <ion-card-content>
-        <ion-text color="medium">
-          <p>No emergency procedures available for this chemical.</p>
-        </ion-text>
-      </ion-card-content>
     </ion-card>
   </div>
 
   <!-- Error State -->
-  <div *ngIf="!isLoading && !chemical" class="error-state">
+  <div *ngIf="!isLoading && error" class="error-state">
     <ion-card>
       <ion-card-content>
         <ion-text color="danger">
-          <p>Chemical not found or error loading details.</p>
+          <p>{{ error }}</p>
         </ion-text>
       </ion-card-content>
     </ion-card>

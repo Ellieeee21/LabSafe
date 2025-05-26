@@ -55,39 +55,24 @@ export class ChemicalDetailsPage implements OnInit {
 
   // Bottom Navigation Methods
   navigateToHome() {
-    console.log('Navigating to Emergency Types (Home)...');
-    this.router.navigate(['/tabs/tab1']).then(
-      success => {
-        console.log('Navigation to home successful:', success);
-      },
-      error => {
-        console.error('Navigation to home failed:', error);
-      }
-    );
-  }
+  console.log('Navigating to Emergency Types (Home)...');
+  this.router.navigate(['/tabs/tab1']);
+}
 
-  navigateToChemicals() {
-    console.log('Navigating to chemicals...');
-    this.router.navigate(['/chemical-list']).then(
-      success => {
-        console.log('Navigation to chemicals successful:', success);
-      },
-      error => {
-        console.error('Navigation to chemicals failed, trying fallback:', error);
-        this.router.navigate(['/tabs/tab3']);
-      }
-    );
-  }
+navigateToChemicals() {
+  console.log('Navigating to chemicals...');
+  this.router.navigate(['/chemical-list']);
+}
 
-  navigateToHistory() {
-    console.log('History feature coming soon');
-    // TODO: Implement history navigation when ready
-  }
+navigateToHistory() {
+  console.log('History feature coming soon');
+  // TODO: Implement history navigation when ready
+}
 
-  navigateToProfile() {
-    console.log('Profile feature coming soon');
-    // TODO: Implement profile navigation when ready
-  }
+navigateToProfile() {
+  console.log('Profile feature coming soon');
+  // TODO: Implement profile navigation when ready
+}
 
   // Keep the old methods for backward compatibility
   goBack() {
