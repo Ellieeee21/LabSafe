@@ -39,15 +39,15 @@ export class EmergencyTypesPage implements OnInit {
       
       // Complete emergency types as shown in the image
       this.emergencyTypes = [
-        { id: 1, name: 'Eye Contact', icon: 'eye-contact.png' },
-        { id: 2, name: 'Fire Fighting', icon: 'fire-fighting.png' },
-        { id: 3, name: 'Flammability', icon: 'flammability.png' },
-        { id: 4, name: 'Ingestion', icon: 'ingestion.png' },
-        { id: 5, name: 'Inhalation', icon: 'inhalation.png' },
-        { id: 6, name: 'Instability or Reactivity', icon: 'instability.png' },
-        { id: 7, name: 'Skin Contact', icon: 'skin-contact.png' },
-        { id: 8, name: 'Spill', icon: 'spill.png' }
-      ];
+  { id: 1, name: 'Eye Contact', icon: 'Eye.png' },
+  { id: 2, name: 'Fire Fighting', icon: 'Fire-fighting.png' },
+  { id: 3, name: 'Flammability', icon: 'Flammability.png' },
+  { id: 4, name: 'Ingestion', icon: 'Ingestion.png' },
+  { id: 5, name: 'Inhalation', icon: 'Inhalation.png' },
+  { id: 6, name: 'Instability or Reactivity', icon: 'Instability.png' },
+  { id: 7, name: 'Skin Contact', icon: 'Skin-contact.png' },
+  { id: 8, name: 'Spill', icon: 'Spill.png' }
+];
       
       this.filteredEmergencyTypes = [...this.emergencyTypes];
       

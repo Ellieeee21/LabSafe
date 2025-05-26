@@ -2,14 +2,25 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatabaseService, Chemical } from '../services/database.service';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { 
+  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, 
+  IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, 
+  IonButton, IonIcon, IonSpinner, IonBackButton, IonButtons,
+  IonText
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-chemical-details',
   templateUrl: './chemical-details.page.html',
   styleUrls: ['./chemical-details.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule]
+  imports: [
+    CommonModule,
+    IonHeader, IonToolbar, IonTitle, IonContent, IonCard,
+    IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent,
+    IonIcon, IonSpinner,
+    IonText
+  ]
 })
 export class ChemicalDetailsPage implements OnInit {
   chemical: Chemical | null = null;
@@ -18,13 +29,15 @@ export class ChemicalDetailsPage implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    public router: Router,
+    private router: Router,
     private databaseService: DatabaseService
-  ) {}
+  ) {
+    
+  }
 
   async ngOnInit() {
-    const chemicalId = Number(this.route.snapshot.paramMap.get('id'));
-    if (chemicalId && !isNaN(chemicalId)) {
+    const chemicalId = this.route.snapshot.paramMap.get('id');
+    if (chemicalId) {
       await this.loadChemicalDetails(chemicalId);
     } else {
       this.error = 'Invalid chemical ID';
@@ -32,17 +45,15 @@ export class ChemicalDetailsPage implements OnInit {
     }
   }
 
-  async loadChemicalDetails(chemicalId: number) {
+  async loadChemicalDetails(chemicalId: string) {
     try {
       this.isLoading = true;
       this.error = null;
       
-      // Load chemical info only
       this.chemical = await this.databaseService.getChemicalById(chemicalId);
       
       if (!this.chemical) {
         this.error = 'Chemical not found';
-        return;
       }
       
     } catch (error) {
@@ -53,33 +64,26 @@ export class ChemicalDetailsPage implements OnInit {
     }
   }
 
-  // Bottom Navigation Methods
+  // Navigation methods
   navigateToHome() {
-  console.log('Navigating to Emergency Types (Home)...');
-  this.router.navigate(['/tabs/tab1']);
-}
-
-navigateToChemicals() {
-  console.log('Navigating to chemicals...');
-  this.router.navigate(['/chemical-list']);
-}
-
-navigateToHistory() {
-  console.log('History feature coming soon');
-  // TODO: Implement history navigation when ready
-}
-
-navigateToProfile() {
-  console.log('Profile feature coming soon');
-  // TODO: Implement profile navigation when ready
-}
-
-  // Keep the old methods for backward compatibility
-  goBack() {
-    this.navigateToChemicals();
+    this.router.navigate(['/tabs/tab1']);
   }
 
-  navigateToChemicalList() {
+  navigateToChemicals() {
+    this.router.navigate(['/chemical-list']);
+  }
+
+  navigateToHistory() {
+    // TODO: Implement history navigation
+    console.log('History feature coming soon');
+  }
+
+  navigateToProfile() {
+    // TODO: Implement profile navigation
+    console.log('Profile feature coming soon');
+  }
+
+  goBack() {
     this.navigateToChemicals();
   }
 }
