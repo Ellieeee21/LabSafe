@@ -43,6 +43,7 @@ export class DatabaseService {
 
   private async initializeDatabase(): Promise<void> {
     try {
+      console.log('Starting database initialization...');
       this.loadingSubject.next(true);
       
       this.db = await this.sqlite.createConnection(
@@ -54,12 +55,21 @@ export class DatabaseService {
       );
       
       await this.db.open();
+      console.log('Database connection opened');
+      
       await this.createTables();
+      console.log('Tables created');
+      
       await this.loadJsonIntoDatabase();
+      console.log('JSON data loaded');
+      
       await this.loadChemicals();
+      console.log('Chemicals loaded into BehaviorSubject');
       
     } catch (error) {
       console.error('Error initializing database:', error);
+      // Try to load directly from JSON as fallback
+      await this.loadDirectlyFromJson();
     } finally {
       this.loadingSubject.next(false);
     }
@@ -112,10 +122,53 @@ export class DatabaseService {
     }
   }
 
+  private async loadDirectlyFromJson(): Promise<void> {
+    try {
+      console.log('Attempting to load directly from JSON...');
+      
+      // Try multiple possible paths for the JSON file
+      const possiblePaths = [
+        '/assets/data/json_database.jsonld',
+        'assets/data/json_database.jsonld',
+        './assets/data/json_database.jsonld'
+      ];
+
+      let jsonData = null;
+      for (const path of possiblePaths) {
+        try {
+          console.log(`Trying to load from: ${path}`);
+          jsonData = await this.http.get<any>(path).toPromise();
+          console.log(`Successfully loaded from: ${path}`);
+          break;
+        } catch (e) {
+          console.log(`Failed to load from: ${path}`, e);
+        }
+      }
+
+      if (!jsonData) {
+        throw new Error('Could not load JSON data from any path');
+      }
+
+      console.log('Raw JSON data:', jsonData);
+      
+      // Process the JSON-LD data
+      const chemicals = this.parseJsonLdData(jsonData);
+      console.log(`Parsed ${chemicals.length} chemicals from JSON`);
+      
+      // Set chemicals directly without database
+      this.chemicalsSubject.next(chemicals);
+      
+    } catch (error) {
+      console.error('Error loading directly from JSON:', error);
+      this.chemicalsSubject.next([]);
+    }
+  }
+
   public async getChemicalById(id: number): Promise<Chemical | null> {
     if (!this.db) {
-      console.error('Database connection not available for getting chemical by ID');
-      return null;
+      // If no database, search in current chemicals array
+      const currentChemicals = this.chemicalsSubject.value;
+      return currentChemicals.find(c => c.id === id) || null;
     }
 
     try {
@@ -133,18 +186,19 @@ export class DatabaseService {
   }
 
   public async reloadDatabase(): Promise<void> {
-    if (!this.db) {
-      throw new Error('Database connection not available');
-    }
-
     try {
       this.loadingSubject.next(true);
       
-      await this.db.execute('DELETE FROM chemicals');
-      await this.loadJsonIntoDatabase();
-      await this.loadChemicals();
+      if (this.db) {
+        await this.db.execute('DELETE FROM chemicals');
+        await this.loadJsonIntoDatabase();
+        await this.loadChemicals();
+      } else {
+        // If no database connection, reload directly from JSON
+        await this.loadDirectlyFromJson();
+      }
       
-      console.log('Database reloaded successfully');
+      console.log('Database/Data reloaded successfully');
     } catch (error) {
       console.error('Error reloading database:', error);
       throw error;
@@ -160,15 +214,39 @@ export class DatabaseService {
     }
 
     try {
-      // Load the JSON-LD file
-      const jsonData = await this.http.get<any>('/assets/data/json_database').toPromise();
+      // Try multiple possible paths for the JSON file
+      const possiblePaths = [
+        '/assets/data/json_database.jsonld',
+        'assets/data/json_database.jsonld',
+        './assets/data/json_database.jsonld'
+      ];
+
+      let jsonData = null;
+      for (const path of possiblePaths) {
+        try {
+          console.log(`Trying to load JSON from: ${path}`);
+          jsonData = await this.http.get<any>(path).toPromise();
+          console.log(`Successfully loaded JSON from: ${path}`);
+          break;
+        } catch (e) {
+          console.log(`Failed to load JSON from: ${path}`, e);
+        }
+      }
       
       if (!jsonData) {
-        throw new Error('Failed to load JSON data');
+        throw new Error('Failed to load JSON data from any path');
       }
 
-      // Process the JSON-LD data similar to Java version
+      console.log('Raw JSON data structure:', Object.keys(jsonData));
+
+      // Process the JSON-LD data
       const chemicals = this.parseJsonLdData(jsonData);
+      console.log(`Parsed ${chemicals.length} chemicals from JSON`);
+      
+      if (chemicals.length === 0) {
+        console.warn('No chemicals were parsed from the JSON data');
+        return;
+      }
       
       // Insert chemicals into database
       await this.db.execute('BEGIN TRANSACTION');
@@ -184,35 +262,68 @@ export class DatabaseService {
       if (this.db) {
         await this.db.execute('ROLLBACK');
       }
+      throw error;
     }
   }
 
   private parseJsonLdData(jsonData: any): Chemical[] {
     const chemicals: Chemical[] = [];
     
-    // Handle both array and single object formats
-    const items = Array.isArray(jsonData) ? jsonData : 
-                 jsonData['@graph'] ? jsonData['@graph'] : 
-                 [jsonData];
+    console.log('Parsing JSON-LD data...');
+    console.log('Data type:', typeof jsonData);
+    console.log('Is array:', Array.isArray(jsonData));
+    console.log('Data keys:', Object.keys(jsonData));
     
-    for (const item of items) {
+    // Handle both array and single object formats
+    let items = [];
+    
+    if (Array.isArray(jsonData)) {
+      items = jsonData;
+    } else if (jsonData['@graph']) {
+      items = jsonData['@graph'];
+    } else if (jsonData.chemicals) {
+      items = jsonData.chemicals;
+    } else if (jsonData.data) {
+      items = jsonData.data;
+    } else {
+      items = [jsonData];
+    }
+    
+    console.log(`Processing ${items.length} items`);
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
       try {
-        if (!this.isChemicalObject(item)) continue;
+        console.log(`Processing item ${i}:`, Object.keys(item));
+        
+        if (!this.isChemicalObject(item)) {
+          console.log(`Item ${i} is not a chemical object`);
+          continue;
+        }
         
         const chemical = this.parseChemicalFromJsonLd(item);
         if (chemical) {
           chemicals.push(chemical);
+          console.log(`Successfully parsed chemical: ${chemical.name}`);
+        } else {
+          console.log(`Failed to parse chemical from item ${i}`);
         }
       } catch (e) {
-        console.error('Error parsing chemical:', e);
+        console.error(`Error parsing item ${i}:`, e);
       }
     }
     
+    console.log(`Total chemicals parsed: ${chemicals.length}`);
     return chemicals;
   }
 
   private isChemicalObject(jsonObject: any): boolean {
-    // Similar logic to Java version
+    // More lenient check - if it has a name and looks like chemical data
+    if (jsonObject.name || jsonObject['http://www.w3.org/2000/01/rdf-schema#label']) {
+      return true;
+    }
+    
+    // Check for @type
     if (jsonObject['@type']) {
       const types = Array.isArray(jsonObject['@type']) ? 
                    jsonObject['@type'] : 
@@ -224,30 +335,27 @@ export class DatabaseService {
       ];
       
       if (types.some((t: string) => 
-          chemicalIndicators.some(ind => t.includes(ind)))) {
+          chemicalIndicators.some(ind => t.toLowerCase().includes(ind.toLowerCase())))) {
         return true;
       }
     }
     
-    // Check for rdfs:label
-    if (jsonObject['http://www.w3.org/2000/01/rdf-schema#label']) {
-      return true;
-    }
-    
     // Check for chemical identifiers
-    return jsonObject.name && 
-          (jsonObject.molecularFormula || jsonObject.formula || jsonObject.casNumber);
+    return jsonObject.molecularFormula || jsonObject.formula || jsonObject.casNumber;
   }
 
   private parseChemicalFromJsonLd(jsonObject: any): Chemical | null {
     try {
       // Generate ID from @id or name
-      const idString = jsonObject['@id'] || jsonObject.id || jsonObject.name;
-      const id = Math.abs(this.hashCode(idString));
+      const idString = jsonObject['@id'] || jsonObject.id || jsonObject.name || Math.random().toString();
+      const id = Math.abs(this.hashCode(idString.toString()));
       
       // Extract name from various possible locations
       const name = this.extractName(jsonObject);
-      if (!name || name === 'Unknown Chemical') return null;
+      if (!name || name === 'Unknown Chemical') {
+        console.log('Skipping chemical with no valid name');
+        return null;
+      }
       
       // Extract other properties
       const formula = this.extractValue(jsonObject, 'molecularFormula') || 
@@ -259,7 +367,7 @@ export class DatabaseService {
       const precautions = this.extractPrecautions(jsonObject);
       const description = this.extractDescription(jsonObject);
       
-      return {
+      const chemical: Chemical = {
         id,
         name,
         formula,
@@ -279,6 +387,8 @@ export class DatabaseService {
         density: this.extractValue(jsonObject, 'density'),
         solubility: this.extractValue(jsonObject, 'solubility')
       };
+      
+      return chemical;
     } catch (e) {
       console.error('Error parsing chemical:', e);
       return null;
@@ -293,7 +403,8 @@ export class DatabaseService {
     // Try other common name properties
     name = this.extractValue(jsonObject, 'name') || 
           this.extractValue(jsonObject, 'http://schema.org/name') || 
-          this.extractValue(jsonObject, 'title');
+          this.extractValue(jsonObject, 'title') ||
+          this.extractValue(jsonObject, 'label');
     
     if (name) return name;
     
