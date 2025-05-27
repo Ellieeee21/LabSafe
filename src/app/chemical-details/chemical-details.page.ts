@@ -50,7 +50,16 @@ export class ChemicalDetailsPage implements OnInit {
       this.isLoading = true;
       this.error = null;
       
-      this.chemical = await this.databaseService.getChemicalById(chemicalId);
+      // Convert string ID to number before passing to the service
+      const numericId = parseInt(chemicalId, 10);
+      
+      // Check if conversion was successful
+      if (isNaN(numericId)) {
+        this.error = 'Invalid chemical ID format';
+        return;
+      }
+      
+      this.chemical = await this.databaseService.getChemicalById(numericId);
       
       if (!this.chemical) {
         this.error = 'Chemical not found';
