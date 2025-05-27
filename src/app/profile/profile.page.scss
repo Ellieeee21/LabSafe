@@ -54,7 +54,7 @@ ion-header ion-toolbar {
 .profile-image {
   width: 120px;
   height: 120px;
-  border-radius: 50%;
+  border-radius: 60px; /* Perfect circle */
   object-fit: cover;
   border: 4px solid white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -67,7 +67,7 @@ ion-header ion-toolbar {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
+  border-radius: 60px; /* Perfect circle */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,71 +132,119 @@ ion-header ion-toolbar {
   margin-bottom: 8px;
 }
 
+// Input fields - Fixed for proper editing
 .profile-input {
-  --background: white;
+  --background: white !important;
   --border-radius: 8px;
   --padding-start: 16px;
   --padding-end: 16px;
-  --color: #333;
-  border: 1px solid #E0E0E0;
+  --color: #333 !important;
+  --placeholder-color: #999;
+  border: 1px solid #E0E0E0 !important;
   border-radius: 8px;
   font-size: 16px;
   min-height: 48px;
+  width: 100%;
 
-  &:focus {
-    --border-color: #4A90E2;
+  &.ion-focused {
+    --border-color: #4A90E2 !important;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+  
+  &.ion-touched.ion-invalid {
+    --border-color: #ff6961 !important;
+  }
+}
+
+// Make sure inputs are interactive
+ion-input {
+  cursor: text !important;
+  
+  &.profile-input {
+    --background: white !important;
+    --color: #333 !important;
+    --placeholder-color: #999 !important;
+    pointer-events: auto !important;
+  }
+}
+
+// Date picker styling - Fixed with calendar icon
+.datetime-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-datetime {
+  --background: white !important;
+  --border-radius: 8px;
+  --padding-start: 16px;
+  --padding-end: 40px;
+  --color: #333 !important;
+  --placeholder-color: #999;
+  border: 1px solid #E0E0E0 !important;
+  border-radius: 8px;
+  min-height: 48px;
+  width: 100%;
+  cursor: pointer;
+  
+  &::part(text) {
+    color: #333 !important;
+  }
+  
+  &.ion-focused {
+    --border-color: #4A90E2 !important;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
   }
 }
 
-// Date picker styling - Updated for better functionality
-.profile-datetime {
-  --background: white;
-  --border-radius: 8px;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --color: #333;
-  border: 1px solid #E0E0E0;
-  border-radius: 8px;
-  min-height: 48px;
-  width: 100%;
-  
-  &::part(text) {
-    color: #333;
-  }
+.calendar-icon {
+  position: absolute;
+  right: 12px;
+  color: #666;
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 10;
 }
 
-// Gender radio group - Updated for better visibility
+// Gender radio group - Horizontal layout
 .gender-group {
   margin-top: 8px;
 }
 
-.gender-options {
+.gender-options-horizontal {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 24px;
+  align-items: center;
 }
 
-.gender-item {
-  --background: transparent;
+.gender-item-inline {
+  --background: transparent !important;
   --padding-start: 0;
   --padding-end: 0;
   --inner-padding-end: 0;
   --min-height: 40px;
+  flex: none;
+  width: auto;
   
   ion-radio {
-    --color: #4A90E2;
-    --color-checked: #4A90E2;
-    margin-right: 12px;
+    --color: #4A90E2 !important;
+    --color-checked: #4A90E2 !important;
+    --border-color: #4A90E2 !important;
+    --border-color-checked: #4A90E2 !important;
+    margin-right: 8px;
+    cursor: pointer;
   }
   
   ion-label {
-    color: #333;
+    color: #333 !important;
     font-size: 16px;
+    cursor: pointer;
   }
 }
 
-// Phone input container
+// Phone input container - Fixed for editing
 .phone-input-container {
   display: flex;
   gap: 12px;
@@ -204,27 +252,36 @@ ion-header ion-toolbar {
 }
 
 .country-code-select {
-  --background: white;
+  --background: white !important;
   --border-radius: 8px;
   --padding-start: 12px;
   --padding-end: 12px;
-  border: 1px solid #E0E0E0;
+  --color: #333 !important;
+  border: 1px solid #E0E0E0 !important;
   border-radius: 8px;
   min-width: 80px;
   min-height: 48px;
+  cursor: pointer;
 }
 
 .phone-input {
-  --background: white;
+  --background: white !important;
   --border-radius: 8px;
   --padding-start: 16px;
   --padding-end: 16px;
-  --color: #333;
-  border: 1px solid #E0E0E0;
+  --color: #333 !important;
+  --placeholder-color: #999;
+  border: 1px solid #E0E0E0 !important;
   border-radius: 8px;
   font-size: 16px;
   min-height: 48px;
   flex: 1;
+  cursor: text;
+  
+  &.ion-focused {
+    --border-color: #4A90E2 !important;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
 }
 
 // Save button
