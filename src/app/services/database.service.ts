@@ -1,10 +1,27 @@
 import { Injectable } from '@angular/core';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { BehaviorSubject, from, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 export interface Chemical {
-  id: string;
+  id: number;
   name: string;
+  formula?: string;
+  casNumber?: string;
+  hazards?: string;
+  precautions?: string;
+  firstAid?: string;
+  description?: string;
+  hazardClass?: string;
+  storageClass?: string;
+  riskPhrases?: string;
+  safetyPhrases?: string;
+  type?: string;
+  molecularWeight?: string;
+  meltingPoint?: string;
+  boilingPoint?: string;
+  density?: string;
+  solubility?: string;
 }
 
 @Injectable({
@@ -19,7 +36,7 @@ export class DatabaseService {
   public chemicals$ = this.chemicalsSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
 
-  constructor() {
+  constructor(private http: HttpClient) {
     this.sqlite = new SQLiteConnection(CapacitorSQLite);
     this.initializeDatabase();
   }
@@ -27,7 +44,6 @@ export class DatabaseService {
   private async initializeDatabase(): Promise<void> {
     try {
       this.loadingSubject.next(true);
-      console.log('Initializing database...');
       
       this.db = await this.sqlite.createConnection(
         'labsafe_chemicals',
@@ -38,16 +54,9 @@ export class DatabaseService {
       );
       
       await this.db.open();
-      console.log('Database connection opened');
-      
       await this.createTables();
-      console.log('Tables created');
-      
       await this.loadJsonIntoDatabase();
-      console.log('JSON data loaded');
-      
       await this.loadChemicals();
-      console.log('Chemicals loaded into observable');
       
     } catch (error) {
       console.error('Error initializing database:', error);
@@ -61,14 +70,28 @@ export class DatabaseService {
 
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS chemicals (
-        id TEXT PRIMARY KEY NOT NULL,
+        id INTEGER PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
-        UNIQUE(id) ON CONFLICT REPLACE
+        formula TEXT,
+        cas_number TEXT,
+        hazards TEXT,
+        precautions TEXT,
+        first_aid TEXT,
+        description TEXT,
+        hazard_class TEXT,
+        storage_class TEXT,
+        risk_phrases TEXT,
+        safety_phrases TEXT,
+        type TEXT,
+        molecular_weight TEXT,
+        melting_point TEXT,
+        boiling_point TEXT,
+        density TEXT,
+        solubility TEXT
       );
     `;
 
     await this.db.execute(createTableQuery);
-    console.log('Chemical table created/verified');
   }
 
   private async loadChemicals(): Promise<void> {
@@ -89,7 +112,7 @@ export class DatabaseService {
     }
   }
 
-  public async getChemicalById(id: string): Promise<Chemical | null> {
+  public async getChemicalById(id: number): Promise<Chemical | null> {
     if (!this.db) {
       console.error('Database connection not available for getting chemical by ID');
       return null;
@@ -117,7 +140,6 @@ export class DatabaseService {
     try {
       this.loadingSubject.next(true);
       
-      // Clear existing data and reload from JSON
       await this.db.execute('DELETE FROM chemicals');
       await this.loadJsonIntoDatabase();
       await this.loadChemicals();
@@ -138,178 +160,220 @@ export class DatabaseService {
     }
 
     try {
-      console.log('Fetching JSON data...');
+      // Load the JSON-LD file
+      const jsonData = await this.http.get<any>('/assets/data/json_database').toPromise();
       
-      // Try multiple possible paths for the JSON file
-      const possiblePaths = [
-        './assets/data/json_database.json',  // With extension
-        './assets/data/json_database',       // Without extension (original)
-        '/assets/data/json_database.json',   // Absolute with extension
-        '/assets/data/json_database'         // Absolute without extension (original)
-      ];
-
-      let jsonData = null;
-      let successfulPath = '';
-
-      for (const path of possiblePaths) {
-        try {
-          console.log(`Trying to fetch from: ${path}`);
-          const response = await fetch(path);
-          
-          if (response.ok) {
-            jsonData = await response.json();
-            successfulPath = path;
-            console.log(`Successfully loaded data from: ${path}`);
-            break;
-          } else {
-            console.log(`Failed to fetch from ${path}: ${response.status}`);
-          }
-        } catch (fetchError) {
-          console.log(`Error fetching from ${path}:`, fetchError);
-        }
-      }
-
       if (!jsonData) {
-        throw new Error('Could not load JSON data from any of the attempted paths');
-      }
-      
-      console.log(`JSON data loaded from ${successfulPath}. Type: ${typeof jsonData}, Length: ${Array.isArray(jsonData) ? jsonData.length : 'Not an array'}`);
-      
-      // Log the structure of the first few items
-      if (Array.isArray(jsonData) && jsonData.length > 0) {
-        console.log('Sample data structure:');
-        for (let i = 0; i < Math.min(3, jsonData.length); i++) {
-          console.log(`Item ${i}:`, Object.keys(jsonData[i]));
-          console.log(`Sample content:`, JSON.stringify(jsonData[i], null, 2).substring(0, 500));
-        }
-      }
-      
-      await this.db.execute('DELETE FROM chemicals');
-      console.log('Cleared existing chemicals from database');
-      
-      let chemicalCount = 0;
-
-      // Process each item in the JSON array
-      for (let i = 0; i < jsonData.length; i++) {
-        const item = jsonData[i];
-        
-        // Extract possible chemical names from various fields
-        const extractedNames = this.extractChemicalNames(item);
-        
-        if (extractedNames.length > 0) {
-          // Use the first valid name found
-          const chemicalName = extractedNames[0];
-          const chemicalId = item['@id'] || item.id || `chemical-${Date.now()}-${i}`;
-          
-          try {
-            await this.db.run(
-              'INSERT OR IGNORE INTO chemicals (id, name) VALUES (?, ?)',
-              [chemicalId, chemicalName.trim()]
-            );
-            chemicalCount++;
-            
-            if (chemicalCount <= 10) {
-              console.log(`Added chemical #${chemicalCount}: "${chemicalName}" (ID: ${chemicalId})`);
-            }
-          } catch (insertError) {
-            console.error(`Error inserting chemical "${chemicalName}":`, insertError);
-          }
-        }
+        throw new Error('Failed to load JSON data');
       }
 
-      console.log(`Processing complete! Attempted to load ${chemicalCount} chemicals`);
+      // Process the JSON-LD data similar to Java version
+      const chemicals = this.parseJsonLdData(jsonData);
       
-      // Verify data was actually inserted
-      const countResult = await this.db.query('SELECT COUNT(*) as count FROM chemicals');
-      const actualCount = countResult.values?.[0]?.count || 0;
-      console.log(`Database verification: ${actualCount} chemicals actually in database`);
-      
-      // Show sample data
-      if (actualCount > 0) {
-        const sampleResult = await this.db.query('SELECT * FROM chemicals LIMIT 5');
-        console.log('Sample chemicals in DB:', sampleResult.values);
+      // Insert chemicals into database
+      await this.db.execute('BEGIN TRANSACTION');
+      for (const chemical of chemicals) {
+        await this.insertChemical(chemical);
       }
+      await this.db.execute('COMMIT');
+      
+      console.log(`Inserted ${chemicals.length} chemicals into database`);
       
     } catch (error) {
       console.error('Error loading chemical data:', error);
-      
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('Fetch error - check file path and ensure json_database file exists in assets/data/');
+      if (this.db) {
+        await this.db.execute('ROLLBACK');
       }
-      
-      throw error;
     }
   }
 
-  private extractChemicalNames(item: any): string[] {
-    const names: string[] = [];
+  private parseJsonLdData(jsonData: any): Chemical[] {
+    const chemicals: Chemical[] = [];
     
-    // Try direct properties first
-    const directProps = ['name', 'title', 'label', 'chemical_name', 'substance_name'];
-    for (const prop of directProps) {
-      if (item[prop] && typeof item[prop] === 'string' && item[prop].trim().length > 1) {
-        names.push(item[prop].trim());
-      }
-    }
+    // Handle both array and single object formats
+    const items = Array.isArray(jsonData) ? jsonData : 
+                 jsonData['@graph'] ? jsonData['@graph'] : 
+                 [jsonData];
     
-    // Try JSON-LD properties
-    const jsonLdProps = [
-      'http://www.w3.org/2000/01/rdf-schema#label',
-      'http://purl.org/dc/terms/title',
-      'http://xmlns.com/foaf/0.1/name',
-      'http://www.w3.org/2004/02/skos/core#prefLabel'
-    ];
-    
-    for (const prop of jsonLdProps) {
-      if (item[prop]) {
-        if (Array.isArray(item[prop])) {
-          for (const entry of item[prop]) {
-            if (typeof entry === 'object' && entry['@value']) {
-              names.push(entry['@value'].trim());
-            } else if (typeof entry === 'string') {
-              names.push(entry.trim());
-            }
-          }
-        } else if (typeof item[prop] === 'string') {
-          names.push(item[prop].trim());
+    for (const item of items) {
+      try {
+        if (!this.isChemicalObject(item)) continue;
+        
+        const chemical = this.parseChemicalFromJsonLd(item);
+        if (chemical) {
+          chemicals.push(chemical);
         }
+      } catch (e) {
+        console.error('Error parsing chemical:', e);
       }
     }
     
-    // Filter out invalid names and return unique valid names
-    return [...new Set(names.filter(name => this.isValidChemicalName(name)))];
+    return chemicals;
   }
 
-  private isValidChemicalName(name: string): boolean {
-    if (!name || typeof name !== 'string' || name.length < 2) {
-      return false;
+  private isChemicalObject(jsonObject: any): boolean {
+    // Similar logic to Java version
+    if (jsonObject['@type']) {
+      const types = Array.isArray(jsonObject['@type']) ? 
+                   jsonObject['@type'] : 
+                   [jsonObject['@type']];
+      
+      const chemicalIndicators = [
+        'Chemical', 'ChemicalSubstance', 'Compound', 'Element', 
+        'Substance', 'Material', 'Reagent', 'NamedIndividual', 'Individual'
+      ];
+      
+      if (types.some((t: string) => 
+          chemicalIndicators.some(ind => t.includes(ind)))) {
+        return true;
+      }
     }
     
-    const trimmedName = name.trim().toLowerCase();
+    // Check for rdfs:label
+    if (jsonObject['http://www.w3.org/2000/01/rdf-schema#label']) {
+      return true;
+    }
     
-    // Skip very short names
-    if (trimmedName.length < 2) return false;
+    // Check for chemical identifiers
+    return jsonObject.name && 
+          (jsonObject.molecularFormula || jsonObject.formula || jsonObject.casNumber);
+  }
+
+  private parseChemicalFromJsonLd(jsonObject: any): Chemical | null {
+    try {
+      // Generate ID from @id or name
+      const idString = jsonObject['@id'] || jsonObject.id || jsonObject.name;
+      const id = Math.abs(this.hashCode(idString));
+      
+      // Extract name from various possible locations
+      const name = this.extractName(jsonObject);
+      if (!name || name === 'Unknown Chemical') return null;
+      
+      // Extract other properties
+      const formula = this.extractValue(jsonObject, 'molecularFormula') || 
+                     this.extractValue(jsonObject, 'formula') || 
+                     this.extractValue(jsonObject, 'chemicalFormula');
+      
+      const casNumber = this.extractValue(jsonObject, 'casNumber');
+      const hazards = this.extractHazards(jsonObject);
+      const precautions = this.extractPrecautions(jsonObject);
+      const description = this.extractDescription(jsonObject);
+      
+      return {
+        id,
+        name,
+        formula,
+        casNumber,
+        hazards,
+        precautions,
+        firstAid: this.extractValue(jsonObject, 'firstAid'),
+        description,
+        hazardClass: this.extractValue(jsonObject, 'hazardClass'),
+        storageClass: this.extractValue(jsonObject, 'storageClass'),
+        riskPhrases: this.extractValue(jsonObject, 'riskPhrases'),
+        safetyPhrases: this.extractValue(jsonObject, 'safetyPhrases'),
+        type: this.extractValue(jsonObject, 'type'),
+        molecularWeight: this.extractValue(jsonObject, 'molecularWeight'),
+        meltingPoint: this.extractValue(jsonObject, 'meltingPoint'),
+        boilingPoint: this.extractValue(jsonObject, 'boilingPoint'),
+        density: this.extractValue(jsonObject, 'density'),
+        solubility: this.extractValue(jsonObject, 'solubility')
+      };
+    } catch (e) {
+      console.error('Error parsing chemical:', e);
+      return null;
+    }
+  }
+
+  private extractName(jsonObject: any): string {
+    // Try rdfs:label first
+    let name = this.extractValue(jsonObject, 'http://www.w3.org/2000/01/rdf-schema#label');
+    if (name) return name;
     
-    // Skip common non-chemical terms
-    const blacklistTerms = [
-      'section', 'page', 'chapter', 'note', 'warning', 'caution',
-      'emergency', 'first aid', 'safety', 'hazard', 'exposure',
-      'procedure', 'method', 'use', 'avoid', 'keep', 'wash',
-      'remove', 'apply', 'clean', 'flush'
-    ];
+    // Try other common name properties
+    name = this.extractValue(jsonObject, 'name') || 
+          this.extractValue(jsonObject, 'http://schema.org/name') || 
+          this.extractValue(jsonObject, 'title');
     
-    const containsBlacklisted = blacklistTerms.some(term => 
-      trimmedName.includes(term)
+    if (name) return name;
+    
+    // Try to extract from @id as last resort
+    if (jsonObject['@id']) {
+      const id = jsonObject['@id'];
+      if (id.startsWith('id#')) {
+        return id.substring(3)
+          .replace(/\.\./g, '')
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .replace(/([0-9])([A-Z])/g, '$1 $2')
+          .trim();
+      }
+    }
+    
+    return 'Unknown Chemical';
+  }
+
+  private extractValue(jsonObject: any, property: string): string | undefined {
+    if (!jsonObject[property]) return undefined;
+    
+    const value = jsonObject[property];
+    
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value) && value.length > 0) {
+      if (typeof value[0] === 'string') return value[0];
+      if (value[0]['@value']) return value[0]['@value'];
+    }
+    if (value['@value']) return value['@value'];
+    
+    return undefined;
+  }
+
+  private extractHazards(jsonObject: any): string {
+    const hazardStatement = this.extractValue(jsonObject, 'hazardStatement');
+    const hazardsValue = this.extractValue(jsonObject, 'hazards');
+    
+    return [hazardStatement, hazardsValue].filter(v => v).join('\n');
+  }
+
+  private extractPrecautions(jsonObject: any): string {
+    const precautionaryStatement = this.extractValue(jsonObject, 'precautionaryStatement');
+    const precautionsValue = this.extractValue(jsonObject, 'precautions');
+    
+    return [precautionaryStatement, precautionsValue].filter(v => v).join('\n');
+  }
+
+  private extractDescription(jsonObject: any): string {
+    return this.extractValue(jsonObject, 'http://www.w3.org/2000/01/rdf-schema#comment') || 
+          this.extractValue(jsonObject, 'description') || 
+          '';
+  }
+
+  private async insertChemical(chemical: Chemical): Promise<void> {
+    if (!this.db) return;
+    
+    await this.db.run(
+      `INSERT OR REPLACE INTO chemicals (
+        id, name, formula, cas_number, hazards, precautions, first_aid, 
+        description, hazard_class, storage_class, risk_phrases, safety_phrases, 
+        type, molecular_weight, melting_point, boiling_point, density, solubility
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        chemical.id, chemical.name, chemical.formula, chemical.casNumber, 
+        chemical.hazards, chemical.precautions, chemical.firstAid, 
+        chemical.description, chemical.hazardClass, chemical.storageClass, 
+        chemical.riskPhrases, chemical.safetyPhrases, chemical.type, 
+        chemical.molecularWeight, chemical.meltingPoint, chemical.boilingPoint, 
+        chemical.density, chemical.solubility
+      ]
     );
-    
-    if (containsBlacklisted) return false;
-    
-    // Must contain at least one letter
-    if (!/[a-zA-Z]/.test(name)) return false;
-    
-    // Skip if it's just numbers
-    if (/^\d+$/.test(trimmedName)) return false;
-    
-    return true;
+  }
+
+  private hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
   }
 }
