@@ -99,11 +99,10 @@ export class EmergencyTypesPage implements OnInit {
     });
   }
 
-  // Bottom Navigation Methods - Updated paths without tabs
+  // Bottom Navigation Methods
   navigateToHome() {
     console.log('Already on Home (Emergency Types)');
     // Already on home page - do nothing or refresh
-    this.router.navigate(['/emergency-types']);
   }
 
   navigateToChemicals() {
@@ -117,7 +116,7 @@ export class EmergencyTypesPage implements OnInit {
   }
 
   navigateToProfile() {
-    console.log('Profile feature coming soon');
-    // TODO: Implement profile navigation when ready
+    console.log('Navigating to profile...');
+    this.router.navigate(['/profile']);
   }
 }

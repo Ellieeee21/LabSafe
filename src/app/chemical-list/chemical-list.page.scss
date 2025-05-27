@@ -20,12 +20,14 @@ ion-header ion-toolbar {
   --color: white !important;
 }
 
-// Search bar styling
+// Search bar styling - WHITE background like Emergency Types for better visibility
 ion-searchbar {
-  --background: white;
+  --background: white !important;
   --border-radius: 12px;
-  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --color: #000000 !important;
+  --placeholder-color: #666666 !important;
 }
 
 .loading-container {

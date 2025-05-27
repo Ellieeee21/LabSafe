@@ -22,11 +22,6 @@
 
   <!-- Chemical List -->
   <div *ngIf="!isLoading">
-    <!-- Results count -->
-    <div class="results-info" *ngIf="filteredChemicals.length > 0">
-      <p>{{ filteredChemicals.length }} chemical{{ filteredChemicals.length !== 1 ? 's' : '' }} found</p>
-    </div>
-
     <!-- Chemical Cards -->
     <ion-card 
       *ngFor="let chemical of filteredChemicals" 

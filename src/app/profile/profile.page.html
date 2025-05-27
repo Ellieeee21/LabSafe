@@ -1,0 +1,167 @@
+<!-- profile.page.html -->
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title class="centered-red-title">Profile</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding white-background">
+  <!-- Profile Header Section -->
+  <div class="profile-header">
+    <div class="profile-image-container">
+      <img [src]="profileData.profileImage" 
+           [alt]="profileData.fullname + ' profile'" 
+           class="profile-image">
+      <div class="image-overlay">
+        <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+      </div>
+    </div>
+    
+    <div class="profile-info">
+      <h2 class="profile-name">{{ profileData.fullname }}</h2>
+      <p class="profile-location">{{ profileData.location }}</p>
+      <ion-button 
+        fill="clear" 
+        size="small" 
+        class="change-image-btn"
+        (click)="changeProfileImage()">
+        Change Image
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Profile Form -->
+  <div class="profile-form">
+    <!-- Full Name -->
+    <div class="form-group">
+      <ion-label class="form-label">Fullname</ion-label>
+      <ion-input
+        [(ngModel)]="profileData.fullname"
+        placeholder="Enter your full name"
+        class="profile-input">
+      </ion-input>
+    </div>
+
+    <!-- Date of Birth -->
+    <div class="form-group">
+      <ion-label class="form-label">Date of birth</ion-label>
+      <ion-datetime
+        [(ngModel)]="profileData.dateOfBirth"
+        presentation="date"
+        [max]="maxDate"
+        placeholder="Select date"
+        class="profile-datetime">
+        <ion-button 
+          slot="start" 
+          fill="clear" 
+          class="datetime-trigger">
+          <ion-icon name="calendar-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-datetime>
+    </div>
+
+    <!-- Gender -->
+    <div class="form-group">
+      <ion-label class="form-label">Gender</ion-label>
+      <ion-radio-group [(ngModel)]="profileData.gender" class="gender-group">
+        <div class="gender-options">
+          <ion-item class="gender-item">
+            <ion-radio slot="start" value="male"></ion-radio>
+            <ion-label>Male</ion-label>
+          </ion-item>
+          <ion-item class="gender-item">
+            <ion-radio slot="start" value="female"></ion-radio>
+            <ion-label>Female</ion-label>
+          </ion-item>
+        </div>
+      </ion-radio-group>
+    </div>
+
+    <!-- Email Address -->
+    <div class="form-group">
+      <ion-label class="form-label">Email address</ion-label>
+      <ion-input
+        [(ngModel)]="profileData.email"
+        type="email"
+        placeholder="Enter your email"
+        class="profile-input">
+      </ion-input>
+    </div>
+
+    <!-- Phone Number -->
+    <div class="form-group">
+      <ion-label class="form-label">Phone number</ion-label>
+      <div class="phone-input-container">
+        <ion-select
+          [(ngModel)]="profileData.countryCode"
+          interface="popover"
+          class="country-code-select">
+          <ion-select-option value="+63">+63</ion-select-option>
+          <ion-select-option value="+1">+1</ion-select-option>
+          <ion-select-option value="+44">+44</ion-select-option>
+          <ion-select-option value="+86">+86</ion-select-option>
+        </ion-select>
+        <ion-input
+          [(ngModel)]="profileData.phoneNumber"
+          type="tel"
+          placeholder="912 345 6789"
+          class="phone-input">
+        </ion-input>
+      </div>
+    </div>
+
+    <!-- Emergency Contact -->
+    <div class="form-group">
+      <ion-label class="form-label">Emergency Contact</ion-label>
+      <ion-input
+        [(ngModel)]="profileData.emergencyContact"
+        placeholder="Enter emergency contact name"
+        class="profile-input">
+      </ion-input>
+    </div>
+
+    <!-- Emergency Contact Number -->
+    <div class="form-group">
+      <ion-label class="form-label">Emergency Contact Number</ion-label>
+      <ion-input
+        [(ngModel)]="profileData.emergencyContactNumber"
+        type="tel"
+        placeholder="+63 998 765 4321"
+        class="profile-input">
+      </ion-input>
+    </div>
+
+    <!-- Save Button -->
+    <ion-button 
+      expand="block" 
+      class="save-button"
+      (click)="saveProfile()">
+      SAVE
+    </ion-button>
+  </div>
+</ion-content>
+
+<!-- Bottom Navigation -->
+<div class="bottom-navigation">
+  <div class="nav-bar">
+    <div class="nav-button" (click)="navigateToHome()">
+      <ion-icon name="home-outline"></ion-icon>
+      <span class="nav-label">Home</span>
+    </div>
+
+    <div class="nav-button" (click)="navigateToChemicals()">
+      <ion-icon name="flask-outline"></ion-icon>
+      <span class="nav-label">Chemicals</span>
+    </div>
+
+    <div class="nav-button" (click)="navigateToHistory()">
+      <ion-icon name="time-outline"></ion-icon>
+      <span class="nav-label">History</span>
+    </div>
+
+    <div class="nav-button active">
+      <ion-icon name="person-outline"></ion-icon>
+      <span class="nav-label">Profile</span>
+    </div>
+  </div>
+</div>

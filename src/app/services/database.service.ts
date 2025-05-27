@@ -36,6 +36,35 @@ export class DatabaseService {
   public chemicals$ = this.chemicalsSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
 
+  // Enhanced blocklist for non-chemical entities
+  private readonly NON_CHEMICAL_BLOCKLIST = [
+    // Hazard classifications
+    'Environmental Hazard', 'Health Hazard', 'Physical Hazard',
+    'Aquatic Environment', 'Acute Toxicity', 'Aspiration',
+    'Carcinogenicity', 'Eye Damage', 'Skin Corrosion',
+    'Respiratory Sensitization', 'Skin Sensitization',
+    'Specific Target Organ Toxicity', 'Germ Cell Mutagenicity',
+    'Reproductive Toxicity', 'Hazardous to the Ozone Layer',
+    
+    // Safety and precautionary statements
+    'Avoid Contact with', 'Avoid Sources of', 'Keep Away from',
+    'Store in', 'Handle with', 'Use only',
+    
+    // Equipment and procedures
+    'Safety Equipment', 'Emergency Procedure', 'First Aid',
+    'Disposal Method', 'Storage Requirement',
+    
+    // Generic terms
+    'Combustible Material', 'Flammable Material', 'Oxidizing Agent',
+    'Reducing Agent', 'Corrosive Material', 'Toxic Material',
+    'Irritant Material', 'Explosive Material',
+    
+    // Abstract concepts
+    'Instability', 'Reactivity', 'Incompatibility', 'Polymerization',
+    'Stability', 'Conditions', 'Requirements', 'Precautions',
+    'Instructions', 'Guidelines', 'Procedures', 'Methods'
+  ];
+
   constructor(private http: HttpClient) {
     this.sqlite = new SQLiteConnection(CapacitorSQLite);
     this.initializeDatabase();
@@ -112,7 +141,10 @@ export class DatabaseService {
 
     try {
       const result = await this.db.query('SELECT * FROM chemicals ORDER BY name');
-      const chemicals: Chemical[] = result.values || [];
+      let chemicals: Chemical[] = result.values || [];
+      
+      // Apply custom sorting: chemicals starting with numbers go to the end
+      chemicals = this.sortChemicals(chemicals);
       
       console.log(`Loaded ${chemicals.length} chemicals from database`);
       this.chemicalsSubject.next(chemicals);
@@ -152,8 +184,11 @@ export class DatabaseService {
       console.log('Raw JSON data:', jsonData);
       
       // Process the JSON-LD data
-      const chemicals = this.parseJsonLdData(jsonData);
+      let chemicals = this.parseJsonLdData(jsonData);
       console.log(`Parsed ${chemicals.length} chemicals from JSON`);
+      
+      // Apply custom sorting
+      chemicals = this.sortChemicals(chemicals);
       
       // Set chemicals directly without database
       this.chemicalsSubject.next(chemicals);
@@ -162,6 +197,21 @@ export class DatabaseService {
       console.error('Error loading directly from JSON:', error);
       this.chemicalsSubject.next([]);
     }
+  }
+
+  // Custom sorting method: chemicals starting with numbers go to the end
+  private sortChemicals(chemicals: Chemical[]): Chemical[] {
+    return chemicals.sort((a, b) => {
+      const aStartsWithNumber = /^[0-9]/.test(a.name);
+      const bStartsWithNumber = /^[0-9]/.test(b.name);
+      
+      // If one starts with number and other doesn't, non-number comes first
+      if (aStartsWithNumber && !bStartsWithNumber) return 1;
+      if (!aStartsWithNumber && bStartsWithNumber) return -1;
+      
+      // Both start with numbers or both don't - alphabetical sort
+      return a.name.localeCompare(b.name);
+    });
   }
 
   public async getChemicalById(id: number): Promise<Chemical | null> {
@@ -318,30 +368,120 @@ export class DatabaseService {
   }
 
   private isChemicalObject(jsonObject: any): boolean {
-    // More lenient check - if it has a name and looks like chemical data
-    if (jsonObject.name || jsonObject['http://www.w3.org/2000/01/rdf-schema#label']) {
-      return true;
+    // First, check if this object should be blocked based on its properties
+    if (this.shouldBlockObject(jsonObject)) {
+      return false;
     }
-    
-    // Check for @type
+
+    // Extract potential name to check against blocklist
+    const name = this.extractName(jsonObject);
+    if (this.isBlockedName(name)) {
+      return false;
+    }
+
+    // Check for @type restrictions - be more specific about what we accept
     if (jsonObject['@type']) {
       const types = Array.isArray(jsonObject['@type']) ? 
                    jsonObject['@type'] : 
                    [jsonObject['@type']];
       
-      const chemicalIndicators = [
-        'Chemical', 'ChemicalSubstance', 'Compound', 'Element', 
-        'Substance', 'Material', 'Reagent', 'NamedIndividual', 'Individual'
+      // Only accept specific chemical-related types
+      const acceptedTypes = [
+        'http://www.w3.org/2002/07/owl#NamedIndividual',
+        'NamedIndividual',
+        'Chemical',
+        'ChemicalSubstance',
+        'Compound',
+        'Element',
+        'Substance',
+        'Material',
+        'Reagent'
       ];
       
-      if (types.some((t: string) => 
-          chemicalIndicators.some(ind => t.toLowerCase().includes(ind.toLowerCase())))) {
-        return true;
+      const hasAcceptedType = types.some((t: string) => {
+        // Check for ProductName type (from your JSON-LD)
+        if (t.includes('ProductName')) return true;
+        
+        return acceptedTypes.some(acceptedType => 
+          t.toLowerCase().includes(acceptedType.toLowerCase())
+        );
+      });
+      
+      if (!hasAcceptedType) {
+        return false;
       }
     }
-    
-    // Check for chemical identifiers
-    return jsonObject.molecularFormula || jsonObject.formula || jsonObject.casNumber;
+
+    // Additional checks for valid chemical identifiers
+    const hasChemicalIdentifiers = !!(
+      jsonObject.molecularFormula || 
+      jsonObject.formula || 
+      jsonObject.casNumber ||
+      jsonObject['id#hasFlammabilityLevel'] ||
+      jsonObject['id#hasHealthLevel'] ||
+      jsonObject['id#hasInstabilityOrReactivityLevel']
+    );
+
+    // Must have a valid name and preferably some chemical identifiers
+    return !!(name && name !== 'Unknown Chemical' && 
+             (hasChemicalIdentifiers || this.looksLikeChemicalName(name)));
+  }
+
+  private shouldBlockObject(jsonObject: any): boolean {
+    // Check for restriction objects (OWL restrictions)
+    if (jsonObject['@type'] && 
+        Array.isArray(jsonObject['@type']) && 
+        jsonObject['@type'].includes('http://www.w3.org/2002/07/owl#Restriction')) {
+      return true;
+    }
+
+    // Check for hazard-related properties that indicate this is not a chemical
+    const hazardProperties = [
+      'isEnvironmentalHazardsOf',
+      'isFirstAidEyeOf',
+      'isFirstAidIngestionOf',
+      'isFirstAidInhalationOf',
+      'isConditionsOfInstabilityOf'
+    ];
+
+    const hasHazardProperties = hazardProperties.some(prop => 
+      jsonObject[`id#${prop}`] || jsonObject[prop]
+    );
+
+    return hasHazardProperties;
+  }
+
+  private isBlockedName(name: string): boolean {
+    if (!name || name === 'Unknown Chemical') return true;
+
+    // Check against our comprehensive blocklist
+    return this.NON_CHEMICAL_BLOCKLIST.some(blockedTerm => 
+      name.toLowerCase().includes(blockedTerm.toLowerCase())
+    );
+  }
+
+  private looksLikeChemicalName(name: string): boolean {
+    // Patterns that suggest a chemical name
+    const chemicalPatterns = [
+      /acid$/i,                    // ends with "acid"
+      /\d,\d/,                    // contains numbers with comma (like 2,4-...)
+      /^[A-Z][a-z]*-\d/,          // starts with letter, has dash and number
+      /oxide$/i,                  // ends with "oxide"
+      /chloride$/i,               // ends with "chloride"
+      /sulfate$/i,                // ends with "sulfate"
+      /nitrate$/i,                // ends with "nitrate"
+      /carbonate$/i,              // ends with "carbonate"
+      /hydroxide$/i,              // ends with "hydroxide"
+      /benzene/i,                 // contains "benzene"
+      /methyl/i,                  // contains "methyl"
+      /ethyl/i,                   // contains "ethyl"
+      /propyl/i,                  // contains "propyl"
+      /^[A-Z][a-z]*ane$/i,        // alkane naming pattern
+      /^[A-Z][a-z]*ene$/i,        // alkene naming pattern
+      /^[A-Z][a-z]*yne$/i,        // alkyne naming pattern
+    ];
+
+    return chemicalPatterns.some(pattern => pattern.test(name));
   }
 
   private parseChemicalFromJsonLd(jsonObject: any): Chemical | null {
@@ -352,8 +492,8 @@ export class DatabaseService {
       
       // Extract name from various possible locations
       const name = this.extractName(jsonObject);
-      if (!name || name === 'Unknown Chemical') {
-        console.log('Skipping chemical with no valid name');
+      if (!name || name === 'Unknown Chemical' || this.isBlockedName(name)) {
+        console.log('Skipping chemical with no valid name or blocked name:', name);
         return null;
       }
       
@@ -413,7 +553,7 @@ export class DatabaseService {
       const id = jsonObject['@id'];
       if (id.startsWith('id#')) {
         return id.substring(3)
-          .replace(/\.\./g, '')
+          .replace(/\.\./g, ',')  // Convert .. to comma for chemical names like 2,4,6-
           .replace(/([a-z])([A-Z])/g, '$1 $2')
           .replace(/([0-9])([A-Z])/g, '$1 $2')
           .trim();

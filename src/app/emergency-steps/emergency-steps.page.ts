@@ -236,7 +236,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     this.router.navigate(['/emergency-types']);
   }
 
-  // Bottom Navigation Methods - Updated paths without tabs
+  // Bottom Navigation Methods
   navigateToHome() {
     this.router.navigate(['/emergency-types']);
   }
@@ -251,6 +251,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   navigateToProfile() {
-    console.log('Profile feature coming soon');
+    console.log('Navigating to profile from emergency steps...');
+    this.router.navigate(['/profile']);
   }
 }

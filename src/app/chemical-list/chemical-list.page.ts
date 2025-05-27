@@ -105,8 +105,8 @@ export class ChemicalListPage implements OnInit, OnDestroy {
 
   async onChemicalClick(chemical: Chemical) {
     console.log('Chemical clicked:', chemical.name, 'ID:', chemical.id);
-    // Navigate to chemical details with the chemical's ID
-    this.router.navigate(['/chemical-details', chemical.id]);
+    // Show chemical info in a toast or alert for now
+    this.showToast(`Chemical: ${chemical.name}`, 'primary');
   }
 
   async reloadFromJsonLd() {
@@ -130,14 +130,14 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     await toast.present();
   }
 
-  // Navigation methods - Updated paths without tabs
+  // Navigation methods
   navigateToHome() {
     this.router.navigate(['/emergency-types']);
   }
 
   navigateToChemicals() {
     // Already on chemicals page - do nothing or refresh
-    this.router.navigate(['/chemical-list']);
+    console.log('Already on chemicals page');
   }
 
   navigateToHistory() {
@@ -145,7 +145,8 @@ export class ChemicalListPage implements OnInit, OnDestroy {
   }
 
   navigateToProfile() {
-    this.showToast('Profile feature coming soon', 'primary');
+    console.log('Navigating to profile from chemical list...');
+    this.router.navigate(['/profile']);
   }
   
   // Debug methods - you can call these from the browser console
