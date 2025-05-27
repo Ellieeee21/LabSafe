@@ -8,8 +8,8 @@ import { IonContent } from "@ionic/angular/standalone";
   selector: 'app-splash',
   templateUrl: './splash.page.html',
   styleUrls: ['./splash.page.scss'],
-  standalone: true, // Add this for standalone components
-  imports: [IonContent] // Add Ionic components used in template
+  standalone: true,
+  imports: [IonContent]
 })
 export class SplashPage implements OnInit {
 
@@ -23,9 +23,8 @@ export class SplashPage implements OnInit {
       SplashScreen.hide();
     });
 
-    // Show splash for 1.5 seconds then go to home
     setTimeout(() => {
-      this.router.navigate(['/home'], { replaceUrl: true });
+      this.router.navigate(['/emergency-types'], { replaceUrl: true });
     }, 1500);
   }
 }
