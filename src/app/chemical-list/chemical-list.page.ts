@@ -12,7 +12,7 @@ import {
 } from "@ionic/angular/standalone";
 import { addIcons } from 'ionicons';
 import { 
-  flaskOutline, chevronForwardOutline, searchOutline, refreshOutline,
+  flaskOutline, searchOutline, refreshOutline,
   homeOutline, timeOutline, personOutline 
 } from 'ionicons/icons';
 
@@ -41,7 +41,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     private toastController: ToastController
   ) {
     addIcons({ 
-      flaskOutline, chevronForwardOutline, searchOutline, refreshOutline,
+      flaskOutline, searchOutline, refreshOutline,
       homeOutline, timeOutline, personOutline
     });
     

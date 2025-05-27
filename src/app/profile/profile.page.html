@@ -8,25 +8,29 @@
 <ion-content [fullscreen]="true" class="ion-padding white-background">
   <!-- Profile Header Section -->
   <div class="profile-header">
-    <div class="profile-image-container">
-      <img [src]="profileData.profileImage" 
-           [alt]="profileData.fullname + ' profile'" 
-           class="profile-image">
-      <div class="image-overlay">
-        <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+    <div class="profile-layout">
+      <div class="profile-left">
+        <div class="profile-image-container">
+          <img [src]="profileData.profileImage" 
+               [alt]="profileData.fullname + ' profile'" 
+               class="profile-image">
+          <div class="image-overlay">
+            <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+          </div>
+        </div>
+        <ion-button 
+          fill="outline" 
+          size="small" 
+          class="change-image-btn"
+          (click)="changeProfileImage()">
+          Change Image
+        </ion-button>
       </div>
-    </div>
-    
-    <div class="profile-info">
-      <h2 class="profile-name">{{ profileData.fullname }}</h2>
-      <p class="profile-location">{{ profileData.location }}</p>
-      <ion-button 
-        fill="clear" 
-        size="small" 
-        class="change-image-btn"
-        (click)="changeProfileImage()">
-        Change Image
-      </ion-button>
+      
+      <div class="profile-right">
+        <h2 class="profile-name">{{ profileData.fullname }}</h2>
+        <p class="profile-location">{{ profileData.location }}</p>
+      </div>
     </div>
   </div>
 
@@ -48,6 +52,7 @@
       <ion-datetime
         [(ngModel)]="profileData.dateOfBirth"
         presentation="date"
+        [min]="minDate"
         [max]="maxDate"
         placeholder="Select date"
         class="profile-datetime">
@@ -67,11 +72,15 @@
         <div class="gender-options">
           <ion-item class="gender-item">
             <ion-radio slot="start" value="male"></ion-radio>
-            <ion-label>Male</ion-label>
+            <ion-label class="gender-label">Male</ion-label>
           </ion-item>
           <ion-item class="gender-item">
             <ion-radio slot="start" value="female"></ion-radio>
-            <ion-label>Female</ion-label>
+            <ion-label class="gender-label">Female</ion-label>
+          </ion-item>
+          <ion-item class="gender-item">
+            <ion-radio slot="start" value="other"></ion-radio>
+            <ion-label class="gender-label">Other</ion-label>
           </ion-item>
         </div>
       </ion-radio-group>
@@ -92,15 +101,7 @@
     <div class="form-group">
       <ion-label class="form-label">Phone number</ion-label>
       <div class="phone-input-container">
-        <ion-select
-          [(ngModel)]="profileData.countryCode"
-          interface="popover"
-          class="country-code-select">
-          <ion-select-option value="+63">+63</ion-select-option>
-          <ion-select-option value="+1">+1</ion-select-option>
-          <ion-select-option value="+44">+44</ion-select-option>
-          <ion-select-option value="+86">+86</ion-select-option>
-        </ion-select>
+        <div class="country-code-display">+63</div>
         <ion-input
           [(ngModel)]="profileData.phoneNumber"
           type="tel"
