@@ -180,8 +180,8 @@ export class DatabaseService {
     }
 
     try {
-      console.log('Fetching JSON data from /assets/data/json_database.json...');
-      const response = await fetch('/assets/data/json_database.json');
+      console.log('Fetching JSON data from /assets/data/json_database...');
+      const response = await fetch('/assets/data/json_database');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -255,7 +255,7 @@ export class DatabaseService {
       console.error('Error loading chemical data:', error);
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('File not found. Check that json_database.json is in src/assets/data/');
+        console.error('File not found. Check that json_database is in src/assets/data/');
       }
     }
   }

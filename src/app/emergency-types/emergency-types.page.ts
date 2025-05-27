@@ -4,6 +4,11 @@ import { DatabaseService } from '../services/database.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
+// Add these icon imports
+import { addIcons } from 'ionicons';
+import { 
+  homeOutline, flaskOutline, timeOutline, personOutline 
+} from 'ionicons/icons';
 
 interface EmergencyType {
   id: number;
@@ -27,7 +32,12 @@ export class EmergencyTypesPage implements OnInit {
   constructor(
     private router: Router,
     private databaseService: DatabaseService
-  ) {}
+  ) {
+    // Add this to register the icons
+    addIcons({ 
+      homeOutline, flaskOutline, timeOutline, personOutline
+    });
+  }
 
   async ngOnInit() {
     await this.loadEmergencyTypes();

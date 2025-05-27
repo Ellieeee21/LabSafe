@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
+    path: 'splash',
+    loadComponent: () => import('./splash/splash.page').then(m => m.SplashPage)
+  },
+  {
     path: 'emergency-types',
     loadComponent: () => import('./emergency-types/emergency-types.page').then((m) => m.EmergencyTypesPage),
   },
@@ -19,7 +23,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: '/emergency-types',
+    redirectTo: 'splash',  // Changed from 'emergency-types' to 'splash'
     pathMatch: 'full'
   }
 ];

@@ -35,7 +35,6 @@ export interface EmergencyStepData {
     IonCard,
     IonCardContent,
     IonIcon,
-    IonLabel
   ]
 })
 export class EmergencyStepsPage implements OnInit, OnDestroy {
