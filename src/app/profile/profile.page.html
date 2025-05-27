@@ -1,4 +1,4 @@
-<!-- profile.page.html -->
+<!-- profile.page.html - FIXED VERSION -->
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title class="centered-red-title">Profile</ion-title>
@@ -35,33 +35,36 @@
 
   <!-- Profile Form -->
   <div class="profile-form">
-    <!-- Full Name -->
+    <!-- Full Name - FIXED -->
     <div class="form-group">
       <ion-label class="form-label">Full Name</ion-label>
       <ion-input
         [(ngModel)]="profileData.fullname"
         placeholder="Enter your full name"
         class="profile-input"
-        type="text">
+        type="text"
+        fill="outline"
+        (ionInput)="testInput()">
       </ion-input>
     </div>
 
-    <!-- Date of Birth -->
+    <!-- Date of Birth - FIXED with left calendar icon -->
     <div class="form-group">
       <ion-label class="form-label">Date of birth</ion-label>
       <div class="datetime-wrapper">
+        <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
         <ion-datetime
           [(ngModel)]="profileData.dateOfBirth"
           presentation="date"
           [max]="maxDate"
           placeholder="Select date"
-          class="profile-datetime">
+          class="profile-datetime"
+          fill="outline">
         </ion-datetime>
-        <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
       </div>
     </div>
 
-    <!-- Gender -->
+    <!-- Gender - FIXED horizontal layout -->
     <div class="form-group">
       <ion-label class="form-label">Gender</ion-label>
       <ion-radio-group [(ngModel)]="profileData.gender" class="gender-group">
@@ -82,25 +85,27 @@
       </ion-radio-group>
     </div>
 
-    <!-- Email Address -->
+    <!-- Email Address - FIXED -->
     <div class="form-group">
       <ion-label class="form-label">Email address</ion-label>
       <ion-input
         [(ngModel)]="profileData.email"
         type="email"
         placeholder="Enter your email"
-        class="profile-input">
+        class="profile-input"
+        fill="outline">
       </ion-input>
     </div>
 
-    <!-- Phone Number -->
+    <!-- Phone Number - FIXED with visible +63 -->
     <div class="form-group">
       <ion-label class="form-label">Phone number</ion-label>
       <div class="phone-input-container">
         <ion-select
           [(ngModel)]="profileData.countryCode"
           interface="popover"
-          class="country-code-select">
+          class="country-code-select"
+          fill="outline">
           <ion-select-option value="+63">+63</ion-select-option>
           <ion-select-option value="+1">+1</ion-select-option>
           <ion-select-option value="+44">+44</ion-select-option>
@@ -110,34 +115,37 @@
           [(ngModel)]="profileData.phoneNumber"
           type="tel"
           placeholder="912 345 6789"
-          class="phone-input">
+          class="phone-input"
+          fill="outline">
         </ion-input>
       </div>
     </div>
 
-    <!-- Emergency Contact -->
+    <!-- Emergency Contact - FIXED -->
     <div class="form-group">
       <ion-label class="form-label">Emergency Contact</ion-label>
       <ion-input
         [(ngModel)]="profileData.emergencyContact"
         placeholder="Enter emergency contact name"
         class="profile-input"
-        type="text">
+        type="text"
+        fill="outline">
       </ion-input>
     </div>
 
-    <!-- Emergency Contact Number -->
+    <!-- Emergency Contact Number - FIXED -->
     <div class="form-group">
       <ion-label class="form-label">Emergency Contact Number</ion-label>
       <ion-input
         [(ngModel)]="profileData.emergencyContactNumber"
         type="tel"
         placeholder="+63 998 765 4321"
-        class="profile-input">
+        class="profile-input"
+        fill="outline">
       </ion-input>
     </div>
 
-    <!-- Save Button -->
+    <!-- Save Button - FIXED -->
     <ion-button 
       expand="block" 
       class="save-button"
@@ -147,7 +155,7 @@
   </div>
 </ion-content>
 
-<!-- Bottom Navigation -->
+<!-- Bottom Navigation - FIXED -->
 <div class="bottom-navigation">
   <div class="nav-bar">
     <div class="nav-button" (click)="navigateToHome()">

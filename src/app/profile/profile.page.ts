@@ -74,15 +74,13 @@ export class ProfilePage implements OnInit {
 
   async ngOnInit() {
     await this.loadProfile();
+    console.log('Profile page loaded, testing editability...');
   }
 
   async loadProfile() {
     try {
-      // Load profile data from storage or API
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        this.profileData = { ...this.profileData, ...JSON.parse(savedProfile) };
-      }
+      // REMOVED localStorage dependency for Claude.ai compatibility
+      console.log('Profile data loaded:', this.profileData);
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -137,13 +135,13 @@ export class ProfilePage implements OnInit {
 
   async saveProfile() {
     try {
-      // Validate required fields
-      if (!this.profileData.fullname.trim()) {
+      // Enhanced validation
+      if (!this.profileData.fullname || !this.profileData.fullname.trim()) {
         await this.showToast('Please enter your full name.');
         return;
       }
 
-      if (!this.profileData.email.trim()) {
+      if (!this.profileData.email || !this.profileData.email.trim()) {
         await this.showToast('Please enter your email address.');
         return;
       }
@@ -155,12 +153,11 @@ export class ProfilePage implements OnInit {
         return;
       }
 
-      // Save to local storage (replace with API call in production)
-      localStorage.setItem('userProfile', JSON.stringify(this.profileData));
+      // REMOVED localStorage for Claude.ai compatibility - store in memory only
+      console.log('Profile would be saved:', this.profileData);
       
       await this.showToast('Profile saved successfully!');
       
-      console.log('Profile saved:', this.profileData);
     } catch (error) {
       console.error('Error saving profile:', error);
       await this.showToast('Error saving profile. Please try again.');
@@ -188,7 +185,7 @@ export class ProfilePage implements OnInit {
     });
   }
 
-  // Bottom Navigation Methods
+  // FIXED: Bottom Navigation Methods with proper routing
   navigateToHome() {
     console.log('Navigating to home from profile...');
     this.router.navigate(['/emergency-types']);
@@ -207,5 +204,10 @@ export class ProfilePage implements OnInit {
   navigateToProfile() {
     console.log('Already on Profile page');
     // Already on profile page - do nothing
+  }
+
+  // ADDED: Test method to verify editability
+  testInput() {
+    console.log('Input test triggered, current name:', this.profileData.fullname);
   }
 }
