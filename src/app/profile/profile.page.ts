@@ -22,6 +22,7 @@ interface ProfileData {
   dateOfBirth: string;
   gender: string;
   email: string;
+  countryCode: string;
   phoneNumber: string;
   emergencyContact: string;
   emergencyContactNumber: string;
@@ -38,16 +39,16 @@ interface ProfileData {
 })
 export class ProfilePage implements OnInit {
   maxDate: string;
-  minDate: string;
   
   profileData: ProfileData = {
-    fullname: '',
-    dateOfBirth: '',
-    gender: '',
-    email: '',
-    phoneNumber: '',
-    emergencyContact: '',
-    emergencyContactNumber: '',
+    fullname: 'Juan Dela Cruz',
+    dateOfBirth: '1992-08-08',
+    gender: 'male',
+    email: 'juan.delacruz@email.com',
+    countryCode: '+63',
+    phoneNumber: '912 345 6789',
+    emergencyContact: 'Maria Dela Cruz',
+    emergencyContactNumber: '+63 998 765 4321',
     profileImage: 'assets/images/default-profile.jpg',
     location: 'Quezon City, Philippines'
   };
@@ -67,9 +68,8 @@ export class ProfilePage implements OnInit {
       calendarOutline
     });
 
-    // Set date range: January 1, 1980 to May 1, 2025
-    this.minDate = '1980-01-01';
-    this.maxDate = '2025-05-01';
+    // Set max date to today for date of birth
+    this.maxDate = new Date().toISOString();
   }
 
   async ngOnInit() {
@@ -81,13 +81,7 @@ export class ProfilePage implements OnInit {
       // Load profile data from storage or API
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
-        const parsedProfile = JSON.parse(savedProfile);
-        this.profileData = { ...this.profileData, ...parsedProfile };
-        
-        // Update location in header if fullname is available
-        if (this.profileData.fullname.trim()) {
-          // Keep the default location or use saved location
-        }
+        this.profileData = { ...this.profileData, ...JSON.parse(savedProfile) };
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -158,31 +152,6 @@ export class ProfilePage implements OnInit {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.profileData.email)) {
         await this.showToast('Please enter a valid email address.');
-        return;
-      }
-
-      if (!this.profileData.phoneNumber.trim()) {
-        await this.showToast('Please enter your phone number.');
-        return;
-      }
-
-      if (!this.profileData.dateOfBirth) {
-        await this.showToast('Please select your date of birth.');
-        return;
-      }
-
-      if (!this.profileData.gender) {
-        await this.showToast('Please select your gender.');
-        return;
-      }
-
-      if (!this.profileData.emergencyContact.trim()) {
-        await this.showToast('Please enter an emergency contact name.');
-        return;
-      }
-
-      if (!this.profileData.emergencyContactNumber.trim()) {
-        await this.showToast('Please enter an emergency contact number.');
         return;
       }
 
