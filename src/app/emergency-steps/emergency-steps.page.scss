@@ -20,6 +20,13 @@ ion-header ion-toolbar {
   --color: white !important;
 }
 
+// Loading and error states
+.loading-container,
+.error-container {
+  margin-top: 40px;
+  text-align: center;
+}
+
 .steps-container {
   padding-bottom: 80px; // Space for bottom navigation
   margin-top: 16px;
@@ -34,6 +41,21 @@ ion-header ion-toolbar {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: white;
   margin: 0;
+  
+  // Sub-step styling for hierarchical display
+  &.sub-step-card {
+    margin-left: 20px;
+    border-left: 4px solid #C00000;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+}
+
+// Info card for no data states
+.info-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  margin: 20px 0;
 }
 
 ion-card-content {
@@ -50,6 +72,14 @@ ion-card-content {
   color: #000000 !important;
   margin: 0 0 8px 0;
   line-height: 1.3;
+  
+  // Sub-step title styling
+  &.sub-step-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333333 !important;
+    padding-left: 8px;
+  }
 }
 
 .step-description {
@@ -79,6 +109,12 @@ ion-card-content {
 
 .text-center {
   text-align: center;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666666 !important;
+  margin-top: 8px;
 }
 
 // Bottom Navigation - SINGLE dark bar like in first image

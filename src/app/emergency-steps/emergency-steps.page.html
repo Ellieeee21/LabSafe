@@ -1,17 +1,27 @@
 <!-- emergency-steps.page.html -->
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title class="centered-red-title">{{ emergencyType }}</ion-title>
+    <ion-title class="centered-red-title">
+      {{ chemicalName ? (chemicalName + ' - Emergency Steps') : (emergencyType || 'Emergency Steps') }}
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding white-background">
-  <div class="steps-container">
+  <!-- Loading state -->
+  <div *ngIf="!hasData && steps.length === 0" class="loading-container">
+    <p class="text-center">Loading emergency procedures...</p>
+  </div>
+
+  <!-- Steps container -->
+  <div *ngIf="hasData && steps.length > 0" class="steps-container">
     <div *ngFor="let step of steps; let i = index">
       <div class="step-wrapper">
-        <ion-card class="step-card">
+        <ion-card class="step-card" [ngClass]="{'sub-step-card': step.title.startsWith('•')}">
           <ion-card-content>
-            <h3 class="step-title">{{ step.title }}</h3>
+            <h3 class="step-title" [ngClass]="{'sub-step-title': step.title.startsWith('•')}">
+              {{ step.title }}
+            </h3>
             <p class="step-description">{{ step.description }}</p>
           </ion-card-content>
         </ion-card>
@@ -22,11 +32,26 @@
         <ion-icon name="chevron-down-outline" class="step-arrow"></ion-icon>
       </div>
     </div>
+  </div>
 
-    <!-- No steps message -->
-    <div *ngIf="steps.length === 0" class="no-steps-container">
-      <p class="text-center">No emergency steps available for this type.</p>
-    </div>
+  <!-- No steps message -->
+  <div *ngIf="hasData && steps.length === 0" class="no-steps-container">
+    <ion-card class="info-card">
+      <ion-card-content>
+        <p class="text-center">No emergency procedures available for this selection.</p>
+        <p class="text-center subtitle">Please check back later or contact your safety administrator.</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="!hasData && steps.length === 0" class="error-container">
+    <ion-card class="info-card">
+      <ion-card-content>
+        <p class="text-center">Unable to load emergency procedures.</p>
+        <p class="text-center subtitle">Please try again or contact support if the problem persists.</p>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>
 
