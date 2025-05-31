@@ -29,9 +29,7 @@
         <ion-card class="step-card">
           <ion-card-content>
             <div class="procedure-item">
-              <!-- Step number only for main emergency types -->
-              <div *ngIf="shouldShowStepNumber(stepGroup.category)" class="step-number">{{ getEmergencyTypeNumber(stepGroup.category) }}</div>
-              
+              <!-- Removed step number completely -->
               <div class="step-content">
                 <!-- Mini header (centered) -->
                 <h3 class="step-header">{{ stepGroup.category }}</h3>

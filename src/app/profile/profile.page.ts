@@ -173,7 +173,7 @@ export class ProfilePage implements OnInit {
     
     // Validate length
     if (cleanNumber.length > 0 && cleanNumber.length !== 10) {
-      const errorMessage = 'Phone number must be exactly 10 digits';
+      const errorMessage = 'Phone number must be valid';
       if (type === 'phone') {
         this.phoneError = errorMessage;
       } else {
@@ -263,14 +263,14 @@ export class ProfilePage implements OnInit {
 
       // Check if phone numbers are exactly 10 digits
       if (cleanPhoneNumber.length !== 10) {
-        this.phoneError = 'Phone number must be exactly 10 digits';
-        await this.showToast('Phone number must be exactly 10 digits.');
+        this.phoneError = 'Phone number must be valid';
+        await this.showToast('Phone number must be valid.');
         return;
       }
 
       if (cleanEmergencyNumber.length !== 10) {
-        this.emergencyPhoneError = 'Emergency contact number must be exactly 10 digits';
-        await this.showToast('Emergency contact number must be exactly 10 digits.');
+        this.emergencyPhoneError = 'Emergency contact number must be valid';
+        await this.showToast('Emergency contact number must be valid.');
         return;
       }
 

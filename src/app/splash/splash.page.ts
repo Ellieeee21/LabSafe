@@ -29,6 +29,6 @@ export class SplashPage implements OnInit {
     // Show our custom splash for 2 seconds
     setTimeout(() => {
       this.router.navigate(['/emergency-types'], { replaceUrl: true });
-    }, 1500);
+    }, 1000);
   }
 }

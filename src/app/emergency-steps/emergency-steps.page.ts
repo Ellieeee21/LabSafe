@@ -49,26 +49,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   filteredSteps: StepGroup[] = [];
   hasData: boolean = false;
   isLoading: boolean = true;
-  showStepNumbers: boolean = false;
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
-  // Emergency type numbering system (only used for chemical-specific navigation)
-  private emergencyTypeNumbers: { [key: string]: number } = {
-    'Eye Contact': 1,
-    'Fire Fighting': 2,
-    'Flammability': 3,
-    'Ingestion': 4,
-    'Inhalation': 5,
-    'Instability or Reactivity': 6,
-    'Skin Contact': 7,
-    'Spill': 8
-  };
-
-  // Main emergency types that should show numbers
-  private mainEmergencyTypes = [
-    'Eye Contact', 'Fire Fighting', 'Flammability', 'Ingestion', 
-    'Inhalation', 'Instability or Reactivity', 'Skin Contact', 'Spill'
+  // Blacklisted categories that should be excluded
+  private blacklistedCategories = [
+    'Stability Information',
+    'Polymerization Information', 
+    'Accidental Release',
+    'General First Aid'
   ];
 
   constructor(
@@ -84,9 +73,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       this.emergencyId = params['emergencyId'] || '';
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
-      
-      // Show step numbers only when coming from a specific chemical
-      this.showStepNumbers = !!this.chemicalId;
       
       this.loadEmergencySteps();
     });
@@ -139,6 +125,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         this.allStepGroups = this.convertRawStepsToGroups(rawSteps);
       }
       
+      // Apply blacklist filter and remove duplicates
+      this.allStepGroups = this.filterBlacklistedCategories(this.allStepGroups);
+      this.allStepGroups = this.removeDuplicateSteps(this.allStepGroups);
+      
       this.hasData = this.allStepGroups.length > 0;
       
     } catch (error) {
@@ -149,6 +139,41 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       this.isLoading = false;
       this.applySearch();
     }
+  }
+
+  private filterBlacklistedCategories(stepGroups: StepGroup[]): StepGroup[] {
+    return stepGroups.filter(group => {
+      return !this.blacklistedCategories.some(blacklisted => 
+        group.category.toLowerCase().includes(blacklisted.toLowerCase()) ||
+        blacklisted.toLowerCase().includes(group.category.toLowerCase())
+      );
+    });
+  }
+
+  private removeDuplicateSteps(stepGroups: StepGroup[]): StepGroup[] {
+    const processedGroups: StepGroup[] = [];
+    const allSeenSteps = new Set<string>();
+
+    stepGroups.forEach(group => {
+      const uniqueSteps: string[] = [];
+      
+      group.steps.forEach(step => {
+        const normalizedStep = step.toLowerCase().trim();
+        if (!allSeenSteps.has(normalizedStep)) {
+          allSeenSteps.add(normalizedStep);
+          uniqueSteps.push(step);
+        }
+      });
+
+      if (uniqueSteps.length > 0) {
+        processedGroups.push({
+          category: group.category,
+          steps: uniqueSteps
+        });
+      }
+    });
+
+    return processedGroups;
   }
 
   private fallbackEmergencyStepsExtraction() {
@@ -166,10 +191,8 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         const emergencySteps: string[] = [];
         const data = chemical.data;
         
-        // Check for emergency-related properties
+        // Check for emergency-related properties (excluding blacklisted ones)
         const emergencyProps = [
-          'id#hasAccidentalGeneral',
-          'id#hasFirstAidGeneral',
           'id#hasFirstAidEye',
           'id#hasFirstAidIngestion',
           'id#hasFirstAidInhalation',
@@ -180,6 +203,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
           'id#hasHealthHazards',
           'id#hasPhysicalHazards',
           'id#hasIncompatibilityIssuesWith'
+          // Removed: 'id#hasAccidentalGeneral', 'id#hasFirstAidGeneral'
         ];
         
         for (const prop of emergencyProps) {
@@ -287,11 +311,9 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     };
 
     const generalCategories = [
-      'id#hasAccidentalGeneral',
       'id#hasHealthHazards',
-      'id#hasPhysicalHazards',
-      'id#hasStabilityInformation',
-      'id#hasPolymerizationInformation'
+      'id#hasPhysicalHazards'
+      // Removed blacklisted categories from general processing
     ];
 
     for (const [prop, categoryName] of Object.entries(emergencyMapping)) {
@@ -396,23 +418,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         group.steps.some(step => step.toLowerCase().includes(this.searchQuery))
       );
     }
-  }
-
-  shouldShowStepNumber(category: string): boolean {
-    return this.showStepNumbers && this.mainEmergencyTypes.some(type => 
-      category.toLowerCase().includes(type.toLowerCase()) ||
-      type.toLowerCase().includes(category.toLowerCase())
-    );
-  }
-
-  getEmergencyTypeNumber(category: string): number {
-    for (const [type, number] of Object.entries(this.emergencyTypeNumbers)) {
-      if (category.toLowerCase().includes(type.toLowerCase()) ||
-          type.toLowerCase().includes(category.toLowerCase())) {
-        return number;
-      }
-    }
-    return 0;
   }
 
   goBack() {
