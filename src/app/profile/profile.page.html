@@ -1,4 +1,4 @@
-<!-- profile.page.html - FIXED VERSION -->
+<!-- profile.page.html - UPDATED VERSION -->
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title class="centered-red-title">Profile</ion-title>
@@ -10,10 +10,17 @@
   <div class="profile-header">
     <div class="profile-left">
       <div class="profile-image-container">
-        <img [src]="profileData.profileImage" 
-             [alt]="profileData.fullname + ' profile'" 
-             class="profile-image"
-             (click)="changeProfileImage()">
+        <!-- Updated to show default profile icon when no image -->
+        <div class="profile-image-wrapper" (click)="changeProfileImage()">
+          <img *ngIf="profileData.profileImage && profileData.profileImage !== 'assets/images/default-profile.jpg'" 
+               [src]="profileData.profileImage" 
+               [alt]="profileData.fullname + ' profile'" 
+               class="profile-image">
+          <div *ngIf="!profileData.profileImage || profileData.profileImage === 'assets/images/default-profile.jpg'" 
+               class="default-profile-icon">
+            <ion-icon name="person-outline" class="default-icon"></ion-icon>
+          </div>
+        </div>
         <div class="image-overlay" (click)="changeProfileImage()">
           <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
         </div>
@@ -35,7 +42,7 @@
 
   <!-- Profile Form -->
   <div class="profile-form">
-    <!-- Full Name - FIXED -->
+    <!-- Full Name -->
     <div class="form-group">
       <ion-label class="form-label">Full Name</ion-label>
       <ion-input
@@ -48,23 +55,20 @@
       </ion-input>
     </div>
 
-    <!-- Date of Birth - FIXED with left calendar icon -->
+    <!-- Date of Birth - Simplified -->
     <div class="form-group">
       <ion-label class="form-label">Date of birth</ion-label>
-      <div class="datetime-wrapper">
-        <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
-        <ion-datetime
-          [(ngModel)]="profileData.dateOfBirth"
-          presentation="date"
-          [max]="maxDate"
-          placeholder="Select date"
-          class="profile-datetime"
-          fill="outline">
-        </ion-datetime>
-      </div>
+      <ion-input
+        [(ngModel)]="profileData.dateOfBirth"
+        type="date"
+        placeholder="Select date"
+        class="profile-input date-input"
+        fill="outline"
+        [max]="maxDate">
+      </ion-input>
     </div>
 
-    <!-- Gender - FIXED horizontal layout -->
+    <!-- Gender -->
     <div class="form-group">
       <ion-label class="form-label">Gender</ion-label>
       <ion-radio-group [(ngModel)]="profileData.gender" class="gender-group">
@@ -85,7 +89,7 @@
       </ion-radio-group>
     </div>
 
-    <!-- Email Address - FIXED -->
+    <!-- Email Address with validation -->
     <div class="form-group">
       <ion-label class="form-label">Email address</ion-label>
       <ion-input
@@ -93,35 +97,32 @@
         type="email"
         placeholder="Enter your email"
         class="profile-input"
-        fill="outline">
+        fill="outline"
+        (ionBlur)="validateEmail()">
       </ion-input>
+      <div *ngIf="emailError" class="error-message">{{ emailError }}</div>
     </div>
 
-    <!-- Phone Number - FIXED with visible +63 -->
+    <!-- Phone Number with fixed +63 and 10-digit validation -->
     <div class="form-group">
       <ion-label class="form-label">Phone number</ion-label>
       <div class="phone-input-container">
-        <ion-select
-          [(ngModel)]="profileData.countryCode"
-          interface="popover"
-          class="country-code-select"
-          fill="outline">
-          <ion-select-option value="+63">+63</ion-select-option>
-          <ion-select-option value="+1">+1</ion-select-option>
-          <ion-select-option value="+44">+44</ion-select-option>
-          <ion-select-option value="+86">+86</ion-select-option>
-        </ion-select>
+        <div class="country-code-display">+63</div>
         <ion-input
           [(ngModel)]="profileData.phoneNumber"
           type="tel"
-          placeholder="912 345 6789"
+          placeholder="9123456789"
           class="phone-input"
-          fill="outline">
+          fill="outline"
+          maxlength="10"
+          (ionInput)="validatePhoneNumber('phone')"
+          pattern="[0-9]*">
         </ion-input>
       </div>
+      <div *ngIf="phoneError" class="error-message">{{ phoneError }}</div>
     </div>
 
-    <!-- Emergency Contact - FIXED -->
+    <!-- Emergency Contact -->
     <div class="form-group">
       <ion-label class="form-label">Emergency Contact</ion-label>
       <ion-input
@@ -133,19 +134,26 @@
       </ion-input>
     </div>
 
-    <!-- Emergency Contact Number - FIXED -->
+    <!-- Emergency Contact Number with fixed +63 and 10-digit validation -->
     <div class="form-group">
       <ion-label class="form-label">Emergency Contact Number</ion-label>
-      <ion-input
-        [(ngModel)]="profileData.emergencyContactNumber"
-        type="tel"
-        placeholder="+63 998 765 4321"
-        class="profile-input"
-        fill="outline">
-      </ion-input>
+      <div class="phone-input-container">
+        <div class="country-code-display">+63</div>
+        <ion-input
+          [(ngModel)]="profileData.emergencyContactNumber"
+          type="tel"
+          placeholder="9987654321"
+          class="phone-input"
+          fill="outline"
+          maxlength="10"
+          (ionInput)="validatePhoneNumber('emergency')"
+          pattern="[0-9]*">
+        </ion-input>
+      </div>
+      <div *ngIf="emergencyPhoneError" class="error-message">{{ emergencyPhoneError }}</div>
     </div>
 
-    <!-- Save Button - FIXED -->
+    <!-- Save Button -->
     <ion-button 
       expand="block" 
       class="save-button"
@@ -155,7 +163,7 @@
   </div>
 </ion-content>
 
-<!-- Bottom Navigation - FIXED -->
+<!-- Bottom Navigation -->
 <div class="bottom-navigation">
   <div class="nav-bar">
     <div class="nav-button" (click)="navigateToHome()">

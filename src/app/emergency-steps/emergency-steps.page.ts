@@ -49,10 +49,12 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   filteredSteps: StepGroup[] = [];
   hasData: boolean = false;
   isLoading: boolean = true;
+  showStepNumbers: boolean = false; // New property to control step numbering
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
+  private subscriptions: Subscription[] = []; // Add subscriptions array
 
-  // Emergency type numbering system
+  // Emergency type numbering system (only used for chemical-specific navigation)
   private emergencyTypeNumbers: { [key: string]: number } = {
     'Eye Contact': 1,
     'Fire Fighting': 2,
@@ -84,6 +86,9 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
       
+      // Show step numbers only when coming from a specific chemical
+      this.showStepNumbers = !!this.chemicalId;
+      
       this.loadEmergencySteps();
     });
 
@@ -101,6 +106,9 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    // Clean up all subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    
     if (this.backButtonSubscription) {
       this.backButtonSubscription.unsubscribe();
     }
@@ -136,7 +144,8 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private loadChemicalSpecificSteps() {
-    this.databaseService.allData$.subscribe(allData => {
+    // Store the subscription to manage it properly
+    const chemicalSub = this.databaseService.allData$.subscribe(allData => {
       const chemical = allData.find((item: AllDataItem) => 
         item.type === 'chemical' && 
         (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
@@ -151,14 +160,22 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         }
         
         this.hasData = this.allStepGroups.length > 0;
+        console.log('Chemical-specific steps loaded:', this.allStepGroups);
+      } else {
+        console.log('No chemical data found for ID:', this.chemicalId);
+        this.hasData = false;
+        this.allStepGroups = [];
       }
-    }).unsubscribe();
+    });
+
+    // Add to subscriptions array for proper cleanup
+    this.subscriptions.push(chemicalSub);
   }
 
   private loadEmergencyTypeSpecificSteps() {
-    // When coming from emergency types page, show only that type's data
-    this.databaseService.allData$.subscribe(allData => {
+    const emergencySub = this.databaseService.allData$.subscribe(allData => {
       const allSteps: StepGroup[] = [];
+      const uniqueSteps = new Set<string>(); // Track unique steps
       
       // Get all chemicals and extract steps for the specific emergency type
       const chemicals = allData.filter((item: AllDataItem) => item.type === 'chemical');
@@ -167,31 +184,66 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         if (chemical.data) {
           const chemicalSteps = this.extractChemicalSteps(chemical.data);
           const filteredSteps = this.filterByEmergencyType(chemicalSteps);
-          allSteps.push(...filteredSteps);
+          
+          // Add only unique steps
+          filteredSteps.forEach(stepGroup => {
+            stepGroup.steps.forEach(step => {
+              if (!uniqueSteps.has(step)) {
+                uniqueSteps.add(step);
+                // Find existing group or create new one
+                let existingGroup = allSteps.find(sg => sg.category === stepGroup.category);
+                if (!existingGroup) {
+                  existingGroup = { category: stepGroup.category, steps: [] };
+                  allSteps.push(existingGroup);
+                }
+                existingGroup.steps.push(step);
+              }
+            });
+          });
         }
       });
       
       this.allStepGroups = allSteps;
       this.hasData = this.allStepGroups.length > 0;
-    }).unsubscribe();
+    });
+
+    this.subscriptions.push(emergencySub);
   }
 
   private loadAllEmergencySteps() {
-    this.databaseService.allData$.subscribe(allData => {
+    const allStepsSub = this.databaseService.allData$.subscribe(allData => {
       const allSteps: StepGroup[] = [];
+      const uniqueSteps = new Set<string>(); // Track unique steps
       
       const chemicals = allData.filter((item: AllDataItem) => item.type === 'chemical');
       
       chemicals.forEach(chemical => {
         if (chemical.data) {
           const chemicalSteps = this.extractChemicalSteps(chemical.data);
-          allSteps.push(...chemicalSteps);
+          
+          // Add only unique steps
+          chemicalSteps.forEach(stepGroup => {
+            stepGroup.steps.forEach(step => {
+              if (!uniqueSteps.has(step)) {
+                uniqueSteps.add(step);
+                // Find existing group or create new one
+                let existingGroup = allSteps.find(sg => sg.category === stepGroup.category);
+                if (!existingGroup) {
+                  existingGroup = { category: stepGroup.category, steps: [] };
+                  allSteps.push(existingGroup);
+                }
+                existingGroup.steps.push(step);
+              }
+            });
+          });
         }
       });
       
       this.allStepGroups = allSteps;
       this.hasData = this.allStepGroups.length > 0;
-    }).unsubscribe();
+    });
+
+    this.subscriptions.push(allStepsSub);
   }
 
   private extractChemicalSteps(data: any): StepGroup[] {
@@ -319,7 +371,8 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   shouldShowStepNumber(category: string): boolean {
-    return this.mainEmergencyTypes.some(type => 
+    // Only show step numbers when coming from a specific chemical (showStepNumbers = true)
+    return this.showStepNumbers && this.mainEmergencyTypes.some(type => 
       category.toLowerCase().includes(type.toLowerCase()) ||
       type.toLowerCase().includes(category.toLowerCase())
     );

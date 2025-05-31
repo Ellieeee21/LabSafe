@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
-// FIXED: Import from standalone version
 import { 
   IonHeader, 
   IonToolbar, 
@@ -24,7 +23,6 @@ import {
   ToastController 
 } from '@ionic/angular/standalone';
 
-// Add these icon imports
 import { addIcons } from 'ionicons';
 import { 
   homeOutline, 
@@ -42,7 +40,6 @@ interface ProfileData {
   dateOfBirth: string;
   gender: string;
   email: string;
-  countryCode: string;
   phoneNumber: string;
   emergencyContact: string;
   emergencyContactNumber: string;
@@ -69,24 +66,24 @@ interface ProfileData {
     IonItem,
     IonRadio,
     IonRadioGroup,
-    IonSelect,
-    IonSelectOption,
-    IonDatetime
+  
   ]
 })
 export class ProfilePage implements OnInit {
   maxDate: string;
+  emailError: string = '';
+  phoneError: string = '';
+  emergencyPhoneError: string = '';
   
   profileData: ProfileData = {
     fullname: 'Juan Dela Cruz',
     dateOfBirth: '1992-08-08',
     gender: 'male',
     email: 'juan.delacruz@email.com',
-    countryCode: '+63',
-    phoneNumber: '912 345 6789',
+    phoneNumber: '9123456789',
     emergencyContact: 'Maria Dela Cruz',
-    emergencyContactNumber: '+63 998 765 4321',
-    profileImage: 'assets/images/default-profile.jpg',
+    emergencyContactNumber: '9987654321',
+    profileImage: '', // Empty by default to show icon
     location: 'Quezon City, Philippines'
   };
 
@@ -95,7 +92,6 @@ export class ProfilePage implements OnInit {
     private actionSheetController: ActionSheetController,
     private toastController: ToastController
   ) {
-    // Register icons
     addIcons({ 
       homeOutline, 
       flaskOutline, 
@@ -108,7 +104,7 @@ export class ProfilePage implements OnInit {
     });
 
     // Set max date to today for date of birth
-    this.maxDate = new Date().toISOString();
+    this.maxDate = new Date().toISOString().split('T')[0];
   }
 
   async ngOnInit() {
@@ -118,11 +114,69 @@ export class ProfilePage implements OnInit {
 
   async loadProfile() {
     try {
-      // REMOVED localStorage dependency for Claude.ai compatibility
       console.log('Profile data loaded:', this.profileData);
     } catch (error) {
       console.error('Error loading profile:', error);
     }
+  }
+
+  // Email validation
+  validateEmail() {
+    const email = this.profileData.email.trim();
+    if (!email) {
+      this.emailError = 'Email is required';
+      return false;
+    }
+    
+    // Check for @ and .com
+    if (!email.includes('@') || !email.includes('.com')) {
+      this.emailError = 'Email must contain @ and .com';
+      return false;
+    }
+    
+    // More thorough email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
+    if (!emailRegex.test(email)) {
+      this.emailError = 'Please enter a valid email address ending with .com';
+      return false;
+    }
+    
+    this.emailError = '';
+    return true;
+  }
+
+  // Phone number validation - only numbers, exactly 10 digits
+  validatePhoneNumber(type: 'phone' | 'emergency') {
+    const phoneNumber = type === 'phone' ? this.profileData.phoneNumber : this.profileData.emergencyContactNumber;
+    
+    // Remove non-numeric characters
+    const cleanNumber = phoneNumber.replace(/\D/g, '');
+    
+    // Update the model with clean number
+    if (type === 'phone') {
+      this.profileData.phoneNumber = cleanNumber;
+    } else {
+      this.profileData.emergencyContactNumber = cleanNumber;
+    }
+    
+    // Validate length
+    if (cleanNumber.length > 0 && cleanNumber.length !== 10) {
+      const errorMessage = 'Phone number must be exactly 10 digits';
+      if (type === 'phone') {
+        this.phoneError = errorMessage;
+      } else {
+        this.emergencyPhoneError = errorMessage;
+      }
+      return false;
+    }
+    
+    // Clear error if valid
+    if (type === 'phone') {
+      this.phoneError = '';
+    } else {
+      this.emergencyPhoneError = '';
+    }
+    return true;
   }
 
   async changeProfileImage() {
@@ -174,26 +228,52 @@ export class ProfilePage implements OnInit {
 
   async saveProfile() {
     try {
-      // Enhanced validation
+      // Reset all errors
+      this.emailError = '';
+      this.phoneError = '';
+      this.emergencyPhoneError = '';
+
+      // Validate full name
       if (!this.profileData.fullname || !this.profileData.fullname.trim()) {
         await this.showToast('Please enter your full name.');
         return;
       }
 
-      if (!this.profileData.email || !this.profileData.email.trim()) {
-        await this.showToast('Please enter your email address.');
-        return;
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(this.profileData.email)) {
+      // Validate email
+      if (!this.validateEmail()) {
         await this.showToast('Please enter a valid email address.');
         return;
       }
 
-      // REMOVED localStorage for Claude.ai compatibility - store in memory only
-      console.log('Profile would be saved:', this.profileData);
+      // Validate phone numbers
+      if (!this.validatePhoneNumber('phone')) {
+        await this.showToast('Please enter a valid 10-digit phone number.');
+        return;
+      }
+
+      if (!this.validatePhoneNumber('emergency')) {
+        await this.showToast('Please enter a valid 10-digit emergency contact number.');
+        return;
+      }
+
+      // Check if phone numbers are exactly 10 digits
+      if (this.profileData.phoneNumber.length !== 10) {
+        this.phoneError = 'Phone number must be exactly 10 digits';
+        await this.showToast('Phone number must be exactly 10 digits.');
+        return;
+      }
+
+      if (this.profileData.emergencyContactNumber.length !== 10) {
+        this.emergencyPhoneError = 'Emergency contact number must be exactly 10 digits';
+        await this.showToast('Emergency contact number must be exactly 10 digits.');
+        return;
+      }
+
+      console.log('Profile would be saved:', {
+        ...this.profileData,
+        phoneNumber: '+63' + this.profileData.phoneNumber,
+        emergencyContactNumber: '+63' + this.profileData.emergencyContactNumber
+      });
       
       await this.showToast('Profile saved successfully!');
       
@@ -213,7 +293,6 @@ export class ProfilePage implements OnInit {
     await toast.present();
   }
 
-  // Format date for display
   formatDate(dateString: string): string {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -224,7 +303,6 @@ export class ProfilePage implements OnInit {
     });
   }
 
-  // FIXED: Bottom Navigation Methods with proper routing
   navigateToHome() {
     console.log('Navigating to home from profile...');
     this.router.navigate(['/emergency-types']);
@@ -237,15 +315,12 @@ export class ProfilePage implements OnInit {
 
   navigateToHistory() {
     console.log('History feature coming soon');
-    // TODO: Implement history navigation when ready
   }
 
   navigateToProfile() {
     console.log('Already on Profile page');
-    // Already on profile page - do nothing
   }
 
-  // ADDED: Test method to verify editability
   testInput() {
     console.log('Input test triggered, current name:', this.profileData.fullname);
   }

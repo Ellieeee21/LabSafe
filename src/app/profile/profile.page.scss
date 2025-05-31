@@ -1,4 +1,4 @@
-/* profile.page.scss - FIXED VERSION */
+/* profile.page.scss - UPDATED VERSION */
 
 // White/bone background for the content
 .white-background {
@@ -20,7 +20,7 @@ ion-header ion-toolbar {
   --color: white !important;
 }
 
-// Profile Header Section - Updated Layout
+// Profile Header Section
 .profile-header {
   display: flex;
   flex-direction: row;
@@ -51,16 +51,43 @@ ion-header ion-toolbar {
   cursor: pointer;
 }
 
-// FIXED: Perfect circle profile image
+// Profile image wrapper for both image and default icon
+.profile-image-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+// Actual profile image
 .profile-image {
- width: 120px;         
-  height: 120px;         
-  border-radius: 50%;    
-  object-fit: cover;     
-  border: 4px solid #fff; 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); 
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
   display: block;
-  margin: 0 auto;        
+}
+
+// Default profile icon styling
+.default-profile-icon {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.default-icon {
+  font-size: 60px;
+  color: #666;
 }
 
 .image-overlay {
@@ -70,7 +97,7 @@ ion-header ion-toolbar {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 50% !important; /* Changed from 60px to 50% for perfect circle */
+  border-radius: 50% !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,11 +113,6 @@ ion-header ion-toolbar {
 .camera-icon {
   color: white;
   font-size: 24px;
-}
-
-.profile-info {
-  text-align: left;
-  flex: 1;
 }
 
 .profile-name {
@@ -120,7 +142,7 @@ ion-header ion-toolbar {
 
 // Profile Form
 .profile-form {
-  padding-bottom: 100px; // Space for bottom navigation
+  padding-bottom: 100px;
 }
 
 .form-group {
@@ -135,7 +157,7 @@ ion-header ion-toolbar {
   margin-bottom: 8px;
 }
 
-// FIXED: Input fields - Removed blocking styles and made fully editable
+// Input fields styling
 .profile-input {
   --background: white !important;
   --border-radius: 8px !important;
@@ -149,7 +171,6 @@ ion-header ion-toolbar {
   min-height: 48px !important;
   width: 100% !important;
   
-  // CRITICAL FIXES for editability
   pointer-events: auto !important;
   cursor: text !important;
   user-select: text !important;
@@ -165,63 +186,16 @@ ion-header ion-toolbar {
   }
 }
 
-// FIXED: Make sure ALL ion-input elements are interactive
-ion-input {
-  pointer-events: auto !important;
-  cursor: text !important;
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  
-  // Remove any blocking overlays
-  input {
-    pointer-events: auto !important;
-    cursor: text !important;
-    user-select: text !important;
-    -webkit-user-select: text !important;
-  }
-}
-
-// FIXED: Date picker styling with calendar icon on the LEFT
-.datetime-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.calendar-icon {
-  position: absolute;
-  left: 12px !important; /* Changed from right to left */
-  color: #666;
-  font-size: 20px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.profile-datetime {
-  --background: white !important;
-  --border-radius: 8px !important;
-  --padding-start: 40px !important; /* Increased to make room for left icon */
-  --padding-end: 16px !important;
-  --color: #333 !important;
-  --placeholder-color: #999 !important;
-  border: 1px solid #E0E0E0 !important;
-  border-radius: 8px !important;
-  min-height: 48px !important;
-  width: 100% !important;
+// Date input specific styling
+.date-input {
   cursor: pointer !important;
-  pointer-events: auto !important;
   
-  &::part(text) {
-    color: #333 !important;
-  }
-  
-  &.ion-focused {
-    --border-color: #4A90E2 !important;
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2) !important;
+  input[type="date"] {
+    cursor: pointer !important;
   }
 }
 
-// FIXED: Gender radio group - Horizontal layout
+// Gender radio group
 .gender-group {
   margin-top: 8px;
 }
@@ -262,25 +236,26 @@ ion-input {
   }
 }
 
-// FIXED: Phone input container with +63 visible
+// Phone input container with fixed +63
 .phone-input-container {
   display: flex;
   gap: 12px;
   align-items: center;
 }
 
-.country-code-select {
-  --background: white !important;
-  --border-radius: 8px !important;
-  --padding-start: 12px !important;
-  --padding-end: 12px !important;
-  --color: #333 !important;
-  border: 1px solid #E0E0E0 !important;
-  border-radius: 8px !important;
-  min-width: 80px !important;
-  min-height: 48px !important;
-  cursor: pointer !important;
-  pointer-events: auto !important;
+.country-code-display {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 0 12px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+  min-width: 60px;
 }
 
 .phone-input {
@@ -306,6 +281,14 @@ ion-input {
   }
 }
 
+// Error message styling
+.error-message {
+  color: #ff6961;
+  font-size: 12px;
+  margin-top: 4px;
+  padding-left: 16px;
+}
+
 // Save button
 .save-button {
   --background: #A41E22 !important;
@@ -323,7 +306,7 @@ ion-input {
   pointer-events: auto !important;
 }
 
-// Bottom Navigation - Same as emergency types
+// Bottom Navigation
 .bottom-navigation {
   position: fixed;
   bottom: 0;
@@ -389,27 +372,27 @@ ion-content {
   --padding-bottom: 80px !important;
 }
 
-// CRITICAL: Remove any global styles that might block interaction
-* {
-  user-select: auto !important;
-  -webkit-user-select: auto !important;
+// Ensure interactivity
+ion-input {
   pointer-events: auto !important;
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  
+  input {
+    pointer-events: auto !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+  }
 }
 
-// Ensure form elements are always interactive
-form, .profile-form {
-  pointer-events: auto !important;
-  user-select: auto !important;
-  -webkit-user-select: auto !important;
-}
-
-// Fix for ion-radio-group
 ion-radio-group {
   pointer-events: auto !important;
 }
 
-// Fix for ion-select
-ion-select {
+form, .profile-form {
   pointer-events: auto !important;
-  cursor: pointer !important;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
 }
