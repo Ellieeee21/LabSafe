@@ -17,12 +17,12 @@
   <div *ngIf="hasData && steps.length > 0" class="steps-container">
     <div *ngFor="let step of steps; let i = index">
       <div class="step-wrapper">
-        <ion-card class="step-card" [ngClass]="{'sub-step-card': step.title.startsWith('•')}">
+        <ion-card class="step-card" [ngClass]="{'sub-step-card': step.startsWith('•')}">
           <ion-card-content>
-            <h3 class="step-title" [ngClass]="{'sub-step-title': step.title.startsWith('•')}">
-              {{ step.title }}
-            </h3>
-            <p class="step-description">{{ step.description }}</p>
+            <div class="procedure-item">
+              <div class="step-number">{{ i + 1 }}</div>
+              <p class="step-text" [ngClass]="{'sub-step-title': step.startsWith('•')}">{{ step }}</p>
+            </div>
           </ion-card-content>
         </ion-card>
       </div>
@@ -32,7 +32,6 @@
         <ion-icon name="chevron-down-outline" class="step-arrow"></ion-icon>
       </div>
     </div>
-  </div>
 
   <!-- No steps message -->
   <div *ngIf="hasData && steps.length === 0" class="no-steps-container">
@@ -53,7 +52,7 @@
       </ion-card-content>
     </ion-card>
   </div>
-</ion-content>
+
 
 <!-- Bottom Navigation - Using correct imported icons -->
 <div class="bottom-navigation">

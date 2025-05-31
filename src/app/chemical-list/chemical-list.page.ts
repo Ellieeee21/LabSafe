@@ -63,6 +63,19 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     const chemicalsSub = this.databaseService.chemicals$.subscribe(chemicals => {
       this.chemicals = chemicals;
       this.applyFilter();
+      
+      // Fallback: if no chemicals from observable but allData exists, extract manually
+      if (chemicals.length === 0) {
+        this.databaseService.allData$.subscribe(allData => {
+          if (allData.length > 0) {
+            const manualChemicals = this.databaseService.getChemicals();
+            if (manualChemicals.length > 0) {
+              this.chemicals = manualChemicals;
+              this.applyFilter();
+            }
+          }
+        });
+      }
     });
     this.subscriptions.push(chemicalsSub);
   }

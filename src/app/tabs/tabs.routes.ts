@@ -22,11 +22,6 @@ export const routes: Routes = [
           import('../chemical-list/chemical-list.page').then((m) => m.ChemicalListPage),
       },
       {
-        path: 'chemical-details/:id',
-        loadComponent: () =>
-          import('../chemical-details/chemical-details.page').then((m) => m.ChemicalDetailsPage),
-      },
-      {
         path: '',
         redirectTo: '/tabs/emergency-types',
         pathMatch: 'full',

@@ -2,11 +2,27 @@ import { Injectable } from '@angular/core';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/operators';
 
 export interface Chemical {
-  id: string;
+  id: number;
   name: string;
-  originalId: string;
+  formula?: string;
+  casNumber?: string;
+  hazards?: string;
+  precautions?: string;
+  firstAid?: string;
+  description?: string;
+  hazardClass?: string;
+  storageClass?: string;
+  riskPhrases?: string;
+  safetyPhrases?: string;
+  type?: string;
+  molecularWeight?: string;
+  meltingPoint?: string;
+  boilingPoint?: string;
+  density?: string;
+  solubility?: string;
 }
 
 export interface EmergencyClass {
@@ -18,9 +34,11 @@ export interface EmergencyClass {
   children?: EmergencyClass[];
 }
 
-export interface ChemicalClassRelation {
-  chemicalId: string;
-  classId: string;
+export interface AllDataItem {
+  id: string;
+  name: string;
+  type: string;
+  data: any;
 }
 
 @Injectable({
@@ -29,85 +47,58 @@ export interface ChemicalClassRelation {
 export class DatabaseService {
   private sqlite: SQLiteConnection;
   private db: SQLiteDBConnection | null = null;
-  private chemicalsSubject = new BehaviorSubject<Chemical[]>([]);
-  private classesSubject = new BehaviorSubject<EmergencyClass[]>([]);
+  private allDataSubject = new BehaviorSubject<AllDataItem[]>([]);
   private loadingSubject = new BehaviorSubject<boolean>(false);
   
-  public chemicals$ = this.chemicalsSubject.asObservable();
-  public classes$ = this.classesSubject.asObservable();
+  public allData$ = this.allDataSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
+  
+  // Add chemicals observable that the component expects
+  public chemicals$ = this.allData$.pipe(
+    map(allData => this.extractChemicalsFromAllData(allData))
+  );
 
   constructor(private http: HttpClient) {
     this.sqlite = new SQLiteConnection(CapacitorSQLite);
     this.initializeDatabase();
   }
 
-  // Helper method to handle boolean conversion from database
-  private convertToBoolean(value: any): boolean {
-    if (typeof value === 'boolean') {
-      return value;
-    }
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true' || value === '1';
-    }
-    if (typeof value === 'number') {
-      return value === 1;
-    }
-    return false;
-  }
-
-  // Helper method to sanitize database results
-  private sanitizeDatabaseResult(result: any): any {
-    if (!result) return result;
-    
-    // Convert any string boolean fields to actual booleans
-    const sanitized = { ...result };
-    
-    // Handle any boolean fields that might come from the database as strings
-    Object.keys(sanitized).forEach(key => {
-      const value = sanitized[key];
-      // Check if this looks like a boolean that came as a string
-      if (typeof value === 'string' && (value === 'true' || value === 'false' || value === '1' || value === '0')) {
-        // Only convert if it's clearly meant to be a boolean
-        if (value === 'true' || value === '1') {
-          sanitized[key] = true;
-        } else if (value === 'false' || value === '0') {
-          sanitized[key] = false;
-        }
-      }
-    });
-    
-    return sanitized;
+  private extractChemicalsFromAllData(allData: AllDataItem[]): Chemical[] {
+    return allData
+      .filter(item => item.type === 'chemical')
+      .map(item => this.convertToChemical(item))
+      .filter(chemical => chemical !== null)
+      .sort((a, b) => {
+        const aStartsWithNumber = /^[0-9]/.test(a.name);
+        const bStartsWithNumber = /^[0-9]/.test(b.name);
+        
+        if (aStartsWithNumber && !bStartsWithNumber) return 1;
+        if (!aStartsWithNumber && bStartsWithNumber) return -1;
+        
+        return a.name.localeCompare(b.name);
+      });
   }
 
   private async initializeDatabase(): Promise<void> {
     try {
       this.loadingSubject.next(true);
       
-      // Explicitly typed connection parameters
-      const dbName: string = 'labsafe_chemicals';
-      const encrypted: boolean = false;
-      const mode: string = 'no-encryption';
-      const version: number = 1;
-      const readonly: boolean = false;
-      
       this.db = await this.sqlite.createConnection(
-        dbName,
-        encrypted,
-        mode,
-        version,
-        readonly
+        'labsafe_all_data',
+        false,
+        'no-encryption',
+        1,
+        false
       );
       
       await this.db.open();
       await this.createTables();
       await this.loadJsonIntoDatabase();
-      await this.loadChemicals();
-      await this.loadClasses();
+      await this.loadAllData();
       
     } catch (error) {
       console.error('Error initializing database:', error);
-      throw error; // Re-throw to handle in calling code
+      await this.loadDirectlyFromJson();
     } finally {
       this.loadingSubject.next(false);
     }
@@ -116,43 +107,53 @@ export class DatabaseService {
   private async createTables(): Promise<void> {
     if (!this.db) return;
 
-    const createChemicalsTable = `
-      CREATE TABLE IF NOT EXISTS chemicals (
+    const createAllDataTable = `
+      CREATE TABLE IF NOT EXISTS all_data (
         id TEXT PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
-        original_id TEXT NOT NULL
+        type TEXT NOT NULL,
+        data TEXT NOT NULL
       );
     `;
 
-    const createClassesTable = `
-      CREATE TABLE IF NOT EXISTS emergency_classes (
-        id TEXT PRIMARY KEY NOT NULL,
-        name TEXT,
-        parent_class TEXT,
-        description TEXT
-      );
-    `;
+    await this.db.execute(createAllDataTable);
+  }
 
-    const createRelationsTable = `
-      CREATE TABLE IF NOT EXISTS chemical_class_relations (
-        chemical_id TEXT NOT NULL,
-        class_id TEXT NOT NULL,
-        PRIMARY KEY (chemical_id, class_id),
-        FOREIGN KEY (chemical_id) REFERENCES chemicals(id),
-        FOREIGN KEY (class_id) REFERENCES emergency_classes(id)
-      );
-    `;
+  private async loadDirectlyFromJson(): Promise<void> {
+    try {
+      console.log('Attempting to load directly from JSON...');
+      
+      const possiblePaths = [
+        '/assets/data/json_database.jsonld',
+        'assets/data/json_database.jsonld',
+        './assets/data/json_database.jsonld'
+      ];
 
-    await this.db.execute(createChemicalsTable);
-    await this.db.execute(createClassesTable);
-    await this.db.execute(createRelationsTable);
+      let jsonData = null;
+      for (const path of possiblePaths) {
+        try {
+          jsonData = await this.http.get<any>(path).toPromise();
+          break;
+        } catch (e) {
+          console.log(`Failed to load from: ${path}`);
+        }
+      }
+
+      if (!jsonData) {
+        throw new Error('Could not load JSON data from any path');
+      }
+
+      const allItems = this.parseAllJsonLdData(jsonData);
+      this.allDataSubject.next(allItems);
+      
+    } catch (error) {
+      console.error('Error loading directly from JSON:', error);
+      this.allDataSubject.next([]);
+    }
   }
 
   private async loadJsonIntoDatabase(): Promise<void> {
-    if (!this.db) {
-      console.error('Database connection not available for JSON loading');
-      return;
-    }
+    if (!this.db) return;
 
     try {
       const possiblePaths = [
@@ -167,7 +168,7 @@ export class DatabaseService {
           jsonData = await this.http.get<any>(path).toPromise();
           break;
         } catch (e) {
-          // Continue trying other paths
+          continue;
         }
       }
       
@@ -175,19 +176,29 @@ export class DatabaseService {
         throw new Error('Failed to load JSON data from any path');
       }
 
-      await this.processJsonLdData(jsonData);
+      const allItems = this.parseAllJsonLdData(jsonData);
+      
+      await this.db.execute('BEGIN TRANSACTION');
+      
+      for (const item of allItems) {
+        await this.insertDataItem(item);
+      }
+      
+      await this.db.execute('COMMIT');
       
     } catch (error) {
-      console.error('Error loading chemical data:', error);
+      console.error('Error loading data:', error);
+      if (this.db) {
+        await this.db.execute('ROLLBACK');
+      }
       throw error;
     }
   }
 
-  private async processJsonLdData(jsonData: any): Promise<void> {
-    if (!this.db) return;
-
-    let items = [];
+  private parseAllJsonLdData(jsonData: any): AllDataItem[] {
+    const allItems: AllDataItem[] = [];
     
+    let items = [];
     if (Array.isArray(jsonData)) {
       items = jsonData;
     } else if (jsonData['@graph']) {
@@ -200,77 +211,99 @@ export class DatabaseService {
       items = [jsonData];
     }
     
-    await this.db.execute('BEGIN TRANSACTION');
-    
-    try {
-      for (const item of items) {
-        if (this.isNamedIndividual(item)) {
-          await this.insertChemical(item);
-        } else if (this.isClass(item)) {
-          await this.insertEmergencyClass(item);
+    for (const item of items) {
+      try {
+        const dataItem = this.parseDataItemFromJsonLd(item);
+        if (dataItem) {
+          allItems.push(dataItem);
         }
+      } catch (e) {
+        console.error('Error parsing item:', e);
       }
+    }
+    
+    return allItems;
+  }
+
+  private parseDataItemFromJsonLd(jsonObject: any): AllDataItem | null {
+    try {
+      const id = this.extractId(jsonObject);
+      const name = this.extractName(jsonObject);
       
-      // Insert chemical-class relations based on JSON-LD data
-      await this.insertChemicalClassRelations(items);
-      
-      await this.db.execute('COMMIT');
-      
-    } catch (error) {
-      await this.db.execute('ROLLBACK');
-      throw error;
+      if (!name || name === 'Unknown') {
+        return null;
+      }
+
+      // Determine type based on @type and properties
+      let type = 'unknown';
+      if (this.isChemicalObject(jsonObject)) {
+        type = 'chemical';
+      } else if (this.isClass(jsonObject)) {
+        type = 'class';
+      } else if (this.isStepOrProcedure(jsonObject)) {
+        type = 'step';
+      }
+
+      return {
+        id,
+        name,
+        type,
+        data: jsonObject
+      };
+    } catch (e) {
+      console.error('Error parsing data item:', e);
+      return null;
     }
   }
 
-  private async insertChemicalClassRelations(items: any[]): Promise<void> {
-    if (!this.db) return;
+  private isChemicalObject(jsonObject: any): boolean {
+    const name = this.extractName(jsonObject);
+    
+    // Check for chemical-specific properties
+    const hasChemicalProperties = !!(
+      jsonObject.molecularFormula || 
+      jsonObject.formula || 
+      jsonObject.casNumber ||
+      jsonObject['id#hasFlammabilityLevel'] ||
+      jsonObject['id#hasHealthLevel'] ||
+      jsonObject['id#hasInstabilityOrReactivityLevel']
+    );
 
-    for (const item of items) {
-      if (this.isNamedIndividual(item)) {
-        const chemicalId = this.extractId(item);
+    // Check @type for chemical indicators - improved logic
+    if (jsonObject['@type']) {
+      const types = Array.isArray(jsonObject['@type']) ? 
+                   jsonObject['@type'] : 
+                   [jsonObject['@type']];
+      
+      // Look for NamedIndividual type which indicates chemical entities in your JSON
+      const hasNamedIndividualType = types.some((t: string) => 
+        t === 'http://www.w3.org/2002/07/owl#NamedIndividual'
+      );
+      
+      if (hasNamedIndividualType) {
+        // Check if it has chemical-related properties or looks like a chemical name
+        if (hasChemicalProperties || this.looksLikeChemicalName(name)) {
+          return true;
+        }
         
-        // Look for type information that might link to emergency classes
-        if (item['@type'] && Array.isArray(item['@type'])) {
-          for (const type of item['@type']) {
-            if (type !== 'http://www.w3.org/2002/07/owl#NamedIndividual') {
-              // This might be a class reference
-              const classId = type.startsWith('id#') ? type.substring(3) : type;
-              
-              try {
-                await this.db.run(
-                  'INSERT OR IGNORE INTO chemical_class_relations (chemical_id, class_id) VALUES (?, ?)',
-                  [chemicalId, classId]
-                );
-              } catch (error) {
-                // Ignore foreign key constraint errors
-              }
-            }
+        // Check if it has the ProductName type in rdf:type property
+        if (jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']) {
+          const rdfTypes = Array.isArray(jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']) ?
+                          jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type'] :
+                          [jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']];
+          
+          const hasProductNameType = rdfTypes.some((rdfType: any) => 
+            rdfType['@id'] === 'id#ProductName'
+          );
+          
+          if (hasProductNameType) {
+            return true;
           }
         }
       }
     }
-  }
 
-  private isNamedIndividual(item: any): boolean {
-    if (!item['@type']) return false;
-    
-    const types = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
-    const isIndividual = types.some((type: string) => 
-      type === 'http://www.w3.org/2002/07/owl#NamedIndividual' ||
-      type.includes('NamedIndividual')
-    );
-    
-    // Additional check to ensure this is actually a chemical substance
-    // and not other types of named individuals
-    if (isIndividual) {
-      const name = this.extractLabel(item) || this.extractNameFromId(this.extractId(item));
-      // Filter out non-chemical entities by name patterns or other criteria
-      return Boolean(name && !name.toLowerCase().includes('procedure') && 
-             !name.toLowerCase().includes('class') &&
-             !name.toLowerCase().includes('emergency'));
-    }
-    
-    return false;
+    return hasChemicalProperties;
   }
 
   private isClass(item: any): boolean {
@@ -278,46 +311,34 @@ export class DatabaseService {
     
     const types = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
     return types.some((type: string) => 
-      Boolean(type === 'http://www.w3.org/2002/07/owl#Class' ||
-      type.includes('Class'))
+      type === 'http://www.w3.org/2002/07/owl#Class' ||
+      type.includes('Class')
     );
   }
 
-  private async insertChemical(item: any): Promise<void> {
-    if (!this.db) return;
+  private isStepOrProcedure(item: any): boolean {
+    const name = this.extractName(item);
     
-    const id = this.extractId(item);
-    const name = this.extractLabel(item) || this.extractNameFromId(id);
+    // Look for step/procedure indicators
+    const stepKeywords = [
+      'step', 'procedure', 'instruction', 'emergency', 'safety',
+      'first aid', 'hazard', 'precaution', 'warning', 'caution'
+    ];
     
-    // Enhanced validation to ensure we're only inserting actual chemicals
-    if (!name || 
-        name === 'Unknown Chemical' ||
-        name.toLowerCase().includes('emergency') ||
-        name.toLowerCase().includes('procedure') ||
-        name.toLowerCase().includes('class') ||
-        name.toLowerCase().includes('response') ||
-        name.length < 2) {
-      return;
-    }
-    
-    await this.db.run(
-      'INSERT OR REPLACE INTO chemicals (id, name, original_id) VALUES (?, ?, ?)',
-      [id, name, item['@id'] || id]
+    return stepKeywords.some(keyword => 
+      name.toLowerCase().includes(keyword.toLowerCase())
     );
   }
 
-  private async insertEmergencyClass(item: any): Promise<void> {
-    if (!this.db) return;
-    
-    const id = this.extractId(item);
-    const name = this.extractLabel(item) || this.extractNameFromId(id);
-    const parentClass = this.extractParentClass(item);
-    const description = this.extractDescription(item);
-    
-    await this.db.run(
-      'INSERT OR REPLACE INTO emergency_classes (id, name, parent_class, description) VALUES (?, ?, ?, ?)',
-      [id, name, parentClass, description]
-    );
+  private looksLikeChemicalName(name: string): boolean {
+    const chemicalPatterns = [
+      /acid$/i, /\d,\d/, /^[A-Z][a-z]*-\d/, /oxide$/i,
+      /chloride$/i, /sulfate$/i, /nitrate$/i, /carbonate$/i,
+      /hydroxide$/i, /benzene/i, /methyl/i, /ethyl/i,
+      /propyl/i, /^[A-Z][a-z]*ane$/i, /^[A-Z][a-z]*ene$/i,
+      /^[A-Z][a-z]*yne$/i, /iodide$/i, /dioxide$/i
+    ];
+    return chemicalPatterns.some(pattern => pattern.test(name));
   }
 
   private extractId(item: any): string {
@@ -327,170 +348,293 @@ export class DatabaseService {
     return Math.random().toString(36).substring(7);
   }
 
-  private extractLabel(item: any): string | null {
-    const labelProperty = 'http://www.w3.org/2000/01/rdf-schema#label';
+  private extractName(jsonObject: any): string {
+    let name = this.extractValue(jsonObject, 'http://www.w3.org/2000/01/rdf-schema#label');
+    if (name) return name;
     
-    if (item[labelProperty]) {
-      const label = item[labelProperty];
-      if (Array.isArray(label) && label.length > 0) {
-        return label[0]['@value'] || label[0];
-      } else if (typeof label === 'object' && label['@value']) {
-        return label['@value'];
-      } else if (typeof label === 'string') {
-        return label;
+    name = this.extractValue(jsonObject, 'name') || 
+          this.extractValue(jsonObject, 'http://schema.org/name') || 
+          this.extractValue(jsonObject, 'title') ||
+          this.extractValue(jsonObject, 'label');
+    
+    if (name) return name;
+    
+    if (jsonObject['@id']) {
+      const id = jsonObject['@id'];
+      if (id.startsWith('id#')) {
+        return id.substring(3)
+          .replace(/\.\./g, ',')
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .replace(/([0-9])([A-Z])/g, '$1 $2')
+          .trim();
       }
     }
     
-    return null;
+    return 'Unknown';
   }
 
-  private extractNameFromId(id: string): string {
-    return id
-      .replace(/([a-z])([A-Z])/g, '$1 $2')
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase())
-      .trim();
-  }
-
-  private extractParentClass(item: any): string | null {
-    const subClassOfProperty = 'http://www.w3.org/2000/01/rdf-schema#subClassOf';
+  private extractValue(jsonObject: any, property: string): string | undefined {
+    if (!jsonObject[property]) return undefined;
     
-    if (item[subClassOfProperty]) {
-      const parent = item[subClassOfProperty];
-      if (Array.isArray(parent) && parent.length > 0) {
-        const parentId = parent[0]['@id'];
-        return parentId ? (parentId.startsWith('id#') ? parentId.substring(3) : parentId) : null;
-      } else if (typeof parent === 'object' && parent['@id']) {
-        const parentId = parent['@id'];
-        return parentId.startsWith('id#') ? parentId.substring(3) : parentId;
-      }
+    const value = jsonObject[property];
+    
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value) && value.length > 0) {
+      if (typeof value[0] === 'string') return value[0];
+      if (value[0]['@value']) return value[0]['@value'];
     }
+    if (value['@value']) return value['@value'];
     
-    return null;
+    return undefined;
   }
 
-  private extractDescription(item: any): string | null {
-    const commentProperty = 'http://www.w3.org/2000/01/rdf-schema#comment';
+  private async insertDataItem(item: AllDataItem): Promise<void> {
+    if (!this.db) return;
     
-    if (item[commentProperty]) {
-      const comment = item[commentProperty];
-      if (Array.isArray(comment) && comment.length > 0) {
-        return comment[0]['@value'] || comment[0];
-      } else if (typeof comment === 'object' && comment['@value']) {
-        return comment['@value'];
-      } else if (typeof comment === 'string') {
-        return comment;
-      }
-    }
-    
-    return null;
+    await this.db.run(
+      'INSERT OR REPLACE INTO all_data (id, name, type, data) VALUES (?, ?, ?, ?)',
+      [item.id, item.name, item.type, JSON.stringify(item.data)]
+    );
   }
 
-  private async loadChemicals(): Promise<void> {
+  private async loadAllData(): Promise<void> {
     if (!this.db) return;
 
     try {
-      const result = await this.db.query('SELECT * FROM chemicals ORDER BY name');
-      const chemicals: Chemical[] = (result.values || []).map(chemical => 
-        this.sanitizeDatabaseResult(chemical)
-      );
-      
-      this.chemicalsSubject.next(chemicals);
-    } catch (error) {
-      console.error('Error loading chemicals from database:', error);
-      this.chemicalsSubject.next([]);
-    }
-  }
-
-  private async loadClasses(): Promise<void> {
-    if (!this.db) return;
-
-    try {
-      const result = await this.db.query('SELECT * FROM emergency_classes ORDER BY name');
-      let classes: EmergencyClass[] = (result.values || []).map(cls => 
-        this.sanitizeDatabaseResult(cls)
-      );
-      
-      classes = classes.map(cls => ({
-        ...cls,
-        subClasses: this.findSubClasses(cls.id, classes)
+      const result = await this.db.query('SELECT * FROM all_data ORDER BY name');
+      const allItems: AllDataItem[] = (result.values || []).map(row => ({
+        ...row,
+        data: JSON.parse(row.data)
       }));
       
-      this.classesSubject.next(classes);
+      this.allDataSubject.next(allItems);
     } catch (error) {
-      console.error('Error loading classes from database:', error);
-      this.classesSubject.next([]);
+      console.error('Error loading all data from database:', error);
+      this.allDataSubject.next([]);
     }
   }
 
-  private findSubClasses(parentId: string, allClasses: any[]): string[] {
-    return allClasses
-      .filter(cls => cls.parent_class === parentId)
-      .map(cls => cls.id);
+  // Public methods for filtering data
+  public getChemicals(): Chemical[] {
+    const allData = this.allDataSubject.value;
+    return this.extractChemicalsFromAllData(allData);
   }
 
-  public async getChemicalById(id: string): Promise<Chemical | null> {
-    if (!this.db) {
-      const currentChemicals = this.chemicalsSubject.value;
-      return currentChemicals.find(c => c.id === id) || null;
-    }
+  public getEmergencyStepsForChemical(chemicalId: string): string[] {
+  const allData = this.allDataSubject.value;
+  const steps: string[] = [];
+  
+  // Find the specific chemical
+  const chemical = allData.find(item => 
+    item.type === 'chemical' && (item.id === chemicalId || item.id === `id#${chemicalId}`)
+  );
+  
+  if (chemical && chemical.data) {
+    const emergencySteps = this.extractEmergencyStepsFromChemical(chemical.data);
+    steps.push(...emergencySteps);
+  }
+  
+  // If no specific steps found, get general emergency steps
+  if (steps.length === 0) {
+    return this.getAllEmergencySteps();
+  }
+  
+  return steps;
+}
 
-    try {
-      const result = await this.db.query('SELECT * FROM chemicals WHERE id = ?', [id]);
-      
-      if (result.values && result.values.length > 0) {
-        return this.sanitizeDatabaseResult(result.values[0]) as Chemical;
+public getAllEmergencySteps(): string[] {
+  const allData = this.allDataSubject.value;
+  const steps: string[] = [];
+  
+  // Get emergency steps from all chemicals
+  const chemicals = allData.filter(item => item.type === 'chemical');
+  
+  for (const chemical of chemicals) {
+    const emergencySteps = this.extractEmergencyStepsFromChemical(chemical.data);
+    steps.push(...emergencySteps);
+  }
+  
+  // Remove duplicates and return
+  return [...new Set(steps)];
+}
+
+private extractEmergencyStepsFromChemical(chemicalData: any): string[] {
+  const steps: string[] = [];
+  
+  // Define emergency-related properties to look for
+  const emergencyProperties = [
+    'id#hasAccidentalGeneral',
+    'id#hasFirstAidGeneral',
+    'id#hasFirstAidEye',
+    'id#hasFirstAidIngestion',
+    'id#hasFirstAidInhalation',
+    'id#hasFirstAidSeriousInhalation',
+    'id#hasFirstAidSeriousSkin',
+    'id#hasFirstAidSkin',
+    'id#hasLargeSpill',
+    'id#hasSmallSpill',
+    'id#hasLargeFireFighting',
+    'id#hasConditionsOfInstability',
+    'id#hasHealthHazards',
+    'id#hasPhysicalHazards',
+    'id#hasIncompatibilityIssuesWith',
+    'id#hasReactivityWith',
+    'id#hasStabilityAtNormalConditions',
+    'id#hasPolymerization'
+  ];
+  
+  // Extract steps from each emergency property
+  for (const property of emergencyProperties) {
+    if (chemicalData[property]) {
+      const propertySteps = this.extractStepsFromProperty(chemicalData[property], property);
+      steps.push(...propertySteps);
+    }
+  }
+  
+  return steps;
+}
+
+private extractStepsFromProperty(propertyValue: any, propertyName: string): string[] {
+  const steps: string[] = [];
+  
+  // Get a readable name for the emergency category
+  const categoryName = this.getEmergencyCategoryName(propertyName);
+  
+  if (Array.isArray(propertyValue)) {
+    const items = propertyValue.map(item => {
+      if (typeof item === 'object' && item['@id']) {
+        return this.formatEmergencyStepName(item['@id']);
       }
-      
-      return null;
-    } catch (error) {
-      console.error('Error getting chemical by ID:', error);
-      return null;
+      return item;
+    }).filter(item => item);
+    
+    if (items.length > 0) {
+      steps.push(`${categoryName}: ${items.join(', ')}`);
     }
+  } else if (typeof propertyValue === 'object' && propertyValue['@id']) {
+    const stepName = this.formatEmergencyStepName(propertyValue['@id']);
+    if (stepName) {
+      steps.push(`${categoryName}: ${stepName}`);
+    }
+  } else if (typeof propertyValue === 'string') {
+    steps.push(`${categoryName}: ${propertyValue}`);
   }
+  
+  return steps;
+}
 
-  public async getEmergencyClassesForChemical(chemicalId: string): Promise<EmergencyClass[]> {
-    if (!this.db) return [];
+private getEmergencyCategoryName(propertyName: string): string {
+  const categoryMap: { [key: string]: string } = {
+    'id#hasAccidentalGeneral': 'Accidental Release',
+    'id#hasFirstAidGeneral': 'General First Aid',
+    'id#hasFirstAidEye': 'Eye Contact First Aid',
+    'id#hasFirstAidIngestion': 'Ingestion First Aid',
+    'id#hasFirstAidInhalation': 'Inhalation First Aid',
+    'id#hasFirstAidSeriousInhalation': 'Serious Inhalation First Aid',
+    'id#hasFirstAidSeriousSkin': 'Serious Skin Contact First Aid',
+    'id#hasFirstAidSkin': 'Skin Contact First Aid',
+    'id#hasLargeSpill': 'Large Spill Procedures',
+    'id#hasSmallSpill': 'Small Spill Procedures',
+    'id#hasLargeFireFighting': 'Fire Fighting Procedures',
+    'id#hasConditionsOfInstability': 'Instability Conditions',
+    'id#hasHealthHazards': 'Health Hazards',
+    'id#hasPhysicalHazards': 'Physical Hazards',
+    'id#hasIncompatibilityIssuesWith': 'Incompatible Materials',
+    'id#hasReactivityWith': 'Reactive Materials',
+    'id#hasStabilityAtNormalConditions': 'Stability Information',
+    'id#hasPolymerization': 'Polymerization Information'
+  };
+  
+  return categoryMap[propertyName] || propertyName.replace('id#has', '').replace(/([A-Z])/g, ' $1').trim();
+}
 
+private formatEmergencyStepName(idValue: string): string {
+  if (!idValue) return '';
+  
+  // Remove 'id#' prefix if present
+  let name = idValue.startsWith('id#') ? idValue.substring(3) : idValue;
+  
+  // Convert camelCase to readable format
+  name = name
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/([0-9])([A-Z])/g, '$1 $2')
+    .replace(/\.\./g, ', ')
+    .trim();
+  
+  return name;
+}
+
+  private convertToChemical(item: AllDataItem): Chemical | null {
     try {
-      // First try to get classes directly linked to the chemical
-      const relationResult = await this.db.query(`
-        SELECT ec.* FROM emergency_classes ec
-        INNER JOIN chemical_class_relations ccr ON ec.id = ccr.class_id
-        WHERE ccr.chemical_id = ?
-        ORDER BY ec.name
-      `, [chemicalId]);
-
-      let classes: EmergencyClass[] = (relationResult.values || []).map(cls => 
-        this.sanitizeDatabaseResult(cls)
-      );
+      const jsonObject = item.data;
+      const idString = item.id;
+      const id = Math.abs(this.hashCode(idString.toString()));
       
-      // If no direct relations found, get all emergency classes as fallback
-      if (classes.length === 0) {
-        const allClassesResult = await this.db.query(`
-          SELECT * FROM emergency_classes 
-          ORDER BY name
-        `);
-        classes = (allClassesResult.values || []).map(cls => 
-          this.sanitizeDatabaseResult(cls)
-        );
-      }
+      const formula = this.extractValue(jsonObject, 'molecularFormula') || 
+                     this.extractValue(jsonObject, 'formula') || 
+                     this.extractValue(jsonObject, 'chemicalFormula');
       
-      // Build hierarchy
-      classes = classes.map(cls => ({
-        ...cls,
-        subClasses: this.findSubClasses(cls.id, classes)
-      }));
+      const casNumber = this.extractValue(jsonObject, 'casNumber');
+      const hazards = this.extractHazards(jsonObject);
+      const precautions = this.extractPrecautions(jsonObject);
+      const description = this.extractDescription(jsonObject);
       
-      return classes;
-    } catch (error) {
-      console.error('Error getting emergency classes for chemical:', error);
-      return [];
+      const chemical: Chemical = {
+        id,
+        name: item.name,
+        formula,
+        casNumber,
+        hazards,
+        precautions,
+        firstAid: this.extractValue(jsonObject, 'firstAid'),
+        description,
+        hazardClass: this.extractValue(jsonObject, 'hazardClass'),
+        storageClass: this.extractValue(jsonObject, 'storageClass'),
+        riskPhrases: this.extractValue(jsonObject, 'riskPhrases'),
+        safetyPhrases: this.extractValue(jsonObject, 'safetyPhrases'),
+        type: this.extractValue(jsonObject, 'type'),
+        molecularWeight: this.extractValue(jsonObject, 'molecularWeight'),
+        meltingPoint: this.extractValue(jsonObject, 'meltingPoint'),
+        boilingPoint: this.extractValue(jsonObject, 'boilingPoint'),
+        density: this.extractValue(jsonObject, 'density'),
+        solubility: this.extractValue(jsonObject, 'solubility')
+      };
+      
+      return chemical;
+    } catch (e) {
+      console.error('Error converting to chemical:', e);
+      return null;
     }
   }
 
-  public async getAllEmergencyClasses(): Promise<EmergencyClass[]> {
-    return this.classesSubject.value;
+  private extractHazards(jsonObject: any): string {
+    const hazardStatement = this.extractValue(jsonObject, 'hazardStatement');
+    const hazardsValue = this.extractValue(jsonObject, 'hazards');
+    
+    return [hazardStatement, hazardsValue].filter(v => v).join('\n');
+  }
+
+  private extractPrecautions(jsonObject: any): string {
+    const precautionaryStatement = this.extractValue(jsonObject, 'precautionaryStatement');
+    const precautionsValue = this.extractValue(jsonObject, 'precautions');
+    
+    return [precautionaryStatement, precautionsValue].filter(v => v).join('\n');
+  }
+
+  private extractDescription(jsonObject: any): string {
+    return this.extractValue(jsonObject, 'http://www.w3.org/2000/01/rdf-schema#comment') || 
+          this.extractValue(jsonObject, 'description') || 
+          '';
+  }
+
+  private hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash;
   }
 
   public async reloadDatabase(): Promise<void> {
@@ -498,12 +642,11 @@ export class DatabaseService {
       this.loadingSubject.next(true);
       
       if (this.db) {
-        await this.db.execute('DELETE FROM chemicals');
-        await this.db.execute('DELETE FROM emergency_classes');
-        await this.db.execute('DELETE FROM chemical_class_relations');
+        await this.db.execute('DELETE FROM all_data');
         await this.loadJsonIntoDatabase();
-        await this.loadChemicals();
-        await this.loadClasses();
+        await this.loadAllData();
+      } else {
+        await this.loadDirectlyFromJson();
       }
       
     } catch (error) {

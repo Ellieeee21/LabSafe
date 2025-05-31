@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Location, CommonModule } from '@angular/common';
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
-import { DatabaseService, EmergencyClass } from '../services/database.service';
+import { DatabaseService, AllDataItem } from '../services/database.service';
+import { CommonModule } from '@angular/common';
 import { 
   IonHeader,
   IonToolbar,
@@ -11,16 +11,8 @@ import {
   IonContent,
   IonCard,
   IonCardContent,
-  IonButton,
-  IonButtons,
-  IonIcon,
-  IonLabel
+  IonIcon
 } from '@ionic/angular/standalone';
-
-export interface EmergencyStepData {
-  title: string;
-  description: string;
-}
 
 @Component({
   selector: 'app-emergency-steps',
@@ -35,7 +27,7 @@ export interface EmergencyStepData {
     IonContent,
     IonCard,
     IonCardContent,
-    IonIcon,
+    IonIcon
   ]
 })
 export class EmergencyStepsPage implements OnInit, OnDestroy {
@@ -43,16 +35,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   emergencyId: string = '';
   chemicalId: string = '';
   chemicalName: string = '';
-  steps: EmergencyStepData[] = [];
-  emergencyClasses: EmergencyClass[] = [];
-  classHierarchy: EmergencyClass[] = [];
+  steps: string[] = [];
   hasData: boolean = false;
+  isLoading: boolean = true;
   private backButtonSubscription: Subscription = new Subscription();
+  private dataSubscription: Subscription = new Subscription();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private location: Location,
     private platform: Platform,
     private databaseService: DatabaseService
   ) {}
@@ -64,108 +55,133 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
       
-      if (this.chemicalId) {
-        this.loadChemicalEmergencyData();
-      } else {
-        this.loadAllEmergencyClasses();
-      }
+      this.loadEmergencySteps();
     });
 
     // Handle Android back button
     this.backButtonSubscription = this.platform.backButton.subscribeWithPriority(10, () => {
       this.goBack();
     });
+
+    // Subscribe to database loading state
+    this.dataSubscription = this.databaseService.allData$.subscribe(data => {
+      if (data && data.length > 0) {
+        this.loadEmergencySteps();
+      }
+    });
   }
 
   ngOnDestroy() {
-    // Clean up subscription
     if (this.backButtonSubscription) {
       this.backButtonSubscription.unsubscribe();
     }
-  }
-
-  private async loadChemicalEmergencyData() {
-    try {
-      const emergencyClasses = await this.databaseService.getEmergencyClassesForChemical(this.chemicalId);
-      
-      if (emergencyClasses && emergencyClasses.length > 0) {
-        this.emergencyClasses = emergencyClasses;
-        this.buildClassHierarchy();
-        this.hasData = true;
-      } else {
-        this.hasData = false;
-      }
-    } catch (error) {
-      console.error('Error loading chemical emergency data:', error);
-      this.hasData = false;
+    if (this.dataSubscription) {
+      this.dataSubscription.unsubscribe();
     }
   }
 
-  private async loadAllEmergencyClasses() {
-    try {
-      const allClasses = await this.databaseService.getAllEmergencyClasses();
-      
-      if (allClasses && allClasses.length > 0) {
-        this.emergencyClasses = allClasses;
-        this.buildClassHierarchy();
-        this.hasData = true;
-      } else {
-        this.hasData = false;
-      }
-    } catch (error) {
-      console.error('Error loading all emergency classes:', error);
-      this.hasData = false;
-    }
-  }
-
-  private buildClassHierarchy() {
-    // Build a hierarchical structure from the emergency classes
-    const rootClasses = this.emergencyClasses.filter(cls => !cls.parentClass);
-    const childClasses = this.emergencyClasses.filter(cls => cls.parentClass);
+  private loadEmergencySteps() {
+    this.isLoading = true;
     
-    this.classHierarchy = rootClasses.map(rootClass => {
-      const children = childClasses.filter(child => child.parentClass === rootClass.id);
-      return {
-        ...rootClass,
-        subClasses: children.map(child => child.id),
-        children: children // Add actual child objects for easier access
-      } as any;
-    });
-
-    // Convert classes to steps format for display
-    this.convertClassesToSteps();
+    try {
+      if (this.chemicalId) {
+        // Get steps specific to the selected chemical
+        this.steps = this.databaseService.getEmergencyStepsForChemical(this.chemicalId);
+        console.log(`Emergency steps for chemical ${this.chemicalId}:`, this.steps);
+      } else {
+        // Get all emergency steps/procedures
+        this.steps = this.databaseService.getAllEmergencySteps();
+        console.log('All emergency steps:', this.steps);
+      }
+      
+      this.hasData = this.steps.length > 0;
+      
+      // Fallback: if no data found but we have chemical data, try to extract manually
+      if (!this.hasData && this.chemicalId) {
+        this.fallbackEmergencyStepsExtraction();
+      }
+      
+    } catch (error) {
+      console.error('Error loading emergency steps:', error);
+      this.hasData = false;
+      this.steps = [];
+    } finally {
+      this.isLoading = false;
+    }
   }
 
-  private convertClassesToSteps() {
-    this.steps = [];
-    
-    this.classHierarchy.forEach((rootClass: any) => {
-      // Add root class as a step
-      this.steps.push({
-        title: rootClass.name || 'Emergency Procedure',
-        description: rootClass.description || 'Follow the procedures outlined for this emergency type.'
-      });
-
-      // Add child classes as sub-steps
-      if (rootClass.children && rootClass.children.length > 0) {
-        rootClass.children.forEach((child: EmergencyClass) => {
-          this.steps.push({
-            title: `• ${child.name}`,
-            description: child.description || 'Specific procedure step for this emergency type.'
-          });
-        });
+  private fallbackEmergencyStepsExtraction() {
+    // Subscribe to get the current value instead of accessing .value directly
+    this.databaseService.allData$.subscribe(allData => {
+      const chemical = allData.find((item: AllDataItem) => 
+        item.type === 'chemical' && 
+        (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
+      );
+      
+      if (chemical && chemical.data) {
+        console.log('Found chemical data for fallback:', chemical);
+        
+        // Extract emergency information directly
+        const emergencySteps: string[] = [];
+        const data = chemical.data;
+        
+        // Check for emergency-related properties
+        const emergencyProps = [
+          'id#hasAccidentalGeneral',
+          'id#hasFirstAidGeneral',
+          'id#hasFirstAidEye',
+          'id#hasFirstAidIngestion',
+          'id#hasFirstAidInhalation',
+          'id#hasFirstAidSkin',
+          'id#hasLargeSpill',
+          'id#hasSmallSpill',
+          'id#hasConditionsOfInstability',
+          'id#hasHealthHazards',
+          'id#hasPhysicalHazards',
+          'id#hasIncompatibilityIssuesWith'
+        ];
+        
+        for (const prop of emergencyProps) {
+          if (data[prop]) {
+            const categoryName = this.formatPropertyName(prop);
+            const values = Array.isArray(data[prop]) ? data[prop] : [data[prop]];
+            
+            const formattedValues = values.map((val: any) => {
+              if (val && val['@id']) {
+                return this.formatIdValue(val['@id']);
+              }
+              return val;
+            }).filter((val: any) => val);
+            
+            if (formattedValues.length > 0) {
+              emergencySteps.push(`${categoryName}: ${formattedValues.join(', ')}`);
+            }
+          }
+        }
+        
+        if (emergencySteps.length > 0) {
+          this.steps = emergencySteps;
+          this.hasData = true;
+          console.log('Fallback extraction successful:', this.steps);
+        }
       }
-    });
+    }).unsubscribe(); // Unsubscribe immediately since we only need the current value
+  }
 
-    // If no structured data is available but we have classes, create basic steps
-    if (this.steps.length === 0 && this.emergencyClasses.length > 0) {
-      this.emergencyClasses.forEach(cls => {
-        this.steps.push({
-          title: cls.name || 'Emergency Procedure',
-          description: cls.description || 'Follow the safety procedures for this emergency type.'
-        });
-      });
-    }
+  private formatPropertyName(prop: string): string {
+    return prop
+      .replace('id#has', '')
+      .replace(/([A-Z])/g, ' $1')
+      .trim()
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  private formatIdValue(id: string): string {
+    return id
+      .replace('id#', '')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([0-9])([A-Z])/g, '$1 $2')
+      .trim();
   }
 
   goBack() {
@@ -184,7 +200,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   navigateToChemicals() {
-    console.log('Navigating to chemicals from emergency steps...');
     this.router.navigate(['/chemical-list']);
   }
 
@@ -193,7 +208,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   navigateToProfile() {
-    console.log('Navigating to profile from emergency steps...');
     this.router.navigate(['/profile']);
   }
 }
