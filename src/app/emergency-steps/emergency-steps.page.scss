@@ -20,6 +20,16 @@ ion-header ion-toolbar {
   --color: white !important;
 }
 
+// Search bar styling - WHITE background
+ion-searchbar {
+  --background: white !important;
+  --border-radius: 12px;
+  margin-bottom: 16px;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --color: #000000 !important;
+  --placeholder-color: #666666 !important;
+}
+
 // Loading and error states
 .loading-container,
 .error-container {
@@ -32,11 +42,11 @@ ion-header ion-toolbar {
   margin-top: 16px;
 }
 
-// Category card styling
-.category-card {
+// Step card styling - WHITE background (different from page background)
+.step-card {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background: white;
+  background: white !important; // Pure white, not the #FAFAFA background
   margin: 0 0 16px 0;
 }
 
@@ -54,21 +64,51 @@ ion-card-content {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-}
-
-// Category title styling
-.category-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #000000 !important;
-  margin: 0 0 16px 0;
-  line-height: 1.3;
+  background: white !important; // Ensure card content is white
 }
 
 // Procedure item container
 .procedure-item {
   display: flex;
   align-items: flex-start;
+  width: 100%;
+}
+
+// Step number styling (only for main emergency types)
+.step-number {
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #C00000 !important; // Red color to match header
+  background: #f0f0f0;
+  border-radius: 50%;
+  margin-right: 16px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+// Step content container
+.step-content {
+  flex: 1;
+  width: 100%;
+}
+
+// Step header styling (mini header, centered)
+.step-header {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000 !important; // Full black
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+  text-align: center !important; // Centered header
+}
+
+// Step detail container
+.step-detail {
   margin-bottom: 12px;
   
   &:last-child {
@@ -76,34 +116,26 @@ ion-card-content {
   }
 }
 
-// Step number styling (replaces red circles)
-.step-number {
-  min-width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: #000000;
-  margin-right: 12px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-// Step text styling
+// Step text styling (not centered)
 .step-text {
   font-size: 16px;
-  color: #000000 !important;
+  color: #000000 !important; // Full black text
   margin: 0;
   line-height: 1.4;
-  text-align: justify;
-  flex: 1;
+  text-align: left !important; // Not centered, left aligned
+  background: white !important; // Ensure text background is white
 }
 
-// Category spacer
-.category-spacer {
-  height: 8px;
+// Arrow styling
+.arrow-container {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.step-arrow {
+  font-size: 24px;
+  color: #C00000;
 }
 
 .no-steps-container {

@@ -1,10 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { ActionSheetController, ToastController } from '@ionic/angular';
+
+// FIXED: Import from standalone version
+import { 
+  IonHeader, 
+  IonToolbar, 
+  IonTitle, 
+  IonContent, 
+  IonButton, 
+  IonIcon, 
+  IonInput, 
+  IonLabel, 
+  IonItem, 
+  IonRadio, 
+  IonRadioGroup, 
+  IonSelect, 
+  IonSelectOption, 
+  IonDatetime,
+  ActionSheetController, 
+  ToastController 
+} from '@ionic/angular/standalone';
 
 // Add these icon imports
 import { addIcons } from 'ionicons';
@@ -14,7 +32,9 @@ import {
   timeOutline, 
   personOutline,
   cameraOutline,
-  calendarOutline
+  calendarOutline,
+  imagesOutline,
+  close
 } from 'ionicons/icons';
 
 interface ProfileData {
@@ -35,7 +55,24 @@ interface ProfileData {
   templateUrl: './profile.page.html',
   styleUrls: ['./profile.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule]
+  imports: [
+    CommonModule, 
+    FormsModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonButton,
+    IonIcon,
+    IonInput,
+    IonLabel,
+    IonItem,
+    IonRadio,
+    IonRadioGroup,
+    IonSelect,
+    IonSelectOption,
+    IonDatetime
+  ]
 })
 export class ProfilePage implements OnInit {
   maxDate: string;
@@ -65,7 +102,9 @@ export class ProfilePage implements OnInit {
       timeOutline, 
       personOutline,
       cameraOutline,
-      calendarOutline
+      calendarOutline,
+      imagesOutline,
+      close
     });
 
     // Set max date to today for date of birth

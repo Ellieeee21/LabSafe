@@ -4,6 +4,7 @@ import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { DatabaseService, AllDataItem } from '../services/database.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { 
   IonHeader,
   IonToolbar,
@@ -11,8 +12,14 @@ import {
   IonContent,
   IonCard,
   IonCardContent,
-  IonIcon
+  IonIcon,
+  IonSearchbar
 } from '@ionic/angular/standalone';
+
+interface StepGroup {
+  category: string;
+  steps: string[];
+}
 
 @Component({
   selector: 'app-emergency-steps',
@@ -21,13 +28,15 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     IonHeader,
     IonToolbar,
     IonTitle,
     IonContent,
     IonCard,
     IonCardContent,
-    IonIcon
+    IonIcon,
+    IonSearchbar
   ]
 })
 export class EmergencyStepsPage implements OnInit, OnDestroy {
@@ -35,11 +44,31 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   emergencyId: string = '';
   chemicalId: string = '';
   chemicalName: string = '';
-  steps: string[] = [];
+  searchQuery: string = '';
+  allStepGroups: StepGroup[] = [];
+  filteredSteps: StepGroup[] = [];
   hasData: boolean = false;
   isLoading: boolean = true;
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
+
+  // Emergency type numbering system
+  private emergencyTypeNumbers: { [key: string]: number } = {
+    'Eye Contact': 1,
+    'Fire Fighting': 2,
+    'Flammability': 3,
+    'Ingestion': 4,
+    'Inhalation': 5,
+    'Instability or Reactivity': 6,
+    'Skin Contact': 7,
+    'Spill': 8
+  };
+
+  // Main emergency types that should show numbers
+  private mainEmergencyTypes = [
+    'Eye Contact', 'Fire Fighting', 'Flammability', 'Ingestion', 
+    'Inhalation', 'Instability or Reactivity', 'Skin Contact', 'Spill'
+  ];
 
   constructor(
     private route: ActivatedRoute,
@@ -86,32 +115,27 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     try {
       if (this.chemicalId) {
         // Get steps specific to the selected chemical
-        this.steps = this.databaseService.getEmergencyStepsForChemical(this.chemicalId);
-        console.log(`Emergency steps for chemical ${this.chemicalId}:`, this.steps);
+        this.loadChemicalSpecificSteps();
+      } else if (this.emergencyType) {
+        // Filter by specific emergency type
+        this.loadEmergencyTypeSpecificSteps();
       } else {
         // Get all emergency steps/procedures
-        this.steps = this.databaseService.getAllEmergencySteps();
-        console.log('All emergency steps:', this.steps);
-      }
-      
-      this.hasData = this.steps.length > 0;
-      
-      // Fallback: if no data found but we have chemical data, try to extract manually
-      if (!this.hasData && this.chemicalId) {
-        this.fallbackEmergencyStepsExtraction();
+        this.loadAllEmergencySteps();
       }
       
     } catch (error) {
       console.error('Error loading emergency steps:', error);
       this.hasData = false;
-      this.steps = [];
+      this.allStepGroups = [];
+      this.filteredSteps = [];
     } finally {
       this.isLoading = false;
+      this.applySearch();
     }
   }
 
-  private fallbackEmergencyStepsExtraction() {
-    // Subscribe to get the current value instead of accessing .value directly
+  private loadChemicalSpecificSteps() {
     this.databaseService.allData$.subscribe(allData => {
       const chemical = allData.find((item: AllDataItem) => 
         item.type === 'chemical' && 
@@ -119,61 +143,140 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       );
       
       if (chemical && chemical.data) {
-        console.log('Found chemical data for fallback:', chemical);
+        this.allStepGroups = this.extractChemicalSteps(chemical.data);
         
-        // Extract emergency information directly
-        const emergencySteps: string[] = [];
-        const data = chemical.data;
-        
-        // Check for emergency-related properties
-        const emergencyProps = [
-          'id#hasAccidentalGeneral',
-          'id#hasFirstAidGeneral',
-          'id#hasFirstAidEye',
-          'id#hasFirstAidIngestion',
-          'id#hasFirstAidInhalation',
-          'id#hasFirstAidSkin',
-          'id#hasLargeSpill',
-          'id#hasSmallSpill',
-          'id#hasConditionsOfInstability',
-          'id#hasHealthHazards',
-          'id#hasPhysicalHazards',
-          'id#hasIncompatibilityIssuesWith'
-        ];
-        
-        for (const prop of emergencyProps) {
-          if (data[prop]) {
-            const categoryName = this.formatPropertyName(prop);
-            const values = Array.isArray(data[prop]) ? data[prop] : [data[prop]];
-            
-            const formattedValues = values.map((val: any) => {
-              if (val && val['@id']) {
-                return this.formatIdValue(val['@id']);
-              }
-              return val;
-            }).filter((val: any) => val);
-            
-            if (formattedValues.length > 0) {
-              emergencySteps.push(`${categoryName}: ${formattedValues.join(', ')}`);
-            }
-          }
+        // If we have a specific emergency type, filter by it
+        if (this.emergencyType) {
+          this.allStepGroups = this.filterByEmergencyType(this.allStepGroups);
         }
         
-        if (emergencySteps.length > 0) {
-          this.steps = emergencySteps;
-          this.hasData = true;
-          console.log('Fallback extraction successful:', this.steps);
-        }
+        this.hasData = this.allStepGroups.length > 0;
       }
-    }).unsubscribe(); // Unsubscribe immediately since we only need the current value
+    }).unsubscribe();
   }
 
-  private formatPropertyName(prop: string): string {
-    return prop
-      .replace('id#has', '')
-      .replace(/([A-Z])/g, ' $1')
-      .trim()
-      .replace(/\b\w/g, l => l.toUpperCase());
+  private loadEmergencyTypeSpecificSteps() {
+    // When coming from emergency types page, show only that type's data
+    this.databaseService.allData$.subscribe(allData => {
+      const allSteps: StepGroup[] = [];
+      
+      // Get all chemicals and extract steps for the specific emergency type
+      const chemicals = allData.filter((item: AllDataItem) => item.type === 'chemical');
+      
+      chemicals.forEach(chemical => {
+        if (chemical.data) {
+          const chemicalSteps = this.extractChemicalSteps(chemical.data);
+          const filteredSteps = this.filterByEmergencyType(chemicalSteps);
+          allSteps.push(...filteredSteps);
+        }
+      });
+      
+      this.allStepGroups = allSteps;
+      this.hasData = this.allStepGroups.length > 0;
+    }).unsubscribe();
+  }
+
+  private loadAllEmergencySteps() {
+    this.databaseService.allData$.subscribe(allData => {
+      const allSteps: StepGroup[] = [];
+      
+      const chemicals = allData.filter((item: AllDataItem) => item.type === 'chemical');
+      
+      chemicals.forEach(chemical => {
+        if (chemical.data) {
+          const chemicalSteps = this.extractChemicalSteps(chemical.data);
+          allSteps.push(...chemicalSteps);
+        }
+      });
+      
+      this.allStepGroups = allSteps;
+      this.hasData = this.allStepGroups.length > 0;
+    }).unsubscribe();
+  }
+
+  private extractChemicalSteps(data: any): StepGroup[] {
+    const stepGroups: StepGroup[] = [];
+    
+    // Map emergency type categories
+    const emergencyMapping: { [key: string]: string } = {
+      'id#hasFirstAidEye': 'Eye Contact',
+      'id#hasFireFighting': 'Fire Fighting',
+      'id#hasFlammability': 'Flammability',
+      'id#hasFirstAidIngestion': 'Ingestion',
+      'id#hasFirstAidInhalation': 'Inhalation',
+      'id#hasConditionsOfInstability': 'Instability or Reactivity',
+      'id#hasFirstAidSkin': 'Skin Contact',
+      'id#hasLargeSpill': 'Spill',
+      'id#hasSmallSpill': 'Spill'
+    };
+
+    // General information categories
+    const generalCategories = [
+      'id#hasAccidentalGeneral',
+      'id#hasHealthHazards',
+      'id#hasPhysicalHazards',
+      'id#hasStabilityInformation',
+      'id#hasPolymerizationInformation'
+    ];
+
+    // Process emergency-specific data
+    for (const [prop, categoryName] of Object.entries(emergencyMapping)) {
+      if (data[prop]) {
+        const steps = this.extractStepsFromProperty(data[prop]);
+        if (steps.length > 0) {
+          // Combine spill categories
+          if (categoryName === 'Spill') {
+            const existingSpill = stepGroups.find(sg => sg.category === 'Spill');
+            if (existingSpill) {
+              existingSpill.steps.push(...steps);
+            } else {
+              stepGroups.push({ category: categoryName, steps });
+            }
+          } else {
+            stepGroups.push({ category: categoryName, steps });
+          }
+        }
+      }
+    }
+
+    // Process general information
+    const generalSteps: string[] = [];
+    for (const prop of generalCategories) {
+      if (data[prop]) {
+        const steps = this.extractStepsFromProperty(data[prop]);
+        generalSteps.push(...steps);
+      }
+    }
+
+    if (generalSteps.length > 0) {
+      const chemicalName = this.chemicalName || 'Chemical';
+      stepGroups.push({ 
+        category: `General ${chemicalName} Information`, 
+        steps: generalSteps 
+      });
+    }
+
+    return stepGroups;
+  }
+
+  private extractStepsFromProperty(property: any): string[] {
+    const steps: string[] = [];
+    
+    if (Array.isArray(property)) {
+      property.forEach(item => {
+        if (item && typeof item === 'object' && item['@id']) {
+          steps.push(this.formatIdValue(item['@id']));
+        } else if (typeof item === 'string') {
+          steps.push(item);
+        }
+      });
+    } else if (property && typeof property === 'object' && property['@id']) {
+      steps.push(this.formatIdValue(property['@id']));
+    } else if (typeof property === 'string') {
+      steps.push(property);
+    }
+    
+    return steps.filter(step => step.trim().length > 0);
   }
 
   private formatIdValue(id: string): string {
@@ -182,6 +285,54 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       .replace(/([0-9])([A-Z])/g, '$1 $2')
       .trim();
+  }
+
+  private filterByEmergencyType(stepGroups: StepGroup[]): StepGroup[] {
+    if (!this.emergencyType) return stepGroups;
+    
+    return stepGroups.filter(group => 
+      group.category.toLowerCase().includes(this.emergencyType.toLowerCase()) ||
+      this.emergencyType.toLowerCase().includes(group.category.toLowerCase())
+    );
+  }
+
+  onSearchChange(event: any) {
+    const query = event.target.value.toLowerCase().trim();
+    this.searchQuery = query;
+    this.applySearch();
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.applySearch();
+  }
+
+  private applySearch() {
+    if (!this.searchQuery) {
+      this.filteredSteps = [...this.allStepGroups];
+    } else {
+      this.filteredSteps = this.allStepGroups.filter(group =>
+        group.category.toLowerCase().includes(this.searchQuery) ||
+        group.steps.some(step => step.toLowerCase().includes(this.searchQuery))
+      );
+    }
+  }
+
+  shouldShowStepNumber(category: string): boolean {
+    return this.mainEmergencyTypes.some(type => 
+      category.toLowerCase().includes(type.toLowerCase()) ||
+      type.toLowerCase().includes(category.toLowerCase())
+    );
+  }
+
+  getEmergencyTypeNumber(category: string): number {
+    for (const [type, number] of Object.entries(this.emergencyTypeNumbers)) {
+      if (category.toLowerCase().includes(type.toLowerCase()) ||
+          type.toLowerCase().includes(category.toLowerCase())) {
+        return number;
+      }
+    }
+    return 0;
   }
 
   goBack() {

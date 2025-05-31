@@ -8,43 +8,63 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding white-background">
+  <!-- Search Bar -->
+  <ion-searchbar
+    [(ngModel)]="searchQuery"
+    (ionInput)="onSearchChange($event)"
+    placeholder="Search emergency procedures"
+    show-clear-button="focus"
+    (ionClear)="clearSearch()">
+  </ion-searchbar>
+
   <!-- Loading state -->
-  <div *ngIf="!hasData && steps.length === 0" class="loading-container">
+  <div *ngIf="!hasData && filteredSteps.length === 0 && !isLoading" class="loading-container">
     <p class="text-center">Loading emergency procedures...</p>
   </div>
 
   <!-- Steps container -->
-  <div *ngIf="hasData && steps.length > 0" class="steps-container">
-    <div *ngFor="let step of steps; let i = index">
+  <div *ngIf="hasData && filteredSteps.length > 0" class="steps-container">
+    <div *ngFor="let stepGroup of filteredSteps; let groupIndex = index">
       <div class="step-wrapper">
-        <ion-card class="step-card" [ngClass]="{'sub-step-card': step.startsWith('•')}">
+        <ion-card class="step-card">
           <ion-card-content>
             <div class="procedure-item">
-              <div class="step-number">{{ i + 1 }}</div>
-              <p class="step-text" [ngClass]="{'sub-step-title': step.startsWith('•')}">{{ step }}</p>
+              <!-- Step number only for main emergency types -->
+              <div *ngIf="shouldShowStepNumber(stepGroup.category)" class="step-number">{{ getEmergencyTypeNumber(stepGroup.category) }}</div>
+              
+              <div class="step-content">
+                <!-- Mini header (centered) -->
+                <h3 class="step-header">{{ stepGroup.category }}</h3>
+                
+                <!-- Step details (not centered) -->
+                <div *ngFor="let step of stepGroup.steps" class="step-detail">
+                  <p class="step-text">{{ step }}</p>
+                </div>
+              </div>
             </div>
           </ion-card-content>
         </ion-card>
       </div>
       
       <!-- Arrow between steps (except after last step) -->
-      <div *ngIf="i < steps.length - 1" class="arrow-container">
+      <div *ngIf="groupIndex < filteredSteps.length - 1" class="arrow-container">
         <ion-icon name="chevron-down-outline" class="step-arrow"></ion-icon>
       </div>
     </div>
+  </div>
 
   <!-- No steps message -->
-  <div *ngIf="hasData && steps.length === 0" class="no-steps-container">
+  <div *ngIf="hasData && filteredSteps.length === 0" class="no-steps-container">
     <ion-card class="info-card">
       <ion-card-content>
-        <p class="text-center">No emergency procedures available for this selection.</p>
-        <p class="text-center subtitle">Please check back later or contact your safety administrator.</p>
+        <p class="text-center">No emergency procedures found for your search.</p>
+        <p class="text-center subtitle">Try adjusting your search terms.</p>
       </ion-card-content>
     </ion-card>
   </div>
 
   <!-- Error state -->
-  <div *ngIf="!hasData && steps.length === 0" class="error-container">
+  <div *ngIf="!hasData && filteredSteps.length === 0 && !isLoading" class="error-container">
     <ion-card class="info-card">
       <ion-card-content>
         <p class="text-center">Unable to load emergency procedures.</p>
@@ -52,7 +72,7 @@
       </ion-card-content>
     </ion-card>
   </div>
-
+</ion-content>
 
 <!-- Bottom Navigation - Using correct imported icons -->
 <div class="bottom-navigation">
