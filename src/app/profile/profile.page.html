@@ -91,7 +91,7 @@
 
     <!-- Email Address with validation -->
     <div class="form-group">
-      <ion-label class="form-label">Email address</ion-label>
+      <ion-label class="form-label">Email Address</ion-label>
       <ion-input
         [(ngModel)]="profileData.email"
         type="email"
@@ -111,12 +111,12 @@
         <ion-input
           [(ngModel)]="profileData.phoneNumber"
           type="tel"
-          placeholder="9123456789"
+          placeholder="123 4567 891"
           class="phone-input"
           fill="outline"
-          maxlength="10"
+          maxlength="12"
           (ionInput)="validatePhoneNumber('phone')"
-          pattern="[0-9]*">
+          pattern="[0-9\s]*">
         </ion-input>
       </div>
       <div *ngIf="phoneError" class="error-message">{{ phoneError }}</div>
@@ -142,12 +142,12 @@
         <ion-input
           [(ngModel)]="profileData.emergencyContactNumber"
           type="tel"
-          placeholder="9987654321"
+          placeholder="998 7654 321"
           class="phone-input"
           fill="outline"
-          maxlength="10"
+          maxlength="12"
           (ionInput)="validatePhoneNumber('emergency')"
-          pattern="[0-9]*">
+          pattern="[0-9\s]*">
         </ion-input>
       </div>
       <div *ngIf="emergencyPhoneError" class="error-message">{{ emergencyPhoneError }}</div>

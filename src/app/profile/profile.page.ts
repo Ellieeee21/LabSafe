@@ -130,7 +130,7 @@ export class ProfilePage implements OnInit {
     
     // Check for @ and .com
     if (!email.includes('@') || !email.includes('.com')) {
-      this.emailError = 'Email must contain @ and .com';
+      this.emailError = 'Email must be valid';
       return false;
     }
     
@@ -145,18 +145,30 @@ export class ProfilePage implements OnInit {
     return true;
   }
 
-  // Phone number validation - only numbers, exactly 10 digits
+  // Phone number validation - only numbers, exactly 10 digits with formatting
   validatePhoneNumber(type: 'phone' | 'emergency') {
     const phoneNumber = type === 'phone' ? this.profileData.phoneNumber : this.profileData.emergencyContactNumber;
     
-    // Remove non-numeric characters
+    // Remove non-numeric characters and spaces
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     
-    // Update the model with clean number
+    // Format the number as XXX XXXX XXX
+    let formattedNumber = '';
+    if (cleanNumber.length > 0) {
+      if (cleanNumber.length <= 3) {
+        formattedNumber = cleanNumber;
+      } else if (cleanNumber.length <= 7) {
+        formattedNumber = cleanNumber.slice(0, 3) + ' ' + cleanNumber.slice(3);
+      } else {
+        formattedNumber = cleanNumber.slice(0, 3) + ' ' + cleanNumber.slice(3, 7) + ' ' + cleanNumber.slice(7, 10);
+      }
+    }
+    
+    // Update the model with formatted number
     if (type === 'phone') {
-      this.profileData.phoneNumber = cleanNumber;
+      this.profileData.phoneNumber = formattedNumber;
     } else {
-      this.profileData.emergencyContactNumber = cleanNumber;
+      this.profileData.emergencyContactNumber = formattedNumber;
     }
     
     // Validate length
@@ -245,25 +257,18 @@ export class ProfilePage implements OnInit {
         return;
       }
 
-      // Validate phone numbers
-      if (!this.validatePhoneNumber('phone')) {
-        await this.showToast('Please enter a valid 10-digit phone number.');
-        return;
-      }
-
-      if (!this.validatePhoneNumber('emergency')) {
-        await this.showToast('Please enter a valid 10-digit emergency contact number.');
-        return;
-      }
+      // Get clean numbers for validation
+      const cleanPhoneNumber = this.profileData.phoneNumber.replace(/\D/g, '');
+      const cleanEmergencyNumber = this.profileData.emergencyContactNumber.replace(/\D/g, '');
 
       // Check if phone numbers are exactly 10 digits
-      if (this.profileData.phoneNumber.length !== 10) {
+      if (cleanPhoneNumber.length !== 10) {
         this.phoneError = 'Phone number must be exactly 10 digits';
         await this.showToast('Phone number must be exactly 10 digits.');
         return;
       }
 
-      if (this.profileData.emergencyContactNumber.length !== 10) {
+      if (cleanEmergencyNumber.length !== 10) {
         this.emergencyPhoneError = 'Emergency contact number must be exactly 10 digits';
         await this.showToast('Emergency contact number must be exactly 10 digits.');
         return;
@@ -271,8 +276,8 @@ export class ProfilePage implements OnInit {
 
       console.log('Profile would be saved:', {
         ...this.profileData,
-        phoneNumber: '+63' + this.profileData.phoneNumber,
-        emergencyContactNumber: '+63' + this.profileData.emergencyContactNumber
+        phoneNumber: '+63' + cleanPhoneNumber,
+        emergencyContactNumber: '+63' + cleanEmergencyNumber
       });
       
       await this.showToast('Profile saved successfully!');
