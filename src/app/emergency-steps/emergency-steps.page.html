@@ -2,77 +2,89 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title class="centered-red-title">
-      {{ chemicalName ? (chemicalName + ' - Emergency Steps') : (emergencyType || 'Emergency Steps') }}
+      {{ chemicalName ? (chemicalName + ' - Emergency Information') : 'Emergency Information' }}
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding white-background">
-  <!-- Search Bar -->
-  <ion-searchbar
-    [(ngModel)]="searchQuery"
-    (ionInput)="onSearchChange($event)"
-    placeholder="Search emergency procedures"
-    show-clear-button="focus"
-    (ionClear)="clearSearch()">
-  </ion-searchbar>
-
   <!-- Loading state -->
-  <div *ngIf="!hasData && filteredSteps.length === 0 && !isLoading" class="loading-container">
-    <p class="text-center">Loading emergency procedures...</p>
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner></ion-spinner>
+    <p class="text-center">Loading emergency information...</p>
   </div>
 
-  <!-- Steps container -->
-  <div *ngIf="hasData && filteredSteps.length > 0" class="steps-container">
-    <div *ngFor="let stepGroup of filteredSteps; let groupIndex = index">
-      <div class="step-wrapper">
-        <ion-card class="step-card">
-          <ion-card-content>
-            <div class="procedure-item">
-              <!-- Removed step number completely -->
-              <div class="step-content">
-                <!-- Mini header (centered) -->
-                <h3 class="step-header">{{ stepGroup.category }}</h3>
-                
-                <!-- Step details (not centered) -->
-                <div *ngFor="let step of stepGroup.steps" class="step-detail">
-                  <p class="step-text">{{ step }}</p>
-                </div>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </div>
-      
-      <!-- Arrow between steps (except after last step) -->
-      <div *ngIf="groupIndex < filteredSteps.length - 1" class="arrow-container">
-        <ion-icon name="chevron-down-outline" class="step-arrow"></ion-icon>
-      </div>
-    </div>
-  </div>
-
-  <!-- No steps message -->
-  <div *ngIf="hasData && filteredSteps.length === 0" class="no-steps-container">
+  <!-- Chemical Information Section -->
+  <div *ngIf="!isLoading && chemicalName" class="chemical-info-section">
     <ion-card class="info-card">
       <ion-card-content>
-        <p class="text-center">No emergency procedures found for your search.</p>
-        <p class="text-center subtitle">Try adjusting your search terms.</p>
+        <h2 class="chemical-name">{{ chemicalName }}</h2>
+        <p class="chemical-description">Select an emergency type below to view specific procedures and information.</p>
       </ion-card-content>
     </ion-card>
   </div>
 
-  <!-- Error state -->
-  <div *ngIf="!hasData && filteredSteps.length === 0 && !isLoading" class="error-container">
+  <!-- Emergency Type Buttons -->
+  <div *ngIf="!isLoading && !showSpecificEmergency" class="emergency-buttons-container">
+    <h3 class="section-title">Emergency Types</h3>
+    
+    <div class="buttons-grid">
+      <ion-button 
+        *ngFor="let emergencyType of availableEmergencyTypes" 
+        (click)="selectEmergencyType(emergencyType)"
+        class="emergency-button"
+        fill="outline"
+        expand="block">
+        <ion-icon [name]="getEmergencyIcon(emergencyType.key)" slot="start"></ion-icon>
+        {{ emergencyType.label }}
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Specific Emergency Information -->
+  <div *ngIf="!isLoading && showSpecificEmergency && selectedEmergencyData" class="emergency-details-container">
+    <!-- Back button -->
+    <ion-button (click)="goBackToEmergencyTypes()" fill="clear" class="back-button">
+      <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
+      Back to Emergency Types
+    </ion-button>
+
+    <!-- Emergency Type Header -->
+    <ion-card class="emergency-header-card">
+      <ion-card-content>
+        <h2 class="emergency-title">
+          <ion-icon [name]="getEmergencyIcon(selectedEmergencyType)" class="emergency-icon"></ion-icon>
+          {{ getEmergencyLabel(selectedEmergencyType) }}
+        </h2>
+        <p class="emergency-subtitle">{{ chemicalName }}</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Emergency Steps -->
+    <div class="steps-container">
+      <ion-card class="steps-card">
+        <ion-card-content>
+          <div *ngFor="let step of selectedEmergencyData; let i = index" class="step-item">
+            <div class="step-number">{{ i + 1 }}</div>
+            <div class="step-content">{{ step }}</div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- No data message -->
+  <div *ngIf="!isLoading && !hasData" class="no-data-container">
     <ion-card class="info-card">
       <ion-card-content>
-        <p class="text-center">Unable to load emergency procedures.</p>
-        <p class="text-center subtitle">Please try again or contact support if the problem persists.</p>
+        <p class="text-center">No emergency information available for this chemical.</p>
+        <p class="text-center subtitle">Please contact support if you believe this is an error.</p>
       </ion-card-content>
     </ion-card>
   </div>
 </ion-content>
 
-<!-- Bottom Navigation - Using correct imported icons -->
+<!-- Bottom Navigation -->
 <div class="bottom-navigation">
   <div class="nav-bar">
     <div class="nav-button" (click)="navigateToHome()">

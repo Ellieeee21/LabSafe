@@ -13,12 +13,19 @@ import {
   IonCard,
   IonCardContent,
   IonIcon,
-  IonSearchbar
+  IonButton,
+  IonSpinner
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { 
+  eyeOutline, flameOutline, warningOutline, waterOutline, 
+  pulseOutline, shieldOutline, handLeftOutline, colorFillOutline,
+  arrowBackOutline, homeOutline, flaskOutline, timeOutline, personOutline
+} from 'ionicons/icons';
 
-interface StepGroup {
-  category: string;
-  steps: string[];
+interface EmergencyType {
+  key: string;
+  label: string;
 }
 
 @Component({
@@ -36,28 +43,32 @@ interface StepGroup {
     IonCard,
     IonCardContent,
     IonIcon,
-    IonSearchbar
+    IonButton,
+    IonSpinner
   ]
 })
 export class EmergencyStepsPage implements OnInit, OnDestroy {
-  emergencyType: string = '';
-  emergencyId: string = '';
   chemicalId: string = '';
   chemicalName: string = '';
-  searchQuery: string = '';
-  allStepGroups: StepGroup[] = [];
-  filteredSteps: StepGroup[] = [];
   hasData: boolean = false;
   isLoading: boolean = true;
+  showSpecificEmergency: boolean = false;
+  selectedEmergencyType: string = '';
+  selectedEmergencyData: string[] = [];
+  
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
+  private chemicalData: any = null;
 
-  // Blacklisted categories that should be excluded
-  private blacklistedCategories = [
-    'Stability Information',
-    'Polymerization Information', 
-    'Accidental Release',
-    'General First Aid'
+  availableEmergencyTypes: EmergencyType[] = [
+    { key: 'eyeContact', label: 'Eye Contact' },
+    { key: 'fireFighting', label: 'Fire Fighting' },
+    { key: 'flammability', label: 'Flammability' },
+    { key: 'ingestion', label: 'Ingestion' },
+    { key: 'inhalation', label: 'Inhalation' },
+    { key: 'instability', label: 'Instability or Reactivity' },
+    { key: 'skinContact', label: 'Skin Contact' },
+    { key: 'spill', label: 'Spill' }
   ];
 
   constructor(
@@ -65,27 +76,35 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     private router: Router,
     private platform: Platform,
     private databaseService: DatabaseService
-  ) {}
+  ) {
+    addIcons({ 
+      eyeOutline, flameOutline, warningOutline, waterOutline,
+      pulseOutline, shieldOutline, handLeftOutline, colorFillOutline,
+      arrowBackOutline, homeOutline, flaskOutline, timeOutline, personOutline
+    });
+  }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      this.emergencyType = params['emergencyType'] || '';
-      this.emergencyId = params['emergencyId'] || '';
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
       
-      this.loadEmergencySteps();
+      this.loadChemicalData();
     });
 
     // Handle Android back button
     this.backButtonSubscription = this.platform.backButton.subscribeWithPriority(10, () => {
-      this.goBack();
+      if (this.showSpecificEmergency) {
+        this.goBackToEmergencyTypes();
+      } else {
+        this.goBack();
+      }
     });
 
-    // Subscribe to database loading state - using the working approach from old code
+    // Subscribe to database loading state
     this.dataSubscription = this.databaseService.allData$.subscribe(data => {
       if (data && data.length > 0) {
-        this.loadEmergencySteps();
+        this.loadChemicalData();
       }
     });
   }
@@ -99,308 +118,69 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  private loadEmergencySteps() {
+  private loadChemicalData() {
     this.isLoading = true;
     
     try {
-      if (this.chemicalId) {
-        // Get steps specific to the selected chemical - using working approach from old code
-        const rawSteps = this.databaseService.getEmergencyStepsForChemical(this.chemicalId);
-        console.log(`Emergency steps for chemical ${this.chemicalId}:`, rawSteps);
+      this.databaseService.allData$.subscribe(allData => {
+        const chemical = allData.find((item: AllDataItem) => 
+          item.type === 'chemical' && 
+          (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
+        );
         
-        // Convert raw steps to grouped format
-        this.allStepGroups = this.convertRawStepsToGroups(rawSteps);
-        
-        // Fallback: if no data found, try manual extraction like the old code
-        if (this.allStepGroups.length === 0) {
-          this.fallbackEmergencyStepsExtraction();
+        if (chemical && chemical.data) {
+          this.chemicalData = chemical.data;
+          this.hasData = true;
+          console.log('Chemical data loaded:', this.chemicalData);
+        } else {
+          this.hasData = false;
         }
-      } else if (this.emergencyType) {
-        // Filter by specific emergency type
-        this.loadEmergencyTypeSpecificSteps();
-      } else {
-        // Get all emergency steps/procedures
-        const rawSteps = this.databaseService.getAllEmergencySteps();
-        console.log('All emergency steps:', rawSteps);
-        this.allStepGroups = this.convertRawStepsToGroups(rawSteps);
-      }
-      
-      // Apply blacklist filter and remove duplicates with improved logic
-      this.allStepGroups = this.filterBlacklistedCategories(this.allStepGroups);
-      this.allStepGroups = this.removeDuplicateSteps(this.allStepGroups);
-      
-      this.hasData = this.allStepGroups.length > 0;
+        
+        this.isLoading = false;
+      }).unsubscribe();
       
     } catch (error) {
-      console.error('Error loading emergency steps:', error);
+      console.error('Error loading chemical data:', error);
       this.hasData = false;
-      this.allStepGroups = [];
-    } finally {
       this.isLoading = false;
-      this.applySearch();
     }
   }
 
-  private filterBlacklistedCategories(stepGroups: StepGroup[]): StepGroup[] {
-    return stepGroups.filter(group => {
-      return !this.blacklistedCategories.some(blacklisted => 
-        group.category.toLowerCase().includes(blacklisted.toLowerCase()) ||
-        blacklisted.toLowerCase().includes(group.category.toLowerCase())
-      );
-    });
+  selectEmergencyType(emergencyType: EmergencyType) {
+    this.selectedEmergencyType = emergencyType.key;
+    this.selectedEmergencyData = this.getEmergencyData(emergencyType.key);
+    this.showSpecificEmergency = true;
   }
 
-  // IMPROVED: Better duplicate removal with smart handling of comma-separated values
-  private removeDuplicateSteps(stepGroups: StepGroup[]): StepGroup[] {
-    const processedGroups: StepGroup[] = [];
-    
-    stepGroups.forEach(group => {
-      const uniqueSteps: string[] = [];
-      const seenItems = new Set<string>();
-      
-      group.steps.forEach(step => {
-        // Split by commas and process each part
-        const parts = step.split(',').map(part => part.trim());
-        const uniqueParts: string[] = [];
-        
-        parts.forEach(part => {
-          // Normalize the part for comparison (lowercase, remove extra spaces)
-          const normalizedPart = part.toLowerCase().replace(/\s+/g, ' ').trim();
-          
-          // Only add if we haven't seen this part before
-          if (!seenItems.has(normalizedPart) && part.length > 0) {
-            seenItems.add(normalizedPart);
-            uniqueParts.push(part);
-          }
-        });
-        
-        // Only add the step if it has unique parts
-        if (uniqueParts.length > 0) {
-          uniqueSteps.push(uniqueParts.join(', '));
-        }
-      });
+  private getEmergencyData(emergencyKey: string): string[] {
+    if (!this.chemicalData) return [];
 
-      // Further consolidation: if we have multiple steps in a group, 
-      // check if any can be merged or if duplicates exist
-      const finalUniqueSteps = this.consolidateSteps(uniqueSteps);
-
-      if (finalUniqueSteps.length > 0) {
-        processedGroups.push({
-          category: group.category,
-          steps: finalUniqueSteps
-        });
-      }
-    });
-
-    return processedGroups;
-  }
-
-  // NEW: Additional consolidation to merge steps with overlapping content
-  private consolidateSteps(steps: string[]): string[] {
-    const consolidated: string[] = [];
-    const allUniqueParts = new Set<string>();
-    
-    steps.forEach(step => {
-      const parts = step.split(',').map(part => part.trim());
-      const newParts: string[] = [];
-      
-      parts.forEach(part => {
-        const normalizedPart = part.toLowerCase().replace(/\s+/g, ' ').trim();
-        if (!allUniqueParts.has(normalizedPart) && part.length > 0) {
-          allUniqueParts.add(normalizedPart);
-          newParts.push(part);
-        }
-      });
-      
-      if (newParts.length > 0) {
-        consolidated.push(newParts.join(', '));
-      }
-    });
-    
-    return consolidated;
-  }
-
-  private fallbackEmergencyStepsExtraction() {
-    // Subscribe to get the current value instead of accessing .value directly
-    this.databaseService.allData$.subscribe(allData => {
-      const chemical = allData.find((item: AllDataItem) => 
-        item.type === 'chemical' && 
-        (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
-      );
-      
-      if (chemical && chemical.data) {
-        console.log('Found chemical data for fallback:', chemical);
-        
-        // Extract emergency information directly using old code approach
-        const emergencySteps: string[] = [];
-        const data = chemical.data;
-        
-        // Check for emergency-related properties (excluding blacklisted ones)
-        const emergencyProps = [
-          'id#hasFirstAidEye',
-          'id#hasFirstAidIngestion',
-          'id#hasFirstAidInhalation',
-          'id#hasFirstAidSkin',
-          'id#hasLargeSpill',
-          'id#hasSmallSpill',
-          'id#hasConditionsOfInstability',
-          'id#hasHealthHazards',
-          'id#hasPhysicalHazards',
-          'id#hasIncompatibilityIssuesWith'
-          // Removed: 'id#hasAccidentalGeneral', 'id#hasFirstAidGeneral'
-        ];
-        
-        for (const prop of emergencyProps) {
-          if (data[prop]) {
-            const categoryName = this.formatPropertyName(prop);
-            const values = Array.isArray(data[prop]) ? data[prop] : [data[prop]];
-            
-            const formattedValues = values.map((val: any) => {
-              if (val && val['@id']) {
-                return this.formatIdValue(val['@id']);
-              }
-              return val;
-            }).filter((val: any) => val);
-            
-            if (formattedValues.length > 0) {
-              emergencySteps.push(`${categoryName}: ${formattedValues.join(', ')}`);
-            }
-          }
-        }
-        
-        if (emergencySteps.length > 0) {
-          this.allStepGroups = this.convertRawStepsToGroups(emergencySteps);
-          this.hasData = true;
-          console.log('Fallback extraction successful:', this.allStepGroups);
-        }
-      }
-    }).unsubscribe(); // Unsubscribe immediately since we only need the current value
-  }
-
-  private convertRawStepsToGroups(rawSteps: string[]): StepGroup[] {
-    const groups: StepGroup[] = [];
-    
-    rawSteps.forEach(step => {
-      if (step.includes(':')) {
-        const [category, content] = step.split(':', 2);
-        const trimmedCategory = category.trim();
-        const trimmedContent = content.trim();
-        
-        let existingGroup = groups.find(g => g.category === trimmedCategory);
-        if (!existingGroup) {
-          existingGroup = { category: trimmedCategory, steps: [] };
-          groups.push(existingGroup);
-        }
-        existingGroup.steps.push(trimmedContent);
-      } else {
-        // If no category separator, put in General category
-        let generalGroup = groups.find(g => g.category === 'General');
-        if (!generalGroup) {
-          generalGroup = { category: 'General', steps: [] };
-          groups.push(generalGroup);
-        }
-        generalGroup.steps.push(step);
-      }
-    });
-    
-    return groups;
-  }
-
-  private loadEmergencyTypeSpecificSteps() {
-    this.databaseService.allData$.subscribe(allData => {
-      const allSteps: StepGroup[] = [];
-      const uniqueSteps = new Set<string>();
-      
-      const chemicals = allData.filter((item: AllDataItem) => item.type === 'chemical');
-      
-      chemicals.forEach(chemical => {
-        if (chemical.data) {
-          const chemicalSteps = this.extractChemicalSteps(chemical.data);
-          const filteredSteps = this.filterByEmergencyType(chemicalSteps);
-          
-          filteredSteps.forEach(stepGroup => {
-            stepGroup.steps.forEach(step => {
-              if (!uniqueSteps.has(step)) {
-                uniqueSteps.add(step);
-                let existingGroup = allSteps.find(sg => sg.category === stepGroup.category);
-                if (!existingGroup) {
-                  existingGroup = { category: stepGroup.category, steps: [] };
-                  allSteps.push(existingGroup);
-                }
-                existingGroup.steps.push(step);
-              }
-            });
-          });
-        }
-      });
-      
-      this.allStepGroups = allSteps;
-      this.hasData = this.allStepGroups.length > 0;
-    }).unsubscribe();
-  }
-
-  private extractChemicalSteps(data: any): StepGroup[] {
-    const stepGroups: StepGroup[] = [];
-    
-    const emergencyMapping: { [key: string]: string } = {
-      'id#hasFirstAidEye': 'Eye Contact',
-      'id#hasFireFighting': 'Fire Fighting',
-      'id#hasFlammability': 'Flammability',
-      'id#hasFirstAidIngestion': 'Ingestion',
-      'id#hasFirstAidInhalation': 'Inhalation',
-      'id#hasConditionsOfInstability': 'Instability or Reactivity',
-      'id#hasFirstAidSkin': 'Skin Contact',
-      'id#hasLargeSpill': 'Spill',
-      'id#hasSmallSpill': 'Spill'
+    const emergencyMapping: { [key: string]: string[] } = {
+      'eyeContact': ['id#hasFirstAidEye'],
+      'fireFighting': ['id#hasFireFighting'],
+      'flammability': ['id#hasFlammability'],
+      'ingestion': ['id#hasFirstAidIngestion'],
+      'inhalation': ['id#hasFirstAidInhalation'],
+      'instability': ['id#hasConditionsOfInstability'],
+      'skinContact': ['id#hasFirstAidSkin'],
+      'spill': ['id#hasLargeSpill', 'id#hasSmallSpill']
     };
 
-    const generalCategories = [
-      'id#hasHealthHazards',
-      'id#hasPhysicalHazards'
-      // Removed blacklisted categories from general processing
-    ];
+    const properties = emergencyMapping[emergencyKey] || [];
+    const steps: string[] = [];
 
-    for (const [prop, categoryName] of Object.entries(emergencyMapping)) {
-      if (data[prop]) {
-        const steps = this.extractStepsFromProperty(data[prop]);
-        if (steps.length > 0) {
-          if (categoryName === 'Spill') {
-            const existingSpill = stepGroups.find(sg => sg.category === 'Spill');
-            if (existingSpill) {
-              existingSpill.steps.push(...steps);
-            } else {
-              stepGroups.push({ category: categoryName, steps });
-            }
-          } else {
-            stepGroups.push({ category: categoryName, steps });
-          }
-        }
+    properties.forEach(prop => {
+      if (this.chemicalData[prop]) {
+        const extractedSteps = this.extractStepsFromProperty(this.chemicalData[prop]);
+        steps.push(...extractedSteps);
       }
-    }
+    });
 
-    const generalSteps: string[] = [];
-    for (const prop of generalCategories) {
-      if (data[prop]) {
-        const steps = this.extractStepsFromProperty(data[prop]);
-        generalSteps.push(...steps);
-      }
-    }
-
-    if (generalSteps.length > 0) {
-      const chemicalName = this.chemicalName || 'Chemical';
-      stepGroups.push({ 
-        category: `General ${chemicalName} Information`, 
-        steps: generalSteps 
-      });
-    }
-
-    return stepGroups;
+    return this.cleanAndFormatSteps(steps);
   }
 
-  // IMPROVED: Better handling of duplicates at the property extraction level
   private extractStepsFromProperty(property: any): string[] {
     const steps: string[] = [];
-    const seenSteps = new Set<string>();
     
     if (Array.isArray(property)) {
       property.forEach(item => {
@@ -412,11 +192,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         }
         
         if (stepText.trim().length > 0) {
-          const normalizedStep = stepText.toLowerCase().replace(/\s+/g, ' ').trim();
-          if (!seenSteps.has(normalizedStep)) {
-            seenSteps.add(normalizedStep);
-            steps.push(stepText);
-          }
+          steps.push(stepText);
         }
       });
     } else if (property && typeof property === 'object' && property['@id']) {
@@ -433,14 +209,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     return steps;
   }
 
-  private formatPropertyName(prop: string): string {
-    return prop
-      .replace('id#has', '')
-      .replace(/([A-Z])/g, ' $1')
-      .trim()
-      .replace(/\b\w/g, l => l.toUpperCase());
-  }
-
   private formatIdValue(id: string): string {
     return id
       .replace('id#', '')
@@ -449,43 +217,65 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       .trim();
   }
 
-  private filterByEmergencyType(stepGroups: StepGroup[]): StepGroup[] {
-    if (!this.emergencyType) return stepGroups;
+  private cleanAndFormatSteps(steps: string[]): string[] {
+    const cleanedSteps: string[] = [];
+    const seenSteps = new Set<string>();
+
+    steps.forEach(step => {
+      // Remove redundant prefixes
+      let cleanedStep = step
+        .replace(/^Fire Fighting\s*/i, '')
+        .replace(/^Health Haz\s*/i, '')
+        .replace(/^Phys Haz\s*/i, '')
+        .replace(/^Healthhaz\s*/i, '')
+        .replace(/^Post\s*/i, '')
+        .replace(/^Pre\s*/i, '')
+        .trim();
+
+      // Split on comma and clean each part
+      const parts = cleanedStep.split(',').map(part => part.trim()).filter(part => part.length > 0);
+      
+      parts.forEach(part => {
+        const normalizedPart = part.toLowerCase().replace(/\s+/g, ' ').trim();
+        
+        if (!seenSteps.has(normalizedPart) && part.length > 0) {
+          seenSteps.add(normalizedPart);
+          cleanedSteps.push(part);
+        }
+      });
+    });
+
+    return cleanedSteps;
+  }
+
+  getEmergencyIcon(emergencyKey: string): string {
+    const iconMap: { [key: string]: string } = {
+      'eyeContact': 'eye-outline',
+      'fireFighting': 'flame-outline',
+      'flammability': 'flame-outline',
+      'ingestion': 'water-outline',
+      'inhalation': 'pulse-outline',
+      'instability': 'warning-outline',
+      'skinContact': 'hand-left-outline',
+      'spill': 'color-fill-outline'
+    };
     
-    return stepGroups.filter(group => 
-      group.category.toLowerCase().includes(this.emergencyType.toLowerCase()) ||
-      this.emergencyType.toLowerCase().includes(group.category.toLowerCase())
-    );
+    return iconMap[emergencyKey] || 'warning-outline';
   }
 
-  onSearchChange(event: any) {
-    const query = event.target.value.toLowerCase().trim();
-    this.searchQuery = query;
-    this.applySearch();
+  getEmergencyLabel(emergencyKey: string): string {
+    const type = this.availableEmergencyTypes.find(t => t.key === emergencyKey);
+    return type ? type.label : emergencyKey;
   }
 
-  clearSearch() {
-    this.searchQuery = '';
-    this.applySearch();
-  }
-
-  private applySearch() {
-    if (!this.searchQuery) {
-      this.filteredSteps = [...this.allStepGroups];
-    } else {
-      this.filteredSteps = this.allStepGroups.filter(group =>
-        group.category.toLowerCase().includes(this.searchQuery) ||
-        group.steps.some(step => step.toLowerCase().includes(this.searchQuery))
-      );
-    }
+  goBackToEmergencyTypes() {
+    this.showSpecificEmergency = false;
+    this.selectedEmergencyType = '';
+    this.selectedEmergencyData = [];
   }
 
   goBack() {
-    if (this.chemicalId) {
-      this.router.navigate(['/chemical-list']);
-    } else {
-      this.router.navigate(['/emergency-types']);
-    }
+    this.router.navigate(['/chemical-list']);
   }
 
   navigateToHome() {

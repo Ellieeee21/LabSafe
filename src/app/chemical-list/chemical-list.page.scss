@@ -1,12 +1,10 @@
-/* chemical-list.page.scss */
-
-// White/bone background for the content - EXACTLY like Emergency Types
+// Background
 .white-background {
   --background: #FAFAFA !important;
   background: #FAFAFA !important;
 }
 
-// Centered red title - EXACTLY like Emergency Types
+// Centered red title
 .centered-red-title {
   text-align: center !important;
   color: white !important;
@@ -14,13 +12,13 @@
   font-size: 20px;
 }
 
-// Header styling with red background - EXACTLY like Emergency Types
+// Header styling
 ion-header ion-toolbar {
   --background: #C00000 !important;
   --color: white !important;
 }
 
-// Search bar styling - WHITE background like Emergency Types for better visibility
+// Search bar styling
 ion-searchbar {
   --background: white !important;
   --border-radius: 12px;
@@ -43,7 +41,7 @@ ion-searchbar {
   }
 
   p {
-    color: #000000; // Black text like Emergency Types
+    color: #000000;
     font-size: 16px;
     margin: 0;
   }
@@ -90,7 +88,7 @@ ion-searchbar {
 
   .chemical-icon {
     font-size: 24px;
-    color: #C00000; // Red color to match theme
+    color: #C00000;
     flex-shrink: 0;
   }
 
@@ -101,7 +99,7 @@ ion-searchbar {
       margin: 0 0 4px 0;
       font-size: 18px;
       font-weight: 600;
-      color: #000000; // Black text like Emergency Types
+      color: #000000;
       line-height: 1.3;
     }
 
@@ -134,7 +132,7 @@ ion-searchbar {
       margin: 0 0 8px 0;
       font-size: 20px;
       font-weight: 600;
-      color: #000000; // Black text like Emergency Types
+      color: #000000;
     }
 
     p {
@@ -155,13 +153,13 @@ ion-searchbar {
   }
 }
 
-// Bottom Navigation - 4 buttons consistent with other pages
+// Bottom Navigation
 .bottom-navigation {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #2c2c2c; // Dark background like in first image
+  background: #2c2c2c;
   z-index: 1000;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
 }
@@ -183,14 +181,14 @@ ion-searchbar {
   padding: 8px 4px;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: #999; // Gray for inactive
+  color: #999;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
 
   &.active {
-    color: #4A90E2; // Blue for active like in first image
+    color: #4A90E2;
     
     ion-icon {
       color: #4A90E2;
@@ -215,12 +213,10 @@ ion-searchbar {
   }
 }
 
-// Content padding adjustment
 ion-content {
   --padding-bottom: 80px;
 }
 
-// Responsive design
 @media (max-width: 576px) {
   .chemical-info {
     gap: 8px;

@@ -64,7 +64,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       this.chemicals = chemicals;
       this.applyFilter();
       
-      // Fallback: if no chemicals from observable but allData exists, extract manually
+      // Fallback method
       if (chemicals.length === 0) {
         this.databaseService.allData$.subscribe(allData => {
           if (allData.length > 0) {

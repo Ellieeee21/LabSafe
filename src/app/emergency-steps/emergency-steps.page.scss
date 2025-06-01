@@ -1,12 +1,10 @@
-/* emergency-steps.page.scss */
-
-// White/bone background for the content
+// Background
 .white-background {
   --background: #FAFAFA !important;
   background: #FAFAFA !important;
 }
 
-// Centered red title - EXACTLY like Emergency Types 
+// Centered red title
 .centered-red-title {
   text-align: center !important;
   color: white !important;
@@ -14,13 +12,13 @@
   font-size: 20px;
 }
 
-// Header styling with red background - EXACTLY like Emergency Types
+// Header styling
 ion-header ion-toolbar {
   --background: #C00000 !important;
   --color: white !important;
 }
 
-// Search bar styling - WHITE background
+// Search bar styling
 ion-searchbar {
   --background: white !important;
   --border-radius: 12px;
@@ -37,16 +35,166 @@ ion-searchbar {
   text-align: center;
 }
 
+// Chemical Info Section
+.chemical-info-section {
+  margin-bottom: 20px;
+}
+
+.chemical-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #C00000;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.chemical-description {
+  font-size: 16px;
+  color: #666666;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+
+// Emergency Type Buttons Section
+.emergency-buttons-container {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.buttons-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emergency-button {
+  --border-color: #C00000;
+  --color: #C00000;
+  --border-width: 2px;
+  --border-radius: 12px;
+  margin: 0;
+  height: 56px;
+  font-weight: 500;
+  
+  &:hover {
+    --background: rgba(192, 0, 0, 0.1);
+  }
+  
+  ion-icon {
+    margin-right: 8px;
+    font-size: 20px;
+  }
+}
+
+// Emergency Details Section
+.emergency-details-container {
+  padding-bottom: 80px;
+}
+
+.back-button {
+  --color: #C00000;
+  margin: 0 0 16px 0;
+  
+  ion-icon {
+    margin-right: 8px;
+  }
+}
+
+.emergency-header-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  margin: 0 0 20px 0;
+}
+
+.emergency-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #C00000;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.emergency-icon {
+  margin-right: 12px;
+  font-size: 28px;
+}
+
+.emergency-subtitle {
+  font-size: 16px;
+  color: #666666;
+  margin: 0;
+  text-align: center;
+}
+
+// Steps Container and Cards
 .steps-container {
-  padding-bottom: 80px; // Space for bottom navigation
+  padding-bottom: 80px;
   margin-top: 16px;
 }
 
-// Step card styling - WHITE background (different from page background)
+.steps-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white !important;
+  margin: 0;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.step-number {
+  background: #C00000;
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  margin-right: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-content {
+  flex: 1;
+  font-size: 16px;
+  color: #000000;
+  line-height: 1.5;
+  padding-top: 4px;
+}
+
+// No Data Container
+.no-data-container {
+  margin-top: 40px;
+}
+
+// Step card styling (legacy support)
 .step-card {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background: white !important; // Pure white, not the #FAFAFA background
+  background: white !important;
   margin: 0 0 16px 0;
 }
 
@@ -64,33 +212,33 @@ ion-card-content {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  background: white !important; // Ensure card content is white
+  background: white !important;
 }
 
-// Procedure item container - simplified without step numbers
+// Procedure item container (legacy support)
 .procedure-item {
   display: flex;
   align-items: flex-start;
   width: 100%;
 }
 
-// Step content container - now takes full width
+// Step content container (legacy support)
 .step-content {
   flex: 1;
   width: 100%;
 }
 
-// Step header styling (mini header, centered)
+// Step header styling (legacy support)
 .step-header {
   font-size: 18px;
   font-weight: 600;
-  color: #000000 !important; // Full black
+  color: #000000 !important;
   margin: 0 0 16px 0;
   line-height: 1.3;
-  text-align: center !important; // Centered header
+  text-align: center !important;
 }
 
-// Step detail container
+// Step detail container (legacy support)
 .step-detail {
   margin-bottom: 12px;
   
@@ -99,17 +247,17 @@ ion-card-content {
   }
 }
 
-// Step text styling (not centered)
+// Step text styling (legacy support)
 .step-text {
   font-size: 16px;
-  color: #000000 !important; // Full black text
+  color: #000000 !important;
   margin: 0;
   line-height: 1.4;
-  text-align: left !important; // Not centered, left aligned
-  background: white !important; // Ensure text background is white
+  text-align: left !important;
+  background: white !important;
 }
 
-// Arrow styling
+// Arrow styling (legacy support)
 .arrow-container {
   display: flex;
   justify-content: center;
@@ -136,13 +284,13 @@ ion-card-content {
   margin-top: 8px;
 }
 
-// Bottom Navigation - SINGLE dark bar like in first image
+// Bottom Navigation
 .bottom-navigation {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #2c2c2c; // Dark background like in first image
+  background: #2c2c2c;
   z-index: 1000;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
 }
@@ -164,14 +312,14 @@ ion-card-content {
   padding: 8px 4px;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: #999; // Gray for inactive
+  color: #999;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
 
   &.active {
-    color: #4A90E2; // Blue for active like in first image
+    color: #4A90E2;
     
     ion-icon {
       color: #4A90E2;
@@ -196,7 +344,6 @@ ion-card-content {
   }
 }
 
-// Content padding adjustment for bottom navigation
 ion-content {
   --padding-bottom: 80px;
 }

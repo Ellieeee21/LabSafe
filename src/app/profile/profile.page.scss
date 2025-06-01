@@ -1,4 +1,4 @@
-/* profile.page.scss - UPDATED VERSION WITH AUTHENTICATION */
+/* profile.page.scss - UPDATED VERSION WITH AUTHENTICATION AND CENTERED TITLE */
 
 // White/bone background for the content
 .white-background {
@@ -12,6 +12,12 @@
   color: white !important;
   font-weight: 600;
   font-size: 20px;
+}
+
+// Title spacer to balance logout button
+.title-spacer {
+  width: 65px; // Approximate width to match logout button
+  height: 32px; // Match button height
 }
 
 // Header styling with red background

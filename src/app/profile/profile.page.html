@@ -1,7 +1,11 @@
-<!-- profile.page.html - UPDATED VERSION WITH AUTH -->
+<!-- profile.page.html - UPDATED VERSION WITH AUTH AND CENTERED TITLE -->
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <!-- Empty start slot to balance the logout button -->
+    <div slot="start" class="title-spacer"></div>
+    
     <ion-title class="centered-red-title">Profile</ion-title>
+    
     <!-- Show logout button if logged in -->
     <ion-button 
       *ngIf="isLoggedIn" 
@@ -11,6 +15,9 @@
       (click)="handleLogout()">
       Logout
     </ion-button>
+    
+    <!-- Empty end slot when not logged in to maintain centering -->
+    <div *ngIf="!isLoggedIn" slot="end" class="title-spacer"></div>
   </ion-toolbar>
 </ion-header>
 

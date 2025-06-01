@@ -4,7 +4,6 @@ import { DatabaseService } from '../services/database.service';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
-// Add these icon imports
 import { addIcons } from 'ionicons';
 import { 
   homeOutline, flaskOutline, timeOutline, personOutline 
@@ -33,7 +32,6 @@ export class EmergencyTypesPage implements OnInit {
     private router: Router,
     private databaseService: DatabaseService
   ) {
-    // Add this to register the icons
     addIcons({ 
       homeOutline, flaskOutline, timeOutline, personOutline
     });
@@ -47,7 +45,7 @@ export class EmergencyTypesPage implements OnInit {
     try {
       this.isLoading = true;
       
-      // Complete emergency types as shown in the image
+      // Complete emergency types
       this.emergencyTypes = [
         { id: 1, name: 'Eye Contact', icon: 'Eye.png' },
         { id: 2, name: 'Fire Fighting', icon: 'Fire-fighting.png' },
@@ -90,7 +88,6 @@ export class EmergencyTypesPage implements OnInit {
 
   navigateToSteps(emergencyType: EmergencyType) {
     console.log('Navigating to steps for:', emergencyType.name);
-    // Navigate to emergency steps page with query parameters
     this.router.navigate(['/emergency-steps'], { 
       queryParams: { 
         emergencyType: emergencyType.name,
@@ -102,7 +99,6 @@ export class EmergencyTypesPage implements OnInit {
   // Bottom Navigation Methods
   navigateToHome() {
     console.log('Already on Home (Emergency Types)');
-    // Already on home page - do nothing or refresh
   }
 
   navigateToChemicals() {
