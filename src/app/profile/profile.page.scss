@@ -1,4 +1,4 @@
-/* profile.page.scss - UPDATED VERSION */
+/* profile.page.scss - UPDATED VERSION WITH AUTHENTICATION */
 
 // White/bone background for the content
 .white-background {
@@ -304,6 +304,186 @@ ion-header ion-toolbar {
   letter-spacing: 0.5px !important;
   cursor: pointer !important;
   pointer-events: auto !important;
+}
+
+// Authentication Section
+.auth-section {
+  margin-top: 40px;
+  padding: 0 0 30px 0;
+  
+  &.logged-in {
+    margin-top: 30px;
+  }
+}
+
+.guest-message {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  border: 1px solid #E0E0E0;
+  
+  h3 {
+    color: #333;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+  }
+  
+  p {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+// Login Button Styling
+.login-button {
+  --background: #044c14 !important;
+  --background-activated: #033a0f !important;
+  --background-hover: #033a0f !important;
+  --color: white !important;
+  --border-radius: 8px !important;
+  height: 50px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  
+  ion-icon {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+}
+
+// Sign Up Button Styling
+.signup-button {
+  --background: #52845c !important;
+  --background-activated: #466f4e !important;
+  --background-hover: #466f4e !important;
+  --color: white !important;
+  --border-radius: 8px !important;
+  height: 50px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  
+  ion-icon {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+}
+
+.logged-in-message {
+  text-align: center;
+  padding: 20px;
+  
+  .welcome-message {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    
+    .check-icon {
+      font-size: 32px;
+      color: #4CAF50;
+      margin-bottom: 12px;
+    }
+    
+    h3 {
+      color: #4CAF50;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+    
+    p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+}
+
+// Authentication Modal Styling
+.login-alert,
+.signup-alert {
+  --background: white;
+  --color: #333;
+  
+  .alert-wrapper {
+    --background: white;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  .alert-header {
+    font-weight: 600;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .alert-input {
+    --background: #f8f9fa !important;
+    --color: #333 !important;
+    --placeholder-color: #666 !important;
+    border: 1px solid #E0E0E0 !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    margin: 8px 0 !important;
+    font-size: 16px !important;
+    
+    &:focus {
+      --border-color: #4A90E2 !important;
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2) !important;
+    }
+  }
+  
+  .alert-button-group {
+    .alert-button {
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      
+      &.secondary {
+        --color: #666 !important;
+      }
+      
+      &.login-button {
+        --color: #044c14 !important;
+        font-weight: 600;
+      }
+      
+      &.signup-button {
+        --color: #52845c !important;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// Logout button in header
+ion-toolbar ion-button {
+  --color: white !important;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 // Bottom Navigation

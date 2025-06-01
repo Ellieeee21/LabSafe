@@ -125,7 +125,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         this.allStepGroups = this.convertRawStepsToGroups(rawSteps);
       }
       
-      // Apply blacklist filter and remove duplicates
+      // Apply blacklist filter and remove duplicates with improved logic
       this.allStepGroups = this.filterBlacklistedCategories(this.allStepGroups);
       this.allStepGroups = this.removeDuplicateSteps(this.allStepGroups);
       
@@ -150,30 +150,74 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     });
   }
 
+  // IMPROVED: Better duplicate removal with smart handling of comma-separated values
   private removeDuplicateSteps(stepGroups: StepGroup[]): StepGroup[] {
     const processedGroups: StepGroup[] = [];
-    const allSeenSteps = new Set<string>();
-
+    
     stepGroups.forEach(group => {
       const uniqueSteps: string[] = [];
+      const seenItems = new Set<string>();
       
       group.steps.forEach(step => {
-        const normalizedStep = step.toLowerCase().trim();
-        if (!allSeenSteps.has(normalizedStep)) {
-          allSeenSteps.add(normalizedStep);
-          uniqueSteps.push(step);
+        // Split by commas and process each part
+        const parts = step.split(',').map(part => part.trim());
+        const uniqueParts: string[] = [];
+        
+        parts.forEach(part => {
+          // Normalize the part for comparison (lowercase, remove extra spaces)
+          const normalizedPart = part.toLowerCase().replace(/\s+/g, ' ').trim();
+          
+          // Only add if we haven't seen this part before
+          if (!seenItems.has(normalizedPart) && part.length > 0) {
+            seenItems.add(normalizedPart);
+            uniqueParts.push(part);
+          }
+        });
+        
+        // Only add the step if it has unique parts
+        if (uniqueParts.length > 0) {
+          uniqueSteps.push(uniqueParts.join(', '));
         }
       });
 
-      if (uniqueSteps.length > 0) {
+      // Further consolidation: if we have multiple steps in a group, 
+      // check if any can be merged or if duplicates exist
+      const finalUniqueSteps = this.consolidateSteps(uniqueSteps);
+
+      if (finalUniqueSteps.length > 0) {
         processedGroups.push({
           category: group.category,
-          steps: uniqueSteps
+          steps: finalUniqueSteps
         });
       }
     });
 
     return processedGroups;
+  }
+
+  // NEW: Additional consolidation to merge steps with overlapping content
+  private consolidateSteps(steps: string[]): string[] {
+    const consolidated: string[] = [];
+    const allUniqueParts = new Set<string>();
+    
+    steps.forEach(step => {
+      const parts = step.split(',').map(part => part.trim());
+      const newParts: string[] = [];
+      
+      parts.forEach(part => {
+        const normalizedPart = part.toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!allUniqueParts.has(normalizedPart) && part.length > 0) {
+          allUniqueParts.add(normalizedPart);
+          newParts.push(part);
+        }
+      });
+      
+      if (newParts.length > 0) {
+        consolidated.push(newParts.join(', '));
+      }
+    });
+    
+    return consolidated;
   }
 
   private fallbackEmergencyStepsExtraction() {
@@ -353,24 +397,40 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     return stepGroups;
   }
 
+  // IMPROVED: Better handling of duplicates at the property extraction level
   private extractStepsFromProperty(property: any): string[] {
     const steps: string[] = [];
+    const seenSteps = new Set<string>();
     
     if (Array.isArray(property)) {
       property.forEach(item => {
+        let stepText = '';
         if (item && typeof item === 'object' && item['@id']) {
-          steps.push(this.formatIdValue(item['@id']));
+          stepText = this.formatIdValue(item['@id']);
         } else if (typeof item === 'string') {
-          steps.push(item);
+          stepText = item;
+        }
+        
+        if (stepText.trim().length > 0) {
+          const normalizedStep = stepText.toLowerCase().replace(/\s+/g, ' ').trim();
+          if (!seenSteps.has(normalizedStep)) {
+            seenSteps.add(normalizedStep);
+            steps.push(stepText);
+          }
         }
       });
     } else if (property && typeof property === 'object' && property['@id']) {
-      steps.push(this.formatIdValue(property['@id']));
+      const stepText = this.formatIdValue(property['@id']);
+      if (stepText.trim().length > 0) {
+        steps.push(stepText);
+      }
     } else if (typeof property === 'string') {
-      steps.push(property);
+      if (property.trim().length > 0) {
+        steps.push(property);
+      }
     }
     
-    return steps.filter(step => step.trim().length > 0);
+    return steps;
   }
 
   private formatPropertyName(prop: string): string {

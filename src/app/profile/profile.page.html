@@ -1,7 +1,16 @@
-<!-- profile.page.html - UPDATED VERSION -->
+<!-- profile.page.html - UPDATED VERSION WITH AUTH -->
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title class="centered-red-title">Profile</ion-title>
+    <!-- Show logout button if logged in -->
+    <ion-button 
+      *ngIf="isLoggedIn" 
+      slot="end" 
+      fill="clear" 
+      size="small"
+      (click)="handleLogout()">
+      Logout
+    </ion-button>
   </ion-toolbar>
 </ion-header>
 
@@ -28,8 +37,8 @@
     </div>
     
     <div class="profile-right">
-      <h2 class="profile-name">{{ profileData.fullname }}</h2>
-      <p class="profile-location">{{ profileData.location }}</p>
+      <h2 class="profile-name">{{ profileData.fullname || 'Guest User' }}</h2>
+      <p class="profile-location">{{ profileData.location || 'Location not set' }}</p>
       <ion-button 
         fill="clear" 
         size="small" 
@@ -40,8 +49,8 @@
     </div>
   </div>
 
-  <!-- Profile Form -->
-  <div class="profile-form">
+  <!-- Show profile form only if logged in -->
+  <div *ngIf="isLoggedIn" class="profile-form">
     <!-- Full Name -->
     <div class="form-group">
       <ion-label class="form-label">Full Name</ion-label>
@@ -160,6 +169,45 @@
       (click)="saveProfile()">
       SAVE
     </ion-button>
+  </div>
+
+  <!-- Authentication Buttons Section -->
+  <div class="auth-section" [class.logged-in]="isLoggedIn">
+    <!-- Guest message when not logged in -->
+    <div *ngIf="!isLoggedIn" class="guest-message">
+      <h3>Welcome, Guest!</h3>
+      <p>Login or Sign up to access your profile and save your information.</p>
+    </div>
+
+    <!-- Authentication buttons -->
+    <div *ngIf="!isLoggedIn" class="auth-buttons">
+      <!-- Login Button -->
+      <ion-button 
+        expand="block" 
+        class="login-button"
+        (click)="showLoginModal()">
+        <ion-icon name="log-in" slot="start"></ion-icon>
+        LOGIN
+      </ion-button>
+
+      <!-- Sign Up Button -->
+      <ion-button 
+        expand="block" 
+        class="signup-button"
+        (click)="showSignupModal()">
+        <ion-icon name="person-add" slot="start"></ion-icon>
+        SIGN UP
+      </ion-button>
+    </div>
+
+    <!-- Logged in message -->
+    <div *ngIf="isLoggedIn" class="logged-in-message">
+      <div class="welcome-message">
+        <ion-icon name="checkmark-circle" class="check-icon"></ion-icon>
+        <h3>Welcome back!</h3>
+        <p>You are successfully logged in. You can now update your profile information above.</p>
+      </div>
+    </div>
   </div>
 </ion-content>
 

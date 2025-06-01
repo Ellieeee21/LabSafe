@@ -20,7 +20,9 @@ import {
   IonSelectOption, 
   IonDatetime,
   ActionSheetController, 
-  ToastController 
+  ToastController,
+  AlertController,
+  ModalController
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
@@ -32,7 +34,9 @@ import {
   cameraOutline,
   calendarOutline,
   imagesOutline,
-  close
+  close,
+  logIn,
+  personAdd
 } from 'ionicons/icons';
 
 interface ProfileData {
@@ -45,6 +49,13 @@ interface ProfileData {
   emergencyContactNumber: string;
   profileImage: string;
   location: string;
+}
+
+interface AuthData {
+  email: string;
+  password: string;
+  confirmPassword?: string;
+  fullname?: string;
 }
 
 @Component({
@@ -66,7 +77,6 @@ interface ProfileData {
     IonItem,
     IonRadio,
     IonRadioGroup,
-  
   ]
 })
 export class ProfilePage implements OnInit {
@@ -74,6 +84,20 @@ export class ProfilePage implements OnInit {
   emailError: string = '';
   phoneError: string = '';
   emergencyPhoneError: string = '';
+  isLoggedIn: boolean = false;
+  
+  // Authentication data
+  loginData: AuthData = {
+    email: '',
+    password: ''
+  };
+
+  signupData: AuthData = {
+    email: '',
+    password: '',
+    confirmPassword: '',
+    fullname: ''
+  };
   
   profileData: ProfileData = {
     fullname: 'Juan Dela Cruz',
@@ -90,7 +114,9 @@ export class ProfilePage implements OnInit {
   constructor(
     private router: Router,
     private actionSheetController: ActionSheetController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private alertController: AlertController,
+    private modalController: ModalController
   ) {
     addIcons({ 
       homeOutline, 
@@ -100,7 +126,9 @@ export class ProfilePage implements OnInit {
       cameraOutline,
       calendarOutline,
       imagesOutline,
-      close
+      close,
+      logIn,
+      personAdd
     });
 
     // Set max date to today for date of birth
@@ -109,7 +137,21 @@ export class ProfilePage implements OnInit {
 
   async ngOnInit() {
     await this.loadProfile();
+    this.checkAuthStatus();
     console.log('Profile page loaded, testing editability...');
+  }
+
+  checkAuthStatus() {
+    // Check if user is logged in (you can implement your own logic here)
+    // For now, we'll check if there's user data in memory
+    const userData = this.getUserData();
+    this.isLoggedIn = !!userData;
+  }
+
+  getUserData() {
+    // In a real app, you might check localStorage or a service
+    // For now, we'll use a simple in-memory check
+    return null; // Return null for now, implement your storage logic
   }
 
   async loadProfile() {
@@ -118,6 +160,254 @@ export class ProfilePage implements OnInit {
     } catch (error) {
       console.error('Error loading profile:', error);
     }
+  }
+
+  // Authentication Methods
+  async showLoginModal() {
+    const alert = await this.alertController.create({
+      header: 'Login',
+      cssClass: 'login-alert',
+      inputs: [
+        {
+          name: 'email',
+          type: 'email',
+          placeholder: 'Email',
+          value: this.loginData.email
+        },
+        {
+          name: 'password',
+          type: 'password',
+          placeholder: 'Password',
+          value: this.loginData.password
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary'
+        }, 
+        {
+          text: 'Login',
+          cssClass: 'login-button',
+          handler: (data) => {
+            this.loginData.email = data.email;
+            this.loginData.password = data.password;
+            return this.handleLogin();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async showSignupModal() {
+    const alert = await this.alertController.create({
+      header: 'Sign Up',
+      cssClass: 'signup-alert',
+      inputs: [
+        {
+          name: 'fullname',
+          type: 'text',
+          placeholder: 'Full Name',
+          value: this.signupData.fullname
+        },
+        {
+          name: 'email',
+          type: 'email',
+          placeholder: 'Email',
+          value: this.signupData.email
+        },
+        {
+          name: 'password',
+          type: 'password',
+          placeholder: 'Password',
+          value: this.signupData.password
+        },
+        {
+          name: 'confirmPassword',
+          type: 'password',
+          placeholder: 'Confirm Password',
+          value: this.signupData.confirmPassword
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary'
+        }, 
+        {
+          text: 'Sign Up',
+          cssClass: 'signup-button',
+          handler: (data) => {
+            this.signupData.fullname = data.fullname;
+            this.signupData.email = data.email;
+            this.signupData.password = data.password;
+            this.signupData.confirmPassword = data.confirmPassword;
+            return this.handleSignup();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async handleLogin(): Promise<boolean> {
+    try {
+      // Validate login data
+      if (!this.loginData.email || !this.loginData.password) {
+        await this.showToast('Please enter both email and password.', 'danger');
+        return false;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(this.loginData.email)) {
+        await this.showToast('Please enter a valid email address.', 'danger');
+        return false;
+      }
+
+      // Here you would implement your actual login logic
+      // For now, we'll simulate a successful login
+      console.log('Login attempt with:', this.loginData);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Store user data (in a real app, you'd get this from your API)
+      this.storeUserData({
+        email: this.loginData.email,
+        fullname: 'Logged In User',
+        isLoggedIn: true
+      });
+
+      this.isLoggedIn = true;
+      await this.showToast('Login successful!', 'success');
+      
+      // Clear login data
+      this.loginData = { email: '', password: '' };
+      
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      await this.showToast('Login failed. Please try again.', 'danger');
+      return false;
+    }
+  }
+
+  async handleSignup(): Promise<boolean> {
+    try {
+      // Validate signup data
+      if (!this.signupData.fullname || !this.signupData.email || 
+          !this.signupData.password || !this.signupData.confirmPassword) {
+        await this.showToast('Please fill in all fields.', 'danger');
+        return false;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(this.signupData.email)) {
+        await this.showToast('Please enter a valid email address.', 'danger');
+        return false;
+      }
+
+      // Password validation
+      if (this.signupData.password.length < 6) {
+        await this.showToast('Password must be at least 6 characters long.', 'danger');
+        return false;
+      }
+
+      // Confirm password validation
+      if (this.signupData.password !== this.signupData.confirmPassword) {
+        await this.showToast('Passwords do not match.', 'danger');
+        return false;
+      }
+
+      // Here you would implement your actual signup logic
+      console.log('Signup attempt with:', this.signupData);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Store user data (in a real app, you'd get this from your API)
+      this.storeUserData({
+        email: this.signupData.email,
+        fullname: this.signupData.fullname || 'New User',
+        isLoggedIn: true
+      });
+
+      // Update profile with signup data
+      this.profileData.fullname = this.signupData.fullname || '';
+      this.profileData.email = this.signupData.email;
+
+      this.isLoggedIn = true;
+      await this.showToast('Account created successfully!', 'success');
+      
+      // Clear signup data
+      this.signupData = { email: '', password: '', confirmPassword: '', fullname: '' };
+      
+      return true;
+    } catch (error) {
+      console.error('Signup error:', error);
+      await this.showToast('Signup failed. Please try again.', 'danger');
+      return false;
+    }
+  }
+
+  async handleLogout() {
+    const alert = await this.alertController.create({
+      header: 'Logout',
+      message: 'Are you sure you want to logout?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Logout',
+          handler: () => {
+            this.logout();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  logout() {
+    // Clear user data
+    this.clearUserData();
+    this.isLoggedIn = false;
+    
+    // Reset profile to default
+    this.profileData = {
+      fullname: '',
+      dateOfBirth: '',
+      gender: 'male',
+      email: '',
+      phoneNumber: '',
+      emergencyContact: '',
+      emergencyContactNumber: '',
+      profileImage: '',
+      location: ''
+    };
+
+    this.showToast('Logged out successfully!', 'success');
+  }
+
+  storeUserData(userData: any) {
+    // In a real app, you might use Ionic Storage or localStorage
+    // For now, we'll just store in memory
+    console.log('User data stored:', userData);
+  }
+
+  clearUserData() {
+    // Clear stored user data
+    console.log('User data cleared');
   }
 
   // Email validation
@@ -247,13 +537,13 @@ export class ProfilePage implements OnInit {
 
       // Validate full name
       if (!this.profileData.fullname || !this.profileData.fullname.trim()) {
-        await this.showToast('Please enter your full name.');
+        await this.showToast('Please enter your full name.', 'danger');
         return;
       }
 
       // Validate email
       if (!this.validateEmail()) {
-        await this.showToast('Please enter a valid email address.');
+        await this.showToast('Please enter a valid email address.', 'danger');
         return;
       }
 
@@ -264,13 +554,13 @@ export class ProfilePage implements OnInit {
       // Check if phone numbers are exactly 10 digits
       if (cleanPhoneNumber.length !== 10) {
         this.phoneError = 'Phone number must be valid';
-        await this.showToast('Phone number must be valid.');
+        await this.showToast('Phone number must be valid.', 'danger');
         return;
       }
 
       if (cleanEmergencyNumber.length !== 10) {
         this.emergencyPhoneError = 'Emergency contact number must be valid';
-        await this.showToast('Emergency contact number must be valid.');
+        await this.showToast('Emergency contact number must be valid.', 'danger');
         return;
       }
 
@@ -284,16 +574,16 @@ export class ProfilePage implements OnInit {
       
     } catch (error) {
       console.error('Error saving profile:', error);
-      await this.showToast('Error saving profile. Please try again.');
+      await this.showToast('Error saving profile. Please try again.', 'danger');
     }
   }
 
-  async showToast(message: string) {
+  async showToast(message: string, color: string = 'success') {
     const toast = await this.toastController.create({
       message: message,
       duration: 3000,
       position: 'bottom',
-      color: 'success'
+      color: color
     });
     await toast.present();
   }
