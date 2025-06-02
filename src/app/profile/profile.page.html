@@ -1,4 +1,4 @@
-<!-- profile.page.html - UPDATED VERSION WITH AUTH AND CENTERED TITLE -->
+<!-- profile.page.html - UPDATED VERSION WITH ADDRESS FIELD -->
 <ion-header [translucent]="true">
   <ion-toolbar>
     <!-- Empty start slot to balance the logout button -->
@@ -45,7 +45,7 @@
     
     <div class="profile-right">
       <h2 class="profile-name">{{ profileData.fullname || 'Guest User' }}</h2>
-      <p class="profile-location">{{ profileData.location || 'Location not set' }}</p>
+      <p class="profile-location">{{ profileData.address || 'Address not set' }}</p>
       <ion-button 
         fill="clear" 
         size="small" 
@@ -68,6 +68,18 @@
         type="text"
         fill="outline"
         (ionInput)="testInput()">
+      </ion-input>
+    </div>
+
+    <!-- Address -->
+    <div class="form-group">
+      <ion-label class="form-label">Address</ion-label>
+      <ion-input
+        [(ngModel)]="profileData.address"
+        placeholder="Enter your address"
+        class="profile-input"
+        type="text"
+        fill="outline">
       </ion-input>
     </div>
 

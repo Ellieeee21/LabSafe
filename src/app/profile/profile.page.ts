@@ -41,6 +41,7 @@ import {
 
 interface ProfileData {
   fullname: string;
+  address: string;
   dateOfBirth: string;
   gender: string;
   email: string;
@@ -101,6 +102,7 @@ export class ProfilePage implements OnInit {
   
   profileData: ProfileData = {
     fullname: 'Juan Dela Cruz',
+    address: 'Quezon City, Philippines',
     dateOfBirth: '1992-08-08',
     gender: 'male',
     email: 'juan.delacruz@email.com',
@@ -386,6 +388,7 @@ export class ProfilePage implements OnInit {
     // Reset profile to default
     this.profileData = {
       fullname: '',
+      address: '',
       dateOfBirth: '',
       gender: 'male',
       email: '',
