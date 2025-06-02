@@ -79,6 +79,23 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     'hasReactivityWith'
   ];
 
+  // Predefined Accidental General procedures
+  private accidentalGeneralSteps = [
+    'Absorb with Inert Dry Material',
+    'Call for Assistance of Disposal',
+    'Keep Away from Ignition or Heat',
+    'Never Touch',
+    'Prevent Entry to Basements',
+    'Prevent Entry to Confined Areas',
+    'Prevent Entry to Sewers',
+    'Prevent Water Inside Container',
+    'Stop leak if safe',
+    'Water spray to dampen',
+    'Absorb with Inert Dry Material',
+    'Dilute with Water and Dispose According to Authority Requirements',
+    'Place in Appropriate Disposal'
+  ];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -279,7 +296,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     for (const [prop, categoryName] of Object.entries(emergencyMapping)) {
       if (data[prop]) {
         console.log(`Found property ${prop}:`, data[prop]);
-        const steps = this.extractStepsFromProperty(data[prop], prop);
+        let steps: string[] = [];
+        
+        // Handle Accidental General with predefined steps
+        if (prop.includes('AccidentalGeneral')) {
+          steps = this.accidentalGeneralSteps.map(step => `• ${step}`);
+        } else {
+          steps = this.extractStepsFromProperty(data[prop], prop);
+        }
+        
         if (steps.length > 0) {
           stepGroups.push({ 
             category: categoryName, 
@@ -426,6 +451,9 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     
     // Fix "Phys Haz" to "Physical Hazards"
     cleaned = cleaned.replace(/Phys\s+Haz/gi, 'Physical Hazards');
+    
+    // Remove "Fire Fighting " prefix from fire fighting instructions
+    cleaned = cleaned.replace(/^Fire\s+Fighting\s+/i, '');
     
     return cleaned;
   }
