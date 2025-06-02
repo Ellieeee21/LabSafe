@@ -370,7 +370,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         const incompatibles = this.extractStepsFromProperty(data[key], key);
         if (incompatibles.length > 0) {
           steps.push(`Incompatible Materials:`);
-          incompatibles.forEach(item => steps.push(`• ${item}`));
+          incompatibles.forEach(item => steps.push(item));
         }
         break;
       }
@@ -382,7 +382,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         const reactives = this.extractStepsFromProperty(data[key], key);
         if (reactives.length > 0) {
           steps.push(`Reactive With:`);
-          reactives.forEach(item => steps.push(`• ${item}`));
+          reactives.forEach(item => steps.push(item));
         }
         break;
       }
@@ -403,17 +403,31 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       property.forEach(item => {
         const stepText = this.extractSingleValue(item);
         if (stepText && stepText.trim().length > 0) {
-          steps.push(shouldBeBulleted ? `• ${stepText}` : stepText);
+          // Remove "Post " prefix and clean up the text
+          const cleanedText = this.cleanStepText(stepText);
+          steps.push(shouldBeBulleted ? `• ${cleanedText}` : cleanedText);
         }
       });
     } else {
       const stepText = this.extractSingleValue(property);
       if (stepText && stepText.trim().length > 0) {
-        steps.push(shouldBeBulleted ? `• ${stepText}` : stepText);
+        // Remove "Post " prefix and clean up the text
+        const cleanedText = this.cleanStepText(stepText);
+        steps.push(shouldBeBulleted ? `• ${cleanedText}` : cleanedText);
       }
     }
     
     return steps;
+  }
+
+  private cleanStepText(text: string): string {
+    // Remove "Post " prefix if it exists
+    let cleaned = text.replace(/^Post\s+/i, '');
+    
+    // Fix "Phys Haz" to "Physical Hazards"
+    cleaned = cleaned.replace(/Phys\s+Haz/gi, 'Physical Hazards');
+    
+    return cleaned;
   }
 
   private extractSingleValue(item: any): string {
