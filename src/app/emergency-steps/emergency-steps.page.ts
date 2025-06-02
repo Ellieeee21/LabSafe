@@ -50,7 +50,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
-  private chemicalAliases: { [key: string]: string[] } = {};
+  private chemicalAliases: { [key: string]: string[] } = {
+    'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
+    'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
+    'Acetic Acid': ['Glacial Acetic Acid'],
+    'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
+    '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
+  };
 
   private nonBulletedProperties = [
     'hasHealthLevel',
@@ -78,14 +84,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     private router: Router,
     private platform: Platform,
     private databaseService: DatabaseService
-  ) {
-    this.initializeChemicalAliases();
-  }
+  ) {}
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
+      
+      console.log('Chemical ID:', this.chemicalId);
+      console.log('Chemical Name:', this.chemicalName);
       
       this.loadEmergencySteps();
     });
@@ -98,6 +105,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     // Subscribe to database loading state
     this.dataSubscription = this.databaseService.allData$.subscribe(data => {
       if (data && data.length > 0) {
+        console.log('Database data received, reloading steps');
         this.loadEmergencySteps();
       }
     });
@@ -112,34 +120,35 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  private initializeChemicalAliases() {
-    this.chemicalAliases = {
-      'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
-      'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
-      'Acetic Acid': ['Glacial Acetic Acid'],
-      'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
-      '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
-    };
-  }
-
   private loadEmergencySteps() {
     this.isLoading = true;
     
     try {
-      this.databaseService.allData$.subscribe(allData => {
+     
+      const allData = this.databaseService.getCurrentAllData();
+      console.log('All data length:', allData.length);
+      
+      if (allData && allData.length > 0) {
         const chemical = this.findChemicalData(allData);
+        console.log('Found chemical:', chemical);
         
         if (chemical && chemical.data) {
           this.allStepGroups = this.extractAllInformation(chemical.data);
           this.hasData = this.allStepGroups.length > 0;
+          console.log('Extracted step groups:', this.allStepGroups.length);
         } else {
           this.hasData = false;
           this.allStepGroups = [];
+          console.log('No chemical data found');
         }
-        
-        this.isLoading = false;
-        this.applySearch();
-      }).unsubscribe();
+      } else {
+        this.hasData = false;
+        this.allStepGroups = [];
+        console.log('No database data available');
+      }
+      
+      this.isLoading = false;
+      this.applySearch();
       
     } catch (error) {
       console.error('Error loading emergency steps:', error);
@@ -151,24 +160,74 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
+    console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
+    
+    // First try exact ID match
     let chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
     );
 
+    if (chemical) {
+      console.log('Found by ID:', chemical.id);
+      return chemical;
+    }
 
-    if (!chemical && this.chemicalName) {
+    // Try name-based matching with normalization
+    if (this.chemicalName) {
+      const searchName = this.normalizeChemicalName(this.chemicalName);
+      console.log('Normalized search name:', searchName);
+      
       chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
         
-        const mainName = this.getMainChemicalName(this.chemicalName);
-        const itemMainName = this.getMainChemicalName(item.id?.replace('id#', '') || '');
+        const itemName = this.normalizeChemicalName(item.name || '');
+        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
         
-        return mainName === itemMainName;
+        console.log('Comparing with item:', itemName, 'ID:', itemId);
+        
+        return itemName === searchName || itemId === searchName;
       });
+
+      if (chemical) {
+        console.log('Found by name:', chemical.name);
+        return chemical;
+      }
+
+      // Try alias matching
+      const mainChemicalName = this.getMainChemicalName(this.chemicalName);
+      if (mainChemicalName !== this.chemicalName) {
+        const aliasSearchName = this.normalizeChemicalName(mainChemicalName);
+        console.log('Trying alias search:', aliasSearchName);
+        
+        chemical = allData.find((item: AllDataItem) => {
+          if (item.type !== 'chemical') return false;
+          
+          const itemName = this.normalizeChemicalName(item.name || '');
+          const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+          
+          return itemName === aliasSearchName || itemId === aliasSearchName;
+        });
+        
+        if (chemical) {
+          console.log('Found by alias:', chemical.name);
+          return chemical;
+        }
+      }
     }
 
-    return chemical || null;
+    // Debug: List all available chemicals
+    const chemicals = allData.filter(item => item.type === 'chemical');
+    console.log('Available chemicals:', chemicals.map(c => ({ id: c.id, name: c.name })));
+
+    return null;
+  }
+
+  private normalizeChemicalName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')  // Remove all non-alphanumeric characters
+      .trim();
   }
 
   private getMainChemicalName(name: string): string {
@@ -183,12 +242,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
 
   private extractAllInformation(data: any): StepGroup[] {
     const stepGroups: StepGroup[] = [];
+    console.log('Extracting information from data:', Object.keys(data));
     
+    // Extract chemical information first
     const chemicalInfo = this.extractChemicalInformation(data);
     if (chemicalInfo.steps.length > 0) {
       stepGroups.push(chemicalInfo);
     }
 
+    // Map of property names to display names
     const emergencyMapping: { [key: string]: string } = {
       'hasFirstAidEye': 'Eye Contact First Aid',
       'hasFirstAidIngestion': 'Ingestion First Aid',
@@ -205,8 +267,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       'hasAccidentalGeneral': 'General Accident Procedures'
     };
 
+    // Process each emergency property
     for (const [prop, categoryName] of Object.entries(emergencyMapping)) {
       if (data[prop]) {
+        console.log(`Found property ${prop}:`, data[prop]);
         const steps = this.extractStepsFromProperty(data[prop], prop);
         if (steps.length > 0) {
           stepGroups.push({ 
@@ -218,42 +282,50 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       }
     }
 
+    console.log('Total step groups extracted:', stepGroups.length);
     return stepGroups;
   }
 
   private extractChemicalInformation(data: any): StepGroup {
     const steps: string[] = [];
 
+    // Extract flammability level
     if (data['hasFlammabilityLevel']) {
       const level = this.extractSimpleValue(data['hasFlammabilityLevel']);
       if (level) steps.push(`Flammability Level: ${level}`);
     }
 
+    // Extract health level
     if (data['hasHealthLevel']) {
       const level = this.extractSimpleValue(data['hasHealthLevel']);
       if (level) steps.push(`Health Level: ${level}`);
     }
 
+    // Extract instability/reactivity level
     if (data['hasInstabilityOrReactivityLevel']) {
       const level = this.extractSimpleValue(data['hasInstabilityOrReactivityLevel']);
       if (level) steps.push(`Instability/Reactivity Level: ${level}`);
     }
 
+    // Extract physical hazards
     if (data['hasPhysicalHazards']) {
       const hazards = this.extractStepsFromProperty(data['hasPhysicalHazards'], 'hasPhysicalHazards');
       hazards.forEach(hazard => steps.push(hazard));
     }
 
+    // Extract stability information
     if (data['hasStabilityAtNormalConditions']) {
       const stability = this.extractSimpleValue(data['hasStabilityAtNormalConditions']);
       if (stability) steps.push(`Stability at Normal Conditions: ${stability}`);
     }
 
+    // Extract polymerization information
     if (data['hasPolymerization']) {
       const polymerization = this.extractSimpleValue(data['hasPolymerization']);
       if (polymerization) steps.push(`Polymerization: ${polymerization}`);
     }
 
+    // Extract incompatibility information
     if (data['hasIncompatibilityIssuesWith']) {
       const incompatibles = this.extractStepsFromProperty(data['hasIncompatibilityIssuesWith'], 'hasIncompatibilityIssuesWith');
       if (incompatibles.length > 0) {
@@ -262,6 +334,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       }
     }
 
+    // Extract reactivity information
     if (data['hasReactivityWith']) {
       const reactives = this.extractStepsFromProperty(data['hasReactivityWith'], 'hasReactivityWith');
       if (reactives.length > 0) {
@@ -284,13 +357,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     if (Array.isArray(property)) {
       property.forEach(item => {
         const stepText = this.extractSingleValue(item);
-        if (stepText.trim().length > 0) {
+        if (stepText && stepText.trim().length > 0) {
           steps.push(shouldBeBulleted ? `• ${stepText}` : stepText);
         }
       });
     } else {
       const stepText = this.extractSingleValue(property);
-      if (stepText.trim().length > 0) {
+      if (stepText && stepText.trim().length > 0) {
         steps.push(shouldBeBulleted ? `• ${stepText}` : stepText);
       }
     }
@@ -299,11 +372,29 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private extractSingleValue(item: any): string {
-    if (item && typeof item === 'object' && item['@id']) {
-      return this.formatIdValue(item['@id']);
-    } else if (typeof item === 'string') {
+    if (!item) return '';
+    
+    if (typeof item === 'string') {
       return item;
     }
+    
+    if (typeof item === 'object') {
+      // Handle JSON-LD @id references
+      if (item['@id']) {
+        return this.formatIdValue(item['@id']);
+      }
+      
+      // Handle objects with @value
+      if (item['@value']) {
+        return item['@value'];
+      }
+      
+      // Handle plain objects
+      if (item.value) {
+        return item.value;
+      }
+    }
+    
     return '';
   }
 
@@ -316,10 +407,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private formatIdValue(id: string): string {
+    if (!id) return '';
+    
     return id
       .replace('id#', '')
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       .replace(/([0-9])([A-Z])/g, '$1 $2')
+      .replace(/\.\./g, ', ')
       .trim();
   }
 

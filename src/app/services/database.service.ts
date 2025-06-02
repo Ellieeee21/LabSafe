@@ -104,6 +104,10 @@ export class DatabaseService {
     }
   }
 
+public getCurrentAllData(): AllDataItem[] {
+  return this.allDataSubject.value;
+}
+
   private async createTables(): Promise<void> {
     if (!this.db) return;
 
