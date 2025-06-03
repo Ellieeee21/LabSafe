@@ -1,18 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
-import { ToastController, AlertController } from '@ionic/angular';
+import { ActivatedRoute, Router } from '@angular/router';
+import { DatabaseService, Chemical } from '../services/database.service';
 import { Subscription } from 'rxjs';
-import { DatabaseService, Chemical, EmergencyClass } from '../services/database.service';
 import { CommonModule } from '@angular/common';
+import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
-import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, IonSearchbar, 
-  IonCard, IonCardContent, IonSpinner, IonButton, IonIcon
-} from "@ionic/angular/standalone";
 import { addIcons } from 'ionicons';
 import { 
-  flaskOutline, searchOutline, refreshOutline,
-  homeOutline, timeOutline, personOutline
+  homeOutline, flaskOutline, timeOutline, personOutline, searchOutline, chevronForwardOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -20,125 +15,138 @@ import {
   templateUrl: './chemical-list.page.html',
   styleUrls: ['./chemical-list.page.scss'],
   standalone: true,
-  imports: [
-    CommonModule, FormsModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonSearchbar,
-    IonCard, IonCardContent, IonSpinner, IonButton, IonIcon
-  ]
+  imports: [CommonModule, IonicModule, FormsModule]
 })
 export class ChemicalListPage implements OnInit, OnDestroy {
+  searchQuery: string = '';
   chemicals: Chemical[] = [];
   filteredChemicals: Chemical[] = [];
-  isLoading = false;
-  searchTerm = '';
+  isLoading = true;
+  emergencyType: string = '';
+  emergencyId: string = '';
   
-  private subscriptions: Subscription[] = [];
+  private subscription: Subscription = new Subscription();
+  private routeSubscription: Subscription = new Subscription();
 
   constructor(
-    private router: Router,
     private databaseService: DatabaseService,
-    private toastController: ToastController,
-    private alertController: AlertController
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     addIcons({ 
-      flaskOutline, searchOutline, refreshOutline,
-      homeOutline, timeOutline, personOutline
+      homeOutline, flaskOutline, timeOutline, personOutline, searchOutline, chevronForwardOutline
     });
   }
 
-  ngOnInit() {
-    this.setupSubscriptions();
+  async ngOnInit() {
+    // Subscribe to route parameters to get emergency type
+    this.routeSubscription = this.route.queryParams.subscribe(params => {
+      this.emergencyType = params['emergencyType'] || '';
+      this.emergencyId = params['emergencyId'] || '';
+      console.log('Emergency Type:', this.emergencyType);
+      console.log('Emergency ID:', this.emergencyId);
+    });
+
+    await this.loadChemicals();
   }
 
   ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
+    }
   }
 
-  private setupSubscriptions() {
-    const loadingSub = this.databaseService.loading$.subscribe(loading => {
-      this.isLoading = loading;
-    });
-    this.subscriptions.push(loadingSub);
-
-    const chemicalsSub = this.databaseService.chemicals$.subscribe(chemicals => {
-      this.chemicals = chemicals;
-      this.applyFilter();
+  async loadChemicals() {
+    try {
+      this.isLoading = true;
       
-      // Fallback method
-      if (chemicals.length === 0) {
-        this.databaseService.allData$.subscribe(allData => {
-          if (allData.length > 0) {
-            const manualChemicals = this.databaseService.getChemicals();
-            if (manualChemicals.length > 0) {
-              this.chemicals = manualChemicals;
-              this.applyFilter();
-            }
-          }
-        });
-      }
-    });
-    this.subscriptions.push(chemicalsSub);
+      this.subscription = this.databaseService.chemicals$.subscribe(chemicals => {
+        console.log('Chemicals loaded:', chemicals.length);
+        this.chemicals = chemicals;
+        this.applySearch();
+        this.isLoading = false;
+      });
+      
+    } catch (error) {
+      console.error('Error loading chemicals:', error);
+      this.chemicals = [];
+      this.filteredChemicals = [];
+      this.isLoading = false;
+    }
   }
 
   onSearchChange(event: any) {
-    this.searchTerm = event.target.value?.toLowerCase() || '';
-    this.applyFilter();
+    const query = event.target.value.toLowerCase().trim();
+    this.searchQuery = query;
+    this.applySearch();
   }
 
-  private applyFilter() {
-    if (!this.searchTerm.trim()) {
+  clearSearch() {
+    this.searchQuery = '';
+    this.applySearch();
+  }
+
+  private applySearch() {
+    if (!this.searchQuery) {
       this.filteredChemicals = [...this.chemicals];
     } else {
       this.filteredChemicals = this.chemicals.filter(chemical =>
-        chemical.name.toLowerCase().includes(this.searchTerm)
+        chemical.name.toLowerCase().includes(this.searchQuery) ||
+        (chemical.formula && chemical.formula.toLowerCase().includes(this.searchQuery)) ||
+        (chemical.casNumber && chemical.casNumber.toLowerCase().includes(this.searchQuery))
       );
     }
   }
 
-  clearSearch() {
-    this.searchTerm = '';
-    this.applyFilter();
+  // Navigate to chemical details instead of emergency steps
+  navigateToChemicalDetails(chemical: Chemical) {
+    console.log('Navigating to chemical details for:', chemical.name);
+    this.router.navigate(['/chemical-details', chemical.id]);
   }
 
-  async onChemicalClick(chemical: Chemical) {
-    // Navigate directly to emergency steps page with chemical information
-    this.router.navigate(['/emergency-steps'], {
-      queryParams: {
-        chemicalId: chemical.id,
-        chemicalName: chemical.name
-      }
-    });
-  }
-
-  async reloadFromJsonLd() {
-    try {
-      await this.databaseService.reloadDatabase();
-      this.showToast('Chemical database reloaded successfully');
-    } catch (error) {
-      this.showToast('Error reloading data', 'danger');
+  // Keep the old method for backward compatibility if needed
+  navigateToEmergencySteps(chemical: Chemical) {
+    console.log('Navigating to emergency steps for chemical:', chemical.name);
+    
+    // Build query parameters - include emergency type if it exists
+    const queryParams: any = {
+      chemicalId: chemical.id.toString(),
+      chemicalName: chemical.name
+    };
+    
+    // Pass through emergency type information if it exists
+    if (this.emergencyType) {
+      queryParams.emergencyType = this.emergencyType;
     }
-  }
-
-  private async showToast(message: string, color: string = 'success') {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color,
-      position: 'bottom'
+    if (this.emergencyId) {
+      queryParams.emergencyId = this.emergencyId;
+    }
+    
+    this.router.navigate(['/emergency-steps'], { 
+      queryParams 
     });
-    await toast.present();
   }
 
-  // Navigation methods
+  // Bottom Navigation Methods
   navigateToHome() {
+    console.log('Navigating to emergency types...');
     this.router.navigate(['/emergency-types']);
   }
 
+  navigateToChemicals() {
+    console.log('Already on Chemicals');
+  }
+
   navigateToHistory() {
-    this.showToast('History feature coming soon', 'primary');
+    console.log('History feature coming soon');
+    // TODO: Implement history navigation when ready
   }
 
   navigateToProfile() {
+    console.log('Navigating to profile...');
     this.router.navigate(['/profile']);
   }
 }

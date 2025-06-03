@@ -7,14 +7,11 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
-      "launchAutoHide": true,
-      "launchFadeOutDuration": 500,
-      "backgroundColor": "#ffffff",
-      "androidScaleType": "CENTER_CROP",
+      "launchAutoHide": false,
+      "launchShowDuration": 0,
       "showSpinner": false,
-      "splashFullScreen": true,
-      "splashImmersive": true
+      "splashFullScreen": false,
+      "splashImmersive": false
     },
     "CapacitorSQLite": {
       "iosDatabaseLocation": "Library/CapacitorDatabase",

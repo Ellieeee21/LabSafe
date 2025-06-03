@@ -40,15 +40,8 @@
         <ion-card-content>
           <h3 class="step-header">{{ stepGroup.category }}</h3>
           
-          <!-- Chemical Information formatting -->
-          <div *ngIf="stepGroup.isChemicalInfo" class="chemical-info-content">
-            <div *ngFor="let step of stepGroup.steps" class="chemical-info-item">
-              <span [innerHTML]="step"></span>
-            </div>
-          </div>
-          
-          <!-- Regular emergency steps  -->
-          <div *ngIf="!stepGroup.isChemicalInfo" class="emergency-steps-content">
+          <!-- Emergency steps content -->
+          <div class="emergency-steps-content">
             <div *ngFor="let step of stepGroup.steps; let i = index" class="step-item">
               <span [innerHTML]="step"></span>
             </div>

@@ -18,7 +18,6 @@ import {
 interface StepGroup {
   category: string;
   steps: string[];
-  isChemicalInfo?: boolean;
 }
 
 @Component({
@@ -42,6 +41,8 @@ interface StepGroup {
 export class EmergencyStepsPage implements OnInit, OnDestroy {
   chemicalId: string = '';
   chemicalName: string = '';
+  emergencyType: string = '';
+  emergencyId: string = '';
   searchQuery: string = '';
   allStepGroups: StepGroup[] = [];
   filteredSteps: StepGroup[] = [];
@@ -58,28 +59,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
   };
 
-  private nonBulletedProperties = [
-    'hasHealthLevel',
-    'hasPhysicalHazards', 
-    'hasPolymerization',
-    'hasStabilityAtNormalConditions',
-    'hasFlammabilityLevel',
-    'hasInstabilityOrReactivityLevel'
-  ];
+  private emergencyTypeMapping: { [key: string]: string[] } = {
+    'Eye Contact': ['id#hasFirstAidEye', 'hasFirstAidEye'],
+    'Fire Fighting': ['id#hasSmallFireFighting', 'hasSmallFireFighting', 'id#hasLargeFireFighting', 'hasLargeFireFighting'],
+    'Ingestion': ['id#hasFirstAidIngestion', 'hasFirstAidIngestion'],
+    'Inhalation': ['id#hasFirstAidInhalation', 'hasFirstAidInhalation', 'id#hasFirstAidSeriousInhalation', 'hasFirstAidSeriousInhalation'],
+    'Skin Contact': ['id#hasFirstAidSkin', 'hasFirstAidSkin', 'id#hasFirstAidSeriousSkin', 'hasFirstAidSeriousSkin'],
+    'Spill': ['id#hasSmallSpill', 'hasSmallSpill', 'id#hasLargeSpill', 'hasLargeSpill', 'id#hasAccidentalGeneral', 'hasAccidentalGeneral']
+  };
 
-  // Chemical information properties
-  private chemicalInfoProperties = [
-    'hasFlammabilityLevel',
-    'hasHealthLevel',
-    'hasInstabilityOrReactivityLevel',
-    'hasPhysicalHazards',
-    'hasStabilityAtNormalConditions',
-    'hasPolymerization',
-    'hasIncompatibilityIssuesWith',
-    'hasReactivityWith'
-  ];
-
-  // Predefined Accidental General procedures
   private accidentalGeneralSteps = [
     'Absorb with Inert Dry Material',
     'Call for Assistance of Disposal',
@@ -107,9 +95,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
+      this.emergencyType = params['emergencyType'] || '';
+      this.emergencyId = params['emergencyId'] || '';
       
       console.log('Chemical ID:', this.chemicalId);
       console.log('Chemical Name:', this.chemicalName);
+      console.log('Emergency Type:', this.emergencyType);
+      console.log('Emergency ID:', this.emergencyId);
       
       this.loadEmergencySteps();
     });
@@ -150,7 +142,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         
         if (chemical && chemical.data) {
           console.log('Chemical data keys:', Object.keys(chemical.data));
-          this.allStepGroups = this.extractAllInformation(chemical.data);
+          this.allStepGroups = this.extractEmergencyProcedures(chemical.data);
           this.hasData = this.allStepGroups.length > 0;
           console.log('Extracted step groups:', this.allStepGroups.length);
           console.log('Step groups:', this.allStepGroups);
@@ -231,7 +223,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       }
     }
 
-    // Debug: List all available chemicals
     const chemicals = allData.filter(item => item.type === 'chemical');
     console.log('Available chemicals:', chemicals.map(c => ({ id: c.id, name: c.name })));
 
@@ -255,15 +246,81 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     return name;
   }
 
-  private extractAllInformation(data: any): StepGroup[] {
+  private extractEmergencyProcedures(data: any): StepGroup[] {
     const stepGroups: StepGroup[] = [];
-    console.log('Extracting information from data:', Object.keys(data));
+    console.log('Extracting emergency procedures for emergency type:', this.emergencyType);
+    console.log('Extracting procedures from data:', Object.keys(data));
     
-    const chemicalInfo = this.extractChemicalInformation(data);
-    if (chemicalInfo.steps.length > 0) {
-      stepGroups.push(chemicalInfo);
+    if (!this.emergencyType) {
+      return this.extractAllEmergencyProcedures(data);
     }
 
+    const relevantProperties = this.emergencyTypeMapping[this.emergencyType];
+    
+    if (!relevantProperties) {
+      console.log('No mapping found for emergency type:', this.emergencyType);
+      return [];
+    }
+
+    console.log('Looking for properties:', relevantProperties);
+
+    const emergencyMapping: { [key: string]: string } = {
+      'id#hasFirstAidEye': 'Eye Contact First Aid',
+      'hasFirstAidEye': 'Eye Contact First Aid',
+      'id#hasFirstAidIngestion': 'Ingestion First Aid',
+      'hasFirstAidIngestion': 'Ingestion First Aid',
+      'id#hasFirstAidInhalation': 'Inhalation First Aid',
+      'hasFirstAidInhalation': 'Inhalation First Aid',
+      'id#hasFirstAidSkin': 'Skin Contact First Aid',
+      'hasFirstAidSkin': 'Skin Contact First Aid',
+      'id#hasFirstAidSeriousInhalation': 'Serious Inhalation First Aid',
+      'hasFirstAidSeriousInhalation': 'Serious Inhalation First Aid',
+      'id#hasFirstAidSeriousSkin': 'Serious Skin Contact First Aid',
+      'hasFirstAidSeriousSkin': 'Serious Skin Contact First Aid',
+      'id#hasFirstAidGeneral': 'General First Aid',
+      'hasFirstAidGeneral': 'General First Aid',
+      'id#hasSmallSpill': 'Small Spill Procedures',
+      'hasSmallSpill': 'Small Spill Procedures',
+      'id#hasLargeSpill': 'Large Spill Procedures',
+      'hasLargeSpill': 'Large Spill Procedures',
+      'id#hasSmallFireFighting': 'Small Fire Fighting',
+      'hasSmallFireFighting': 'Small Fire Fighting',
+      'id#hasLargeFireFighting': 'Large Fire Fighting',
+      'hasLargeFireFighting': 'Large Fire Fighting',
+      'id#hasConditionsOfInstability': 'Conditions of Instability',
+      'hasConditionsOfInstability': 'Conditions of Instability',
+      'id#hasAccidentalGeneral': 'General Accident Procedures',
+      'hasAccidentalGeneral': 'General Accident Procedures'
+    };
+
+    for (const prop of relevantProperties) {
+      if (data[prop] && emergencyMapping[prop]) {
+        console.log(`Found property ${prop}:`, data[prop]);
+        let steps: string[] = [];
+        
+        if (prop.includes('AccidentalGeneral')) {
+          steps = this.accidentalGeneralSteps.map(step => `• ${step}`);
+        } else {
+          steps = this.extractStepsFromProperty(data[prop]);
+        }
+        
+        if (steps.length > 0) {
+          stepGroups.push({ 
+            category: emergencyMapping[prop], 
+            steps: steps
+          });
+        }
+      }
+    }
+
+    console.log('Total emergency procedure groups extracted:', stepGroups.length);
+    return stepGroups;
+  }
+
+  private extractAllEmergencyProcedures(data: any): StepGroup[] {
+    const stepGroups: StepGroup[] = [];
+    console.log('Extracting all emergency procedures from data:', Object.keys(data));
+    
     const emergencyMapping: { [key: string]: string } = {
       'id#hasFirstAidEye': 'Eye Contact First Aid',
       'hasFirstAidEye': 'Eye Contact First Aid',
@@ -298,147 +355,41 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         console.log(`Found property ${prop}:`, data[prop]);
         let steps: string[] = [];
         
-        // Handle Accidental General with predefined steps
         if (prop.includes('AccidentalGeneral')) {
           steps = this.accidentalGeneralSteps.map(step => `• ${step}`);
         } else {
-          steps = this.extractStepsFromProperty(data[prop], prop);
+          steps = this.extractStepsFromProperty(data[prop]);
         }
         
         if (steps.length > 0) {
           stepGroups.push({ 
             category: categoryName, 
-            steps: steps,
-            isChemicalInfo: false
+            steps: steps
           });
         }
       }
     }
 
-    console.log('Total step groups extracted:', stepGroups.length);
+    console.log('Total emergency procedure groups extracted:', stepGroups.length);
     return stepGroups;
   }
 
-  private extractChemicalInformation(data: any): StepGroup {
+  private extractStepsFromProperty(property: any): string[] {
     const steps: string[] = [];
-
-    const flammabilityKeys = ['id#hasFlammabilityLevel', 'hasFlammabilityLevel'];
-    for (const key of flammabilityKeys) {
-      if (data[key]) {
-        const level = this.extractSimpleValue(data[key]);
-        if (level) {
-          steps.push(`Flammability Level: ${level}`);
-          break;
-        }
-      }
-    }
-
-    const healthKeys = ['id#hasHealthLevel', 'hasHealthLevel'];
-    for (const key of healthKeys) {
-      if (data[key]) {
-        const level = this.extractSimpleValue(data[key]);
-        if (level) {
-          steps.push(`Health Level: ${level}`);
-          break;
-        }
-      }
-    }
-
-    const instabilityKeys = ['id#hasInstabilityOrReactivityLevel', 'hasInstabilityOrReactivityLevel'];
-    for (const key of instabilityKeys) {
-      if (data[key]) {
-        const level = this.extractSimpleValue(data[key]);
-        if (level) {
-          steps.push(`Instability/Reactivity Level: ${level}`);
-          break;
-        }
-      }
-    }
-
-    const physicalHazardKeys = ['id#hasPhysicalHazards', 'hasPhysicalHazards'];
-    for (const key of physicalHazardKeys) {
-      if (data[key]) {
-        const hazards = this.extractStepsFromProperty(data[key], key);
-        if (hazards.length > 0) {
-          steps.push('Physical Hazards:');
-          hazards.forEach(hazard => steps.push(hazard));
-        }
-        break;
-      }
-    }
-
-    const stabilityKeys = ['id#hasStabilityAtNormalConditions', 'hasStabilityAtNormalConditions'];
-    for (const key of stabilityKeys) {
-      if (data[key]) {
-        const stability = this.extractSimpleValue(data[key]);
-        if (stability) {
-          steps.push(`Stability at Normal Conditions: ${stability}`);
-          break;
-        }
-      }
-    }
-
-    const polymerizationKeys = ['id#hasPolymerization', 'hasPolymerization'];
-    for (const key of polymerizationKeys) {
-      if (data[key]) {
-        const polymerization = this.extractSimpleValue(data[key]);
-        if (polymerization) {
-          steps.push(`Polymerization: ${polymerization}`);
-          break;
-        }
-      }
-    }
-
-    const incompatibilityKeys = ['id#hasIncompatibilityIssuesWith', 'hasIncompatibilityIssuesWith'];
-    for (const key of incompatibilityKeys) {
-      if (data[key]) {
-        const incompatibles = this.extractStepsFromProperty(data[key], key);
-        if (incompatibles.length > 0) {
-          steps.push(`Incompatible Materials:`);
-          incompatibles.forEach(item => steps.push(item));
-        }
-        break;
-      }
-    }
-
-    const reactivityKeys = ['id#hasReactivityWith', 'hasReactivityWith'];
-    for (const key of reactivityKeys) {
-      if (data[key]) {
-        const reactives = this.extractStepsFromProperty(data[key], key);
-        if (reactives.length > 0) {
-          steps.push(`Reactive With:`);
-          reactives.forEach(item => steps.push(item));
-        }
-        break;
-      }
-    }
-
-    return {
-      category: 'Chemical Information',
-      steps: steps,
-      isChemicalInfo: true
-    };
-  }
-
-  private extractStepsFromProperty(property: any, propName: string): string[] {
-    const steps: string[] = [];
-    const shouldBeBulleted = !this.nonBulletedProperties.some(p => propName.includes(p));
     
     if (Array.isArray(property)) {
       property.forEach(item => {
         const stepText = this.extractSingleValue(item);
         if (stepText && stepText.trim().length > 0) {
-          // Remove "Post " prefix and clean up the text
           const cleanedText = this.cleanStepText(stepText);
-          steps.push(shouldBeBulleted ? `• ${cleanedText}` : cleanedText);
+          steps.push(`• ${cleanedText}`);
         }
       });
     } else {
       const stepText = this.extractSingleValue(property);
       if (stepText && stepText.trim().length > 0) {
-        // Remove "Post " prefix and clean up the text
         const cleanedText = this.cleanStepText(stepText);
-        steps.push(shouldBeBulleted ? `• ${cleanedText}` : cleanedText);
+        steps.push(`• ${cleanedText}`);
       }
     }
     
@@ -446,13 +397,8 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private cleanStepText(text: string): string {
-    // Remove "Post " prefix if it exists
     let cleaned = text.replace(/^Post\s+/i, '');
-    
-    // Fix "Phys Haz" to "Physical Hazards"
     cleaned = cleaned.replace(/Phys\s+Haz/gi, 'Physical Hazards');
-    
-    // Remove "Fire Fighting " prefix from fire fighting instructions
     cleaned = cleaned.replace(/^Fire\s+Fighting\s+/i, '');
     
     return cleaned;
@@ -489,14 +435,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
     
     return '';
-  }
-
-  private extractSimpleValue(property: any): string {
-    if (Array.isArray(property) && property.length > 0) {
-      return this.extractSingleValue(property[0]);
-    } else {
-      return this.extractSingleValue(property);
-    }
   }
 
   private formatIdValue(id: string): string {

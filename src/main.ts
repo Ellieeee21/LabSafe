@@ -9,25 +9,19 @@ import { AppComponent } from './app/app.component';
 import { environment } from './environments/environment';
 import { DatabaseService } from './app/services/database.service';
 
-// SQLite imports
 import { defineCustomElements as jeepSqlite } from 'jeep-sqlite/loader';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite';
 
-// Initialize SQLite
 const initSQLite = async (): Promise<boolean> => {
   if (Capacitor.getPlatform() === 'web') {
-    // Initialize jeep-sqlite web component
     jeepSqlite(window);
     
-    // Create the 'jeep-sqlite' Stencil component
     const jeepSqliteEl = document.createElement('jeep-sqlite');
     document.body.appendChild(jeepSqliteEl);
     
-    // Wait for the component to be ready
     await customElements.whenDefined('jeep-sqlite');
     
-    // Initialize the Web store
     await CapacitorSQLite.initWebStore();
   }
   
@@ -35,7 +29,6 @@ const initSQLite = async (): Promise<boolean> => {
   
   try {
     if (Capacitor.getPlatform() === 'web') {
-      // Save the database from store to disk
       await sqlite.saveToStore('labsafe_chemicals');
     }
   } catch (error) {
@@ -49,7 +42,6 @@ if (environment.production) {
   enableProdMode();
 }
 
-// Initialize SQLite then bootstrap the app
 initSQLite().then(() => {
   bootstrapApplication(AppComponent, {
     providers: [
@@ -62,7 +54,6 @@ initSQLite().then(() => {
   }).catch(err => console.log(err));
 }).catch(err => {
   console.error('Failed to initialize SQLite:', err);
-  // Bootstrap anyway with limited functionality
   bootstrapApplication(AppComponent, {
     providers: [
       { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },

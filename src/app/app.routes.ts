@@ -18,6 +18,10 @@ export const routes: Routes = [
     loadComponent: () => import('./chemical-list/chemical-list.page').then((m) => m.ChemicalListPage),
   },
   {
+    path: 'chemical-details/:id',
+    loadComponent: () => import('./chemical-details/chemical-details.page').then((m) => m.ChemicalDetailsPage),
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./profile/profile.page').then((m) => m.ProfilePage),
   },
