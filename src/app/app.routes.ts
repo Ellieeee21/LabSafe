@@ -7,23 +7,23 @@ export const routes: Routes = [
   },
   {
     path: 'emergency-types',
-    loadComponent: () => import('./emergency-types/emergency-types.page').then((m) => m.EmergencyTypesPage),
+    loadComponent: () => import('./emergency-types/emergency-types.page').then(m => m.EmergencyTypesPage)
   },
   {
     path: 'emergency-steps',
-    loadComponent: () => import('./emergency-steps/emergency-steps.page').then((m) => m.EmergencyStepsPage),
+    loadComponent: () => import('./emergency-steps/emergency-steps.page').then(m => m.EmergencyStepsPage)
   },
   {
     path: 'chemical-list',
-    loadComponent: () => import('./chemical-list/chemical-list.page').then((m) => m.ChemicalListPage),
+    loadComponent: () => import('./chemical-list/chemical-list.page').then(m => m.ChemicalListPage)
   },
   {
     path: 'chemical-details/:id',
-    loadComponent: () => import('./chemical-details/chemical-details.page').then((m) => m.ChemicalDetailsPage),
+    loadComponent: () => import('./chemical-details/chemical-details.page').then(m => m.ChemicalDetailsPage)
   },
   {
     path: 'profile',
-    loadComponent: () => import('./profile/profile.page').then((m) => m.ProfilePage),
+    loadComponent: () => import('./profile/profile.page').then(m => m.ProfilePage)
   },
   {
     path: '',
