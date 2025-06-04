@@ -26,8 +26,7 @@ interface ChemicalInfoSection {
   imports: [
     CommonModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard,
-    IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, 
-    IonIcon, IonSpinner, IonText
+    IonCardContent, IonIcon, IonSpinner, IonText
   ]
 })
 export class ChemicalDetailsPage implements OnInit {
@@ -69,22 +68,18 @@ export class ChemicalDetailsPage implements OnInit {
       this.isLoading = true;
       this.error = null;
       
-      // Convert string ID to number
       const numericId = parseInt(chemicalId, 10);
       
-      // Check if conversion was successful
       if (isNaN(numericId)) {
         this.error = 'Invalid chemical ID format';
         return;
       }
       
-      // Get the chemical by finding it in the chemicals list
       this.chemical = this.getChemicalById(numericId);
       
       if (!this.chemical) {
         this.error = 'Chemical not found';
       } else {
-        // Load chemical information from database
         await this.loadChemicalInformation();
       }
       
@@ -131,7 +126,6 @@ export class ChemicalDetailsPage implements OnInit {
   private findChemicalData(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
     console.log('Looking for chemical with name:', chemicalName);
     
-    // First try exact match
     let chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       item.name && item.name.toLowerCase() === chemicalName.toLowerCase()
@@ -142,7 +136,6 @@ export class ChemicalDetailsPage implements OnInit {
       return chemical;
     }
 
-    // Try normalized name match
     const searchName = this.normalizeChemicalName(chemicalName);
     console.log('Normalized search name:', searchName);
     
@@ -160,7 +153,6 @@ export class ChemicalDetailsPage implements OnInit {
       return chemical;
     }
 
-    // Try alias matching
     const mainChemicalName = this.getMainChemicalName(chemicalName);
     if (mainChemicalName !== chemicalName) {
       const aliasSearchName = this.normalizeChemicalName(mainChemicalName);
@@ -380,13 +372,8 @@ export class ChemicalDetailsPage implements OnInit {
   }
 
   private cleanStepText(text: string): string {
-    // Remove "Post " prefix if it exists
     let cleaned = text.replace(/^Post\s+/i, '');
-    
-    // Fix "Phys Haz" to "Physical Hazards"
     cleaned = cleaned.replace(/Phys\s+Haz/gi, 'Physical Hazards');
-    
-    // Remove "Fire Fighting " prefix from fire fighting instructions
     cleaned = cleaned.replace(/^Fire\s+Fighting\s+/i, '');
     
     return cleaned;
@@ -444,7 +431,7 @@ export class ChemicalDetailsPage implements OnInit {
       .trim();
   }
 
-  // Navigation methods - Updated for proper routing
+  // Navigation methods
   navigateToHome() {
     console.log('Navigating to emergency types...');
     this.router.navigate(['/emergency-types']);

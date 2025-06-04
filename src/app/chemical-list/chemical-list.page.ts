@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { ActivatedRoute, Router, Params } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DatabaseService, Chemical } from '../services/database.service';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -7,13 +7,7 @@ import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import { 
-  homeOutline, 
-  flaskOutline, 
-  timeOutline, 
-  personOutline, 
-  searchOutline, 
-  chevronForwardOutline, 
-  refreshOutline
+  homeOutline, flaskOutline, timeOutline, personOutline, searchOutline, chevronForwardOutline, refreshOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -27,34 +21,27 @@ export class ChemicalListPage implements OnInit, OnDestroy {
   searchTerm: string = '';
   chemicals: Chemical[] = [];
   filteredChemicals: Chemical[] = [];
-  isLoading: boolean = true;
+  isLoading = true;
   emergencyType: string = '';
   emergencyId: string = '';
   
   private subscription: Subscription = new Subscription();
   private routeSubscription: Subscription = new Subscription();
 
-  private databaseService = inject(DatabaseService);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-
-  constructor() {
+  constructor(
+    private databaseService: DatabaseService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
     addIcons({ 
-      homeOutline, 
-      flaskOutline, 
-      timeOutline, 
-      personOutline, 
-      searchOutline, 
-      chevronForwardOutline, 
-      refreshOutline
+      homeOutline, flaskOutline, timeOutline, personOutline, searchOutline, chevronForwardOutline, refreshOutline
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    this.routeSubscription = this.route.queryParams.subscribe((queryParams: Params) => {
-      this.emergencyType = queryParams['emergencyType'] || '';
-      this.emergencyId = queryParams['emergencyId'] || '';
-      
+  async ngOnInit() {
+    this.routeSubscription = this.route.queryParams.subscribe(params => {
+      this.emergencyType = params['emergencyType'] || '';
+      this.emergencyId = params['emergencyId'] || '';
       console.log('Emergency Type:', this.emergencyType);
       console.log('Emergency ID:', this.emergencyId);
     });
@@ -62,7 +49,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     await this.loadChemicals();
   }
 
-  ngOnDestroy(): void {
+  ngOnDestroy() {
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
@@ -71,11 +58,11 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     }
   }
 
-  async loadChemicals(): Promise<void> {
+  async loadChemicals() {
     try {
       this.isLoading = true;
       
-      this.subscription = this.databaseService.chemicals$.subscribe((chemicals: Chemical[]) => {
+      this.subscription = this.databaseService.chemicals$.subscribe(chemicals => {
         console.log('Chemicals loaded:', chemicals.length);
         this.chemicals = chemicals;
         this.applySearch();
@@ -90,19 +77,18 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     }
   }
 
-  onSearchChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const query = target.value.toLowerCase().trim();
+  onSearchChange(event: any) {
+    const query = event.target.value.toLowerCase().trim();
     this.searchTerm = query;
     this.applySearch();
   }
 
-  clearSearch(): void {
+  clearSearch() {
     this.searchTerm = '';
     this.applySearch();
   }
 
-  private applySearch(): void {
+  private applySearch() {
     if (!this.searchTerm) {
       this.filteredChemicals = [...this.chemicals];
     } else {
@@ -114,28 +100,33 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     }
   }
 
-  onChemicalClick(chemical: Chemical): void {
-    this.navigateToChemicalDetails(chemical);
+  onChemicalClick(chemical: Chemical) {
+    if (this.emergencyType && this.emergencyId) {
+      this.navigateToEmergencySteps(chemical);
+    } else {
+      this.navigateToChemicalDetails(chemical);
+    }
   }
 
-  navigateToChemicalDetails(chemical: Chemical): void {
+  // Navigate to chemical details
+  navigateToChemicalDetails(chemical: Chemical) {
     console.log('Navigating to chemical details for:', chemical.name);
     this.router.navigate(['/chemical-details', chemical.id]);
   }
 
-  navigateToEmergencySteps(chemical: Chemical): void {
+  navigateToEmergencySteps(chemical: Chemical) {
     console.log('Navigating to emergency steps for chemical:', chemical.name);
     
-    const queryParams: { [key: string]: string } = {
+    const queryParams: any = {
       chemicalId: chemical.id.toString(),
       chemicalName: chemical.name
     };
     
-    if (this.emergencyType && this.emergencyType.length > 0) {
-      queryParams['emergencyType'] = this.emergencyType;
+    if (this.emergencyType) {
+      queryParams.emergencyType = this.emergencyType;
     }
-    if (this.emergencyId && this.emergencyId.length > 0) {
-      queryParams['emergencyId'] = this.emergencyId;
+    if (this.emergencyId) {
+      queryParams.emergencyId = this.emergencyId;
     }
     
     this.router.navigate(['/emergency-steps'], { 
@@ -143,7 +134,8 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     });
   }
 
-  async reloadFromJsonLd(): Promise<void> {
+  // Method for reloading database
+  async reloadFromJsonLd() {
     try {
       this.isLoading = true;
       await this.databaseService.reloadDatabase();
@@ -159,20 +151,22 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     return this.filteredChemicals;
   }
 
-  navigateToHome(): void {
+  // Bottom Navigation Methods
+  navigateToHome() {
     console.log('Navigating to emergency types...');
     this.router.navigate(['/emergency-types']);
   }
 
-  navigateToChemicals(): void {
+  navigateToChemicals() {
     console.log('Already on Chemicals');
   }
 
-  navigateToHistory(): void {
+  navigateToHistory() {
     console.log('History feature coming soon');
+    // TODO: Implement history navigation when ready
   }
 
-  navigateToProfile(): void {
+  navigateToProfile() {
     console.log('Navigating to profile...');
     this.router.navigate(['/profile']);
   }
