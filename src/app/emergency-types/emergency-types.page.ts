@@ -86,15 +86,15 @@ export class EmergencyTypesPage implements OnInit {
     this.filteredEmergencyTypes = [...this.emergencyTypes];
   }
 
-  navigateToSteps(emergencyType: EmergencyType) {
-    console.log('Navigating to steps for:', emergencyType.name);
-    this.router.navigate(['/emergency-steps'], { 
-      queryParams: { 
-        emergencyType: emergencyType.name,
-        emergencyId: emergencyType.id 
-      } 
-    });
-  }
+ navigateToSteps(emergencyType: EmergencyType) {
+  console.log('Navigating to chemical list for emergency type:', emergencyType.name);
+  this.router.navigate(['/chemical-list'], { 
+    queryParams: { 
+      emergencyType: emergencyType.name,
+      emergencyId: emergencyType.id.toString()
+    } 
+  });
+}
 
   // Bottom Navigation Methods
   navigateToHome() {
