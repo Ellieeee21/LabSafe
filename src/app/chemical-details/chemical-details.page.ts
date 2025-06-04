@@ -91,11 +91,7 @@ export class ChemicalDetailsPage implements OnInit {
     },
     {
       mainName: 'Acetic Acid',
-      aliases: ['Glacial Acetic Acid']
-    },
-    {
-      mainName: 'AceticAcid..EthylEster',
-      aliases: ['Acetic Acid', 'Ethyl Ester', 'Ethyl Acetate', 'Acetoxyethane']
+      aliases: ['Glacial Acetic Acid', 'AceticAcid..EthylEster', 'Acetic Acid, Ethyl Ester', 'Ethyl Acetate', 'Acetoxyethane', 'Acetic Acid,Ethyl Ester']
     },
     {
       mainName: 'Activated Carbon',
@@ -380,10 +376,11 @@ export class ChemicalDetailsPage implements OnInit {
     const searchNames = this.getAllRelatedNames(chemicalName);
     console.log('All related names:', searchNames);
     
+    // First pass: exact matches
     for (const searchName of searchNames) {
       const chemical = allData.find((item: AllDataItem) => 
         item.type === 'chemical' && 
-        item.name && item.name.toLowerCase() === searchName.toLowerCase()
+        item.name && this.normalizeForComparison(item.name) === this.normalizeForComparison(searchName)
       );
       
       if (chemical) {
@@ -392,6 +389,7 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
+    // Second pass: normalized matches
     for (const searchName of searchNames) {
       const normalizedSearchName = this.normalizeChemicalName(searchName);
       console.log('Trying normalized search for:', normalizedSearchName);
@@ -411,6 +409,7 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
+    // Third pass: partial matching
     for (const searchName of searchNames) {
       const chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
@@ -438,9 +437,13 @@ export class ChemicalDetailsPage implements OnInit {
     const relatedNames = new Set<string>();
     relatedNames.add(chemicalName);
 
+    // Normalize the input name for better matching
+    const normalizedInput = this.normalizeForComparison(chemicalName);
+
+    // Find exact relationship matches
     const relationship = this.chemicalRelationships.find(rel => 
-      rel.mainName.toLowerCase() === chemicalName.toLowerCase() ||
-      rel.aliases.some(alias => alias.toLowerCase() === chemicalName.toLowerCase())
+      this.normalizeForComparison(rel.mainName) === normalizedInput ||
+      rel.aliases.some(alias => this.normalizeForComparison(alias) === normalizedInput)
     );
 
     if (relationship) {
@@ -448,20 +451,36 @@ export class ChemicalDetailsPage implements OnInit {
       relationship.aliases.forEach(alias => relatedNames.add(alias));
     }
 
-    // Special handling for chemicals that might be referenced differently
-    if (chemicalName.includes('..') || chemicalName.includes('Acetic')) {
-      const aceticRelationship = this.chemicalRelationships.find(rel => 
-        rel.mainName === 'Acetic Acid' || rel.mainName === 'AceticAcid..EthylEster'
-      );
-      if (aceticRelationship) {
-        relatedNames.add(aceticRelationship.mainName);
-        aceticRelationship.aliases.forEach(alias => relatedNames.add(alias));
-      }
-      relatedNames.add('Acetic Acid');
-      relatedNames.add('AceticAcid..EthylEster');
-    }
+    // Add common variations for the input name
+    this.addCommonVariations(chemicalName, relatedNames);
 
     return Array.from(relatedNames);
+  }
+
+  private normalizeForComparison(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[,\s]+/g, '') // Remove commas and spaces
+      .replace(/\.\./g, '')   // Remove double dots
+      .replace(/[\[\]()]/g, '') // Remove brackets and parentheses
+      .trim();
+  }
+
+  private addCommonVariations(chemicalName: string, relatedNames: Set<string>) {
+    // Add variations with different punctuation and spacing
+    const variations = [
+      chemicalName.replace(/,/g, ''),  // Remove commas
+      chemicalName.replace(/\s*,\s*/g, ','), // Normalize comma spacing
+      chemicalName.replace(/\s+/g, ''), // Remove all spaces
+      chemicalName.replace(/\.\./g, ', '), // Replace .. with comma space
+      chemicalName.replace(/\.\./g, ' '), // Replace .. with space
+    ];
+
+    variations.forEach(variation => {
+      if (variation !== chemicalName && variation.trim().length > 0) {
+        relatedNames.add(variation.trim());
+      }
+    });
   }
 
   private normalizeChemicalName(name: string): string {
