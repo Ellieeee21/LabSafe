@@ -19,10 +19,9 @@ export class SplashPage implements OnInit {
 
   async ngOnInit() {
     await this.platform.ready();
-    
-    // Show our custom splash for 2 seconds
+    //200 or .2 seconds delay before navigating to emergency types
     setTimeout(() => {
       this.router.navigate(['/emergency-types'], { replaceUrl: true });
-    }, 2000);
+    }, 200);
   }
 }

@@ -23,16 +23,6 @@
     </ion-searchbar>
   </div>
 
-  <!-- Chemical Information Section -->
-  <div *ngIf="!isLoading && chemicalName" class="chemical-info-section">
-    <ion-card class="info-card">
-      <ion-card-content>
-        <h2 class="chemical-name">{{ chemicalName }}</h2>
-        <p class="chemical-description">Emergency procedures and safety information for this chemical.</p>
-      </ion-card-content>
-    </ion-card>
-  </div>
-
   <!-- Emergency Information Sections -->
   <div *ngIf="!isLoading && hasData" class="emergency-details-container">
     <div *ngFor="let stepGroup of filteredSteps" class="steps-container">

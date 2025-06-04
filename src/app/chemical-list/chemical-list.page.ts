@@ -25,6 +25,8 @@ export class ChemicalListPage implements OnInit, OnDestroy {
   emergencyType: string = '';
   emergencyId: string = '';
   
+  isEmergencyMode: boolean = false;
+  
   private subscription: Subscription = new Subscription();
   private routeSubscription: Subscription = new Subscription();
 
@@ -42,8 +44,11 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     this.routeSubscription = this.route.queryParams.subscribe(params => {
       this.emergencyType = params['emergencyType'] || '';
       this.emergencyId = params['emergencyId'] || '';
+      this.isEmergencyMode = !!(this.emergencyType || this.emergencyId);
+      
       console.log('Emergency Type:', this.emergencyType);
       console.log('Emergency ID:', this.emergencyId);
+      console.log('Emergency Mode:', this.isEmergencyMode);
     });
 
     await this.loadChemicals();
@@ -101,14 +106,13 @@ export class ChemicalListPage implements OnInit, OnDestroy {
   }
 
   onChemicalClick(chemical: Chemical) {
-    if (this.emergencyType && this.emergencyId) {
+    if (this.isEmergencyMode) {
       this.navigateToEmergencySteps(chemical);
     } else {
       this.navigateToChemicalDetails(chemical);
     }
   }
 
-  // Navigate to chemical details
   navigateToChemicalDetails(chemical: Chemical) {
     console.log('Navigating to chemical details for:', chemical.name);
     this.router.navigate(['/chemical-details', chemical.id]);
@@ -134,7 +138,6 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     });
   }
 
-  // Method for reloading database
   async reloadFromJsonLd() {
     try {
       this.isLoading = true;
@@ -158,7 +161,8 @@ export class ChemicalListPage implements OnInit, OnDestroy {
   }
 
   navigateToChemicals() {
-    console.log('Already on Chemicals');
+    console.log('Navigating to chemicals (clearing emergency mode)...');
+    this.router.navigate(['/chemical-list']);
   }
 
   navigateToHistory() {

@@ -471,7 +471,20 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate(['/chemical-list']);
+    const queryParams: any = {};
+    
+    if (this.emergencyType) {
+      queryParams.emergencyType = this.emergencyType;
+    }
+    if (this.emergencyId) {
+      queryParams.emergencyId = this.emergencyId;
+    }
+    
+    if (Object.keys(queryParams).length > 0) {
+      this.router.navigate(['/chemical-list'], { queryParams });
+    } else {
+      this.router.navigate(['/chemical-list']);
+    }
   }
 
   navigateToHome() {
