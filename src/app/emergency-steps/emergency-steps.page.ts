@@ -51,8 +51,9 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
-  // Dynamic alias mapping built from JSON-LD data
-  private dynamicAliasMap: Map<string, string[]> = new Map();
+  // Enhanced alias mapping that groups all related chemicals
+  private aliasGroups: Map<string, Set<string>> = new Map();
+  private chemicalToCanonical: Map<string, string> = new Map();
 
   private emergencyTypeMapping: { [key: string]: string[] } = {
     'Eye Contact': ['id#hasFirstAidEye', 'hasFirstAidEye'],
@@ -110,7 +111,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     this.dataSubscription = this.databaseService.allData$.subscribe(data => {
       if (data && data.length > 0) {
         console.log('Database data received, rebuilding alias map and reloading steps');
-        this.buildDynamicAliasMap(data);
+        this.buildEnhancedAliasMap(data);
         this.loadEmergencySteps();
       }
     });
@@ -126,63 +127,136 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   /**
-   * Build dynamic alias mapping from JSON-LD owl:sameAs relationships
+   * Build enhanced alias mapping that properly groups related chemicals
    */
-  private buildDynamicAliasMap(allData: AllDataItem[]) {
-    console.log('Building dynamic alias map from JSON-LD data...');
-    this.dynamicAliasMap.clear();
+  private buildEnhancedAliasMap(allData: AllDataItem[]) {
+    console.log('Building enhanced alias map from JSON-LD data...');
+    this.aliasGroups.clear();
+    this.chemicalToCanonical.clear();
     
-    // Create a map to store all aliases for each canonical chemical
-    const aliasGroups: Map<string, Set<string>> = new Map();
+    // First, collect all chemicals and their sameAs relationships
+    const sameAsRelationships: Map<string, Set<string>> = new Map();
     
-    // First pass: collect all sameAs relationships
     allData.forEach(item => {
       if (item.type === 'chemical' && item.data) {
+        const currentId = item.id;
+        const currentName = this.extractChemicalName(item);
+        
+        // Initialize the set for this chemical
+        if (!sameAsRelationships.has(currentId)) {
+          sameAsRelationships.set(currentId, new Set([currentId]));
+        }
+        
+        // Add the name as well if it's different from ID
+        if (currentName && currentName !== currentId) {
+          sameAsRelationships.get(currentId)!.add(currentName);
+        }
+        
+        // Process sameAs relationships
         const sameAsProperty = item.data['http://www.w3.org/2002/07/owl#sameAs'];
         if (sameAsProperty) {
-          const currentId = item.id;
-          const currentName = this.extractChemicalName(item);
-          
-          // Get all sameAs references
           const sameAsRefs = Array.isArray(sameAsProperty) ? sameAsProperty : [sameAsProperty];
           
           sameAsRefs.forEach(ref => {
             if (ref && ref['@id']) {
-              const canonicalId = ref['@id'];
-              
-              // Initialize alias group if it doesn't exist
-              if (!aliasGroups.has(canonicalId)) {
-                aliasGroups.set(canonicalId, new Set());
-              }
-              
-              // Add current chemical to the canonical group
-              aliasGroups.get(canonicalId)!.add(currentId);
-              aliasGroups.get(canonicalId)!.add(currentName);
+              const relatedId = ref['@id'];
+              sameAsRelationships.get(currentId)!.add(relatedId);
             }
           });
         }
       }
     });
     
-    // Second pass: build bidirectional alias mapping
-    aliasGroups.forEach((aliases, canonicalId) => {
-      const aliasArray = Array.from(aliases).filter(alias => alias && alias.trim());
-      
-      // For each alias, map it to all other aliases in the group
-      aliasArray.forEach(alias => {
-        const otherAliases = aliasArray.filter(a => a !== alias);
-        this.dynamicAliasMap.set(this.normalizeChemicalName(alias), otherAliases);
-      });
-    });
+    // Now create unified groups using Union-Find approach
+    const visited = new Set<string>();
     
-    console.log('Dynamic alias map built:', this.dynamicAliasMap.size, 'entries');
-    
-    // Log some examples for debugging
-    this.dynamicAliasMap.forEach((aliases, key) => {
-      if (key.includes('acetone') || key.includes('acetic')) {
-        console.log(`Aliases for "${key}":`, aliases);
+    sameAsRelationships.forEach((relatedIds, chemicalId) => {
+      if (!visited.has(chemicalId)) {
+        // Find all chemicals that should be in the same group
+        const group = new Set<string>();
+        const queue = [chemicalId];
+        
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          if (visited.has(current)) continue;
+          
+          visited.add(current);
+          group.add(current);
+          
+          // Add normalized versions
+          group.add(this.normalizeChemicalName(current));
+          
+          // Find the actual chemical name from the data
+          const chemicalItem = allData.find(item => item.id === current);
+          if (chemicalItem) {
+            const name = this.extractChemicalName(chemicalItem);
+            if (name) {
+              group.add(name);
+              group.add(this.normalizeChemicalName(name));
+            }
+          }
+          
+          // Add all related chemicals to the queue
+          const related = sameAsRelationships.get(current);
+          if (related) {
+            related.forEach(relatedId => {
+              if (!visited.has(relatedId)) {
+                queue.push(relatedId);
+              }
+            });
+          }
+        }
+        
+        // Choose a canonical ID (prefer the one with emergency data)
+        let canonicalId = chemicalId;
+        for (const id of group) {
+          const chemical = allData.find(item => item.id === id);
+          if (chemical && chemical.data && this.hasEmergencyData(chemical.data)) {
+            canonicalId = id;
+            break;
+          }
+        }
+        
+        // Store the group
+        this.aliasGroups.set(canonicalId, group);
+        
+        // Map each chemical to its canonical ID
+        group.forEach(alias => {
+          this.chemicalToCanonical.set(alias, canonicalId);
+        });
       }
     });
+    
+    console.log('Enhanced alias map built with', this.aliasGroups.size, 'groups');
+    
+    // Debug logging
+    this.aliasGroups.forEach((group, canonical) => {
+      const groupArray = Array.from(group);
+      if (groupArray.some(item => item.toLowerCase().includes('acetone'))) {
+        console.log(`Group with canonical "${canonical}":`, groupArray);
+      }
+    });
+  }
+
+  /**
+   * Check if chemical data has emergency information
+   */
+  private hasEmergencyData(data: any): boolean {
+    const emergencyProperties = [
+      'id#hasFirstAidEye', 'hasFirstAidEye',
+      'id#hasFirstAidIngestion', 'hasFirstAidIngestion',
+      'id#hasFirstAidInhalation', 'hasFirstAidInhalation',
+      'id#hasFirstAidSkin', 'hasFirstAidSkin',
+      'id#hasFirstAidSeriousInhalation', 'hasFirstAidSeriousInhalation',
+      'id#hasFirstAidSeriousSkin', 'hasFirstAidSeriousSkin',
+      'id#hasSmallSpill', 'hasSmallSpill',
+      'id#hasLargeSpill', 'hasLargeSpill',
+      'id#hasSmallFireFighting', 'hasSmallFireFighting',
+      'id#hasLargeFireFighting', 'hasLargeFireFighting',
+      'id#hasAccidentalGeneral', 'hasAccidentalGeneral'
+    ];
+    
+    return emergencyProperties.some(prop => data[prop]);
   }
 
   /**
@@ -216,11 +290,12 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       
       if (allData && allData.length > 0) {
         // Build alias map if not already built
-        if (this.dynamicAliasMap.size === 0) {
-          this.buildDynamicAliasMap(allData);
+        if (this.aliasGroups.size === 0) {
+          this.buildEnhancedAliasMap(allData);
         }
         
-        const chemical = this.findChemicalData(allData);
+        // Find chemical using enhanced alias system
+        const chemical = this.findChemicalWithAliases(allData);
         console.log('Found chemical:', chemical);
         
         if (chemical && chemical.data) {
@@ -228,20 +303,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
           this.allStepGroups = this.extractEmergencyProcedures(chemical.data);
           this.hasData = this.allStepGroups.length > 0;
           console.log('Extracted step groups:', this.allStepGroups.length);
-          console.log('Step groups:', this.allStepGroups);
         } else {
-          // Try to find data using aliases
-          const aliasData = this.findChemicalDataByAliases(allData);
-          if (aliasData && aliasData.data) {
-            console.log('Found chemical data via aliases:', aliasData);
-            this.allStepGroups = this.extractEmergencyProcedures(aliasData.data);
-            this.hasData = this.allStepGroups.length > 0;
-            console.log('Extracted step groups via aliases:', this.allStepGroups.length);
-          } else {
-            this.hasData = false;
-            this.allStepGroups = [];
-            console.log('No chemical data found');
-          }
+          this.hasData = false;
+          this.allStepGroups = [];
+          console.log('No chemical data found');
         }
       } else {
         this.hasData = false;
@@ -261,82 +326,94 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
+  /**
+   * Find chemical using the enhanced alias system
+   */
+  private findChemicalWithAliases(allData: AllDataItem[]): AllDataItem | null {
     console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
     
-    // Try direct ID match first
-    let chemical = allData.find((item: AllDataItem) => 
-      item.type === 'chemical' && 
-      (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
-    );
-
-    if (chemical) {
-      console.log('Found by ID:', chemical.id);
-      return chemical;
-    }
-
-    // Try direct name match
-    if (this.chemicalName) {
-      const searchName = this.normalizeChemicalName(this.chemicalName);
-      console.log('Normalized search name:', searchName);
-      
-      chemical = allData.find((item: AllDataItem) => {
-        if (item.type !== 'chemical') return false;
-        
-        const itemName = this.normalizeChemicalName(this.extractChemicalName(item));
-        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-        
-        return itemName === searchName || itemId === searchName;
-      });
-
-      if (chemical) {
-        console.log('Found by name:', chemical.name || chemical.id);
-        return chemical;
-      }
-    }
-
-    return null;
-  }
-
-  private findChemicalDataByAliases(allData: AllDataItem[]): AllDataItem | null {
-    if (!this.chemicalName) return null;
+    // Create search terms
+    const searchTerms = [
+      this.chemicalId,
+      `id#${this.chemicalId}`,
+      this.chemicalName,
+      this.normalizeChemicalName(this.chemicalId),
+      this.normalizeChemicalName(this.chemicalName)
+    ].filter(term => term && term.trim());
     
-    const searchName = this.normalizeChemicalName(this.chemicalName);
-    console.log('Searching for aliases of:', searchName);
+    console.log('Search terms:', searchTerms);
     
-    // Get aliases for the search term
-    const aliases = this.dynamicAliasMap.get(searchName);
-    if (!aliases || aliases.length === 0) {
-      console.log('No aliases found for:', searchName);
-      return null;
-    }
+    // Try to find canonical ID for any of our search terms
+    let canonicalId: string | null = null;
     
-    console.log('Found aliases:', aliases);
-    
-    // Search for chemicals using aliases
-    for (const alias of aliases) {
-      const normalizedAlias = this.normalizeChemicalName(alias);
-      
-      const chemical = allData.find((item: AllDataItem) => {
-        if (item.type !== 'chemical') return false;
-        
-        const itemName = this.normalizeChemicalName(this.extractChemicalName(item));
-        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-        
-        return itemName === normalizedAlias || itemId === normalizedAlias;
-      });
-      
-      if (chemical) {
-        console.log('Found chemical via alias:', alias, '-> Chemical:', chemical.name || chemical.id);
-        return chemical;
+    for (const term of searchTerms) {
+      const canonical = this.chemicalToCanonical.get(term);
+      if (canonical) {
+        canonicalId = canonical;
+        console.log(`Found canonical ID "${canonical}" for search term "${term}"`);
+        break;
       }
     }
     
-    console.log('No chemical found via aliases');
+    // If we found a canonical ID, look for the chemical with the best data
+    if (canonicalId) {
+      const group = this.aliasGroups.get(canonicalId);
+      if (group) {
+        console.log('Searching in alias group:', Array.from(group));
+        
+        // Look for chemicals in this group that have emergency data
+        for (const alias of group) {
+          const chemical = allData.find(item => 
+            item.type === 'chemical' && 
+            (item.id === alias || 
+             item.id === `id#${alias}` ||
+             this.normalizeChemicalName(this.extractChemicalName(item)) === this.normalizeChemicalName(alias))
+          );
+          
+          if (chemical && chemical.data && this.hasEmergencyData(chemical.data)) {
+            console.log('Found chemical with emergency data:', chemical.id);
+            return chemical;
+          }
+        }
+        
+        // If no chemical with emergency data found, return any chemical from the group
+        for (const alias of group) {
+          const chemical = allData.find(item => 
+            item.type === 'chemical' && 
+            (item.id === alias || 
+             item.id === `id#${alias}` ||
+             this.normalizeChemicalName(this.extractChemicalName(item)) === this.normalizeChemicalName(alias))
+          );
+          
+          if (chemical && chemical.data) {
+            console.log('Found chemical from alias group:', chemical.id);
+            return chemical;
+          }
+        }
+      }
+    }
+    
+    // Fallback: direct search
+    for (const term of searchTerms) {
+      const chemical = allData.find(item => 
+        item.type === 'chemical' && 
+        (item.id === term || 
+         item.id === `id#${term}` ||
+         this.normalizeChemicalName(this.extractChemicalName(item)) === this.normalizeChemicalName(term))
+      );
+      
+      if (chemical) {
+        console.log('Found chemical via direct search:', chemical.id);
+        return chemical;
+      }
+    }
+    
+    console.log('No chemical found');
     return null;
   }
 
   private normalizeChemicalName(name: string): string {
+    if (!name) return '';
     return name
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '')  
