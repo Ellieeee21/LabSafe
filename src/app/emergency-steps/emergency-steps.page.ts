@@ -163,57 +163,55 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private findAllRelatedChemicals(allData: AllDataItem[]): AllDataItem[] {
-    const relatedChemicals: AllDataItem[] = [];
-    const processedIds: Set<string> = new Set();
-    
-    // First, find the primary chemical with improved matching
-    const primaryChemical = this.findChemicalData(allData);
-    if (!primaryChemical) {
-      console.log('Primary chemical not found, attempting fuzzy matching...');
-      const fuzzyMatch = this.findChemicalByFuzzyMatching(allData);
-      if (!fuzzyMatch) {
-        return [];
-      }
-      console.log('Found via fuzzy matching:', fuzzyMatch.id);
-    }
-    
-    const startingChemical = primaryChemical || this.findChemicalByFuzzyMatching(allData);
-    if (!startingChemical) return [];
-    
-    // Use BFS to find all related chemicals through owl:sameAs relationships
-    const queue: AllDataItem[] = [startingChemical];
-    
-    while (queue.length > 0) {
-      const currentChemical = queue.shift()!;
-      const currentId = currentChemical.id;
-      
-      if (processedIds.has(currentId)) {
-        continue;
-      }
-      
-      processedIds.add(currentId);
-      relatedChemicals.push(currentChemical);
-      
-      // Find chemicals that reference this one via owl:sameAs
-      const referencingChemicals = this.findReferencingChemicals(allData, currentId);
-      for (const refChem of referencingChemicals) {
-        if (!processedIds.has(refChem.id)) {
-          queue.push(refChem);
-        }
-      }
-      
-      // Find chemicals that this one references via owl:sameAs
-      const referencedChemicals = this.findReferencedChemicals(allData, currentChemical);
-      for (const refChem of referencedChemicals) {
-        if (!processedIds.has(refChem.id)) {
-          queue.push(refChem);
-        }
-      }
-    }
-    
-    console.log('Found related chemicals via owl:sameAs:', relatedChemicals.map(c => ({ id: c.id, name: c.name })));
-    return relatedChemicals;
+  const relatedChemicals: AllDataItem[] = [];
+  const processedIds: Set<string> = new Set();
+  
+  // First, find the primary chemical
+  const primaryChemical = this.findChemicalData(allData);
+  if (!primaryChemical) {
+    console.log('Primary chemical not found');
+    return [];
   }
+  
+  console.log('Starting with primary chemical:', primaryChemical.id);
+  
+  // Use BFS to find all related chemicals through owl:sameAs relationships
+  const queue: AllDataItem[] = [primaryChemical];
+  
+  while (queue.length > 0) {
+    const currentChemical = queue.shift()!;
+    const currentId = currentChemical.id;
+    
+    if (processedIds.has(currentId)) {
+      continue;
+    }
+    
+    processedIds.add(currentId);
+    relatedChemicals.push(currentChemical);
+    console.log('Added chemical to group:', currentId);
+    
+    // Find chemicals that reference this one via owl:sameAs
+    const referencingChemicals = this.findReferencingChemicals(allData, currentId);
+    for (const refChem of referencingChemicals) {
+      if (!processedIds.has(refChem.id)) {
+        console.log('Found referencing chemical:', refChem.id, 'references', currentId);
+        queue.push(refChem);
+      }
+    }
+    
+    // Find chemicals that this one references via owl:sameAs
+    const referencedChemicals = this.findReferencedChemicals(allData, currentChemical);
+    for (const refChem of referencedChemicals) {
+      if (!processedIds.has(refChem.id)) {
+        console.log('Found referenced chemical:', refChem.id, 'is referenced by', currentId);
+        queue.push(refChem);
+      }
+    }
+  }
+  
+  console.log('Final related chemicals group:', relatedChemicals.map(c => ({ id: c.id, name: c.name })));
+  return relatedChemicals;
+}
 
   private findChemicalByFuzzyMatching(allData: AllDataItem[]): AllDataItem | null {
     if (!this.chemicalName) return null;
@@ -304,46 +302,60 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private findReferencingChemicals(allData: AllDataItem[], targetId: string): AllDataItem[] {
-    return allData.filter(item => {
-      if (item.type !== 'chemical' || !item.data) return false;
-      
-      const sameAs = item.data['http://www.w3.org/2002/07/owl#sameAs'];
-      if (!sameAs) return false;
-      
-      const sameAsArray = Array.isArray(sameAs) ? sameAs : [sameAs];
-      return sameAsArray.some(ref => {
-        const refId = typeof ref === 'object' ? ref['@id'] : ref;
-        return refId === targetId || refId === `id#${targetId}` || refId === targetId.replace('id#', '');
-      });
-    });
-  }
-
-  private findReferencedChemicals(allData: AllDataItem[], chemical: AllDataItem): AllDataItem[] {
-    if (!chemical.data) return [];
+  return allData.filter(item => {
+    if (item.type !== 'chemical' || !item.data || item.id === targetId) return false;
     
-    const sameAs = chemical.data['http://www.w3.org/2002/07/owl#sameAs'];
-    if (!sameAs) return [];
+    const sameAs = item.data['http://www.w3.org/2002/07/owl#sameAs'];
+    if (!sameAs) return false;
     
     const sameAsArray = Array.isArray(sameAs) ? sameAs : [sameAs];
-    const referencedChemicals: AllDataItem[] = [];
-    
-    for (const ref of sameAsArray) {
+    return sameAsArray.some(ref => {
       const refId = typeof ref === 'object' ? ref['@id'] : ref;
-      const referencedChemical = allData.find(item => 
-        item.type === 'chemical' && (
-          item.id === refId || 
-          item.id === refId.replace('id#', '') || 
-          `id#${item.id}` === refId
-        )
-      );
       
-      if (referencedChemical) {
-        referencedChemicals.push(referencedChemical);
-      }
-    }
+      // Handle various ID format combinations
+      const normalizedRefId = refId.replace('id#', '');
+      const normalizedTargetId = targetId.replace('id#', '');
+      
+      return normalizedRefId === normalizedTargetId || 
+             refId === targetId || 
+             refId === `id#${targetId}` || 
+             `id#${refId}` === targetId;
+    });
+  });
+}
+
+ private findReferencedChemicals(allData: AllDataItem[], chemical: AllDataItem): AllDataItem[] {
+  if (!chemical.data) return [];
+  
+  const sameAs = chemical.data['http://www.w3.org/2002/07/owl#sameAs'];
+  if (!sameAs) return [];
+  
+  const sameAsArray = Array.isArray(sameAs) ? sameAs : [sameAs];
+  const referencedChemicals: AllDataItem[] = [];
+  
+  for (const ref of sameAsArray) {
+    const refId = typeof ref === 'object' ? ref['@id'] : ref;
     
-    return referencedChemicals;
+    const referencedChemical = allData.find(item => {
+      if (item.type !== 'chemical' || item.id === chemical.id) return false;
+      
+      // Handle various ID format combinations
+      const normalizedRefId = refId.replace('id#', '');
+      const normalizedItemId = item.id.replace('id#', '');
+      
+      return normalizedItemId === normalizedRefId || 
+             item.id === refId || 
+             item.id === refId.replace('id#', '') || 
+             `id#${item.id}` === refId;
+    });
+    
+    if (referencedChemical) {
+      referencedChemicals.push(referencedChemical);
+    }
   }
+  
+  return referencedChemicals;
+}
 
   private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
     console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
