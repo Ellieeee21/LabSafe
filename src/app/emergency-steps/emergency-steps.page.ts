@@ -51,7 +51,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
-  // Comprehensive chemical aliases mapping - automatically generated from your full list
+  // Comprehensive chemical aliases mapping - updated with all relationships
   private chemicalAliases: { [key: string]: string[] } = {
     '1,2,3-Benzenetriol': ['Pyrogallic Acid', '1,2,3-Trihydroxybenzene'],
     '1,2,3-Propanetriol': ['Glycerin'],
@@ -65,8 +65,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     '2-propanone': ['Acetone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
     'ABL': ['Lauric Acid', 'Dodecanoic Acid', 'Dodecylic Acid', 'Laurostearic Acid', 'Neo-fat12', 'Neo-fat12-43', 'Vulvic Acid', 'n-Dodecanoic Acid'],
     'Absolute Ethanol': ['Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol'],
-    'Acetic Acid': ['Glacial Acetic Acid'],
-    'AceticAcid..EthylEster': ['Acetic Acid', 'Ethyl Ester', 'Ethyl Acetate', 'Acetoxyethane'],
+    'Acetic Acid': ['Glacial Acetic Acid', 'Acetic Acid,Ethyl Ester', 'AceticAcid..EthylEster', 'Ethyl Acetate', 'Acetoxyethane'],
     'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
     'Alpha-alumina': ['Aluminum Oxide', 'Aluminia', 'Aluminum Oxide Powder'],
     'Ametox, Antichlor': ['Sodium Thiosulfate Pentahydrate'],
@@ -248,6 +247,24 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       console.log('Searching for possible names:', possibleNames);
       
       for (const searchName of possibleNames) {
+        console.log('Trying search name:', searchName);
+        
+        // Try exact match first
+        chemical = allData.find((item: AllDataItem) => {
+          if (item.type !== 'chemical') return false;
+          
+          const itemName = item.name || '';
+          const itemId = item.id?.replace('id#', '') || '';
+          
+          return itemName === searchName || itemId === searchName;
+        });
+
+        if (chemical) {
+          console.log('Found chemical by exact name match:', chemical.name, 'for search term:', searchName);
+          return chemical;
+        }
+
+        // Try normalized match if exact match fails
         const normalizedSearchName = this.normalizeChemicalName(searchName);
         console.log('Trying normalized name:', normalizedSearchName);
         
@@ -261,7 +278,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         });
 
         if (chemical) {
-          console.log('Found chemical by related name:', chemical.name, 'for search term:', searchName);
+          console.log('Found chemical by normalized name:', chemical.name, 'for search term:', searchName);
           return chemical;
         }
       }
@@ -306,7 +323,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private normalizeChemicalName(name: string): string {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')  
+      .replace(/[^\w]/g, '')  // Keep alphanumeric characters only
       .trim();
   }
 
