@@ -277,20 +277,25 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private findChemicalWithAliases(allData: AllDataItem[]): AllDataItem | null {
     const searchTerms = this.generateSearchTerms();
     
+    // First, try to find using alias groups
     for (const term of searchTerms) {
-      const canonical = this.chemicalToCanonical.get(term);
+      const normalizedTerm = this.normalizeChemicalName(term);
+      
+      // Check if this term maps to a canonical chemical
+      const canonical = this.chemicalToCanonical.get(term) || this.chemicalToCanonical.get(normalizedTerm);
       if (canonical) {
-        const group = this.aliasGroups.get(canonical);
-        if (group) {
-          for (const alias of group) {
-            const chemical = this.findChemicalByTerm(allData, alias);
-            if (chemical && chemical.data && this.hasEmergencyData(chemical.data)) {
-              return chemical;
-            }
-          }
-          
-          for (const alias of group) {
-            const chemical = this.findChemicalByTerm(allData, alias);
+        const chemical = allData.find(item => item.id === canonical);
+        if (chemical && chemical.data) {
+          return chemical;
+        }
+      }
+      
+      // Check all alias groups for partial matches
+      for (const [canonicalId, aliases] of this.aliasGroups.entries()) {
+        for (const alias of aliases) {
+          if (this.normalizeChemicalName(alias).includes(normalizedTerm) || 
+              normalizedTerm.includes(this.normalizeChemicalName(alias))) {
+            const chemical = allData.find(item => item.id === canonicalId);
             if (chemical && chemical.data) {
               return chemical;
             }
@@ -299,6 +304,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       }
     }
     
+    // Fallback: direct search
     for (const term of searchTerms) {
       const chemical = this.findChemicalByTerm(allData, term);
       if (chemical) {
@@ -306,6 +312,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       }
     }
     
+    // Last resort: fuzzy matching
     for (const item of allData) {
       if (item.type === 'chemical' && this.isChemicalMatch(item, searchTerms)) {
         return item;
