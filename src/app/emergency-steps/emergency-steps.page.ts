@@ -166,14 +166,22 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     const relatedChemicals: AllDataItem[] = [];
     const processedIds: Set<string> = new Set();
     
-    // First, find the primary chemical
+    // First, find the primary chemical with improved matching
     const primaryChemical = this.findChemicalData(allData);
     if (!primaryChemical) {
-      return [];
+      console.log('Primary chemical not found, attempting fuzzy matching...');
+      const fuzzyMatch = this.findChemicalByFuzzyMatching(allData);
+      if (!fuzzyMatch) {
+        return [];
+      }
+      console.log('Found via fuzzy matching:', fuzzyMatch.id);
     }
     
+    const startingChemical = primaryChemical || this.findChemicalByFuzzyMatching(allData);
+    if (!startingChemical) return [];
+    
     // Use BFS to find all related chemicals through owl:sameAs relationships
-    const queue: AllDataItem[] = [primaryChemical];
+    const queue: AllDataItem[] = [startingChemical];
     
     while (queue.length > 0) {
       const currentChemical = queue.shift()!;
@@ -205,6 +213,94 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     
     console.log('Found related chemicals via owl:sameAs:', relatedChemicals.map(c => ({ id: c.id, name: c.name })));
     return relatedChemicals;
+  }
+
+  private findChemicalByFuzzyMatching(allData: AllDataItem[]): AllDataItem | null {
+    if (!this.chemicalName) return null;
+    
+    const searchTerms = this.extractSearchTerms(this.chemicalName);
+    console.log('Search terms extracted:', searchTerms);
+    
+    // Find chemicals that match any of the search terms
+    for (const term of searchTerms) {
+      const normalizedTerm = this.normalizeChemicalName(term);
+      
+      const chemical = allData.find((item: AllDataItem) => {
+        if (item.type !== 'chemical') return false;
+        
+        // Check ID match
+        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+        if (itemId === normalizedTerm) return true;
+        
+        // Check name match
+        const itemName = this.normalizeChemicalName(item.name || '');
+        if (itemName === normalizedTerm) return true;
+        
+        // Check rdfs:label
+        if (item.data && item.data['http://www.w3.org/2000/01/rdf-schema#label']) {
+          const labels = item.data['http://www.w3.org/2000/01/rdf-schema#label'];
+          const labelArray = Array.isArray(labels) ? labels : [labels];
+          
+          for (const label of labelArray) {
+            const labelValue = typeof label === 'object' ? label['@value'] : label;
+            if (labelValue && this.normalizeChemicalName(labelValue) === normalizedTerm) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      });
+      
+      if (chemical) {
+        console.log('Found chemical via fuzzy matching:', chemical.id, 'for term:', term);
+        return chemical;
+      }
+    }
+    
+    return null;
+  }
+
+  private extractSearchTerms(chemicalName: string): string[] {
+    const terms: string[] = [];
+    
+    // Add the full name
+    terms.push(chemicalName);
+    
+    // Extract terms from brackets and parentheses
+    const bracketMatches = chemicalName.match(/\[([^\]]+)\]/g);
+    if (bracketMatches) {
+      bracketMatches.forEach(match => {
+        const content = match.slice(1, -1); // Remove brackets
+        terms.push(content);
+        // Also add individual parts split by common separators
+        content.split(/[,;|]/).forEach(part => {
+          terms.push(part.trim());
+        });
+      });
+    }
+    
+    const parenMatches = chemicalName.match(/\(([^)]+)\)/g);
+    if (parenMatches) {
+      parenMatches.forEach(match => {
+        const content = match.slice(1, -1); // Remove parentheses
+        terms.push(content);
+        content.split(/[,;|]/).forEach(part => {
+          terms.push(part.trim());
+        });
+      });
+    }
+    
+    // Split by common separators and add individual parts
+    const parts = chemicalName.split(/[-_.,\s]+/);
+    parts.forEach(part => {
+      if (part.length > 2) { // Only add meaningful parts
+        terms.push(part);
+      }
+    });
+    
+    // Remove duplicates and empty strings
+    return [...new Set(terms)].filter(term => term.trim().length > 0);
   }
 
   private findReferencingChemicals(allData: AllDataItem[], targetId: string): AllDataItem[] {
