@@ -150,7 +150,21 @@ export class ChemicalDetailsPage implements OnInit {
       console.log('All data length:', allData.length);
       
       if (allData && allData.length > 0 && this.chemical) {
-        const chemicalData = this.findChemicalData(allData, this.chemical.name);
+        let chemicalData = this.findChemicalData(allData, this.chemical.name);
+ 
+        if (!chemicalData) {
+          const relatedChemicals = this.getAllPossibleNamesForChemical(this.chemical.name);
+          console.log('Looking for related chemicals:', relatedChemicals);
+          
+          for (const relatedName of relatedChemicals) {
+            chemicalData = this.findChemicalData(allData, relatedName);
+            if (chemicalData) {
+              console.log('Found data using related chemical:', relatedName);
+              break;
+            }
+          }
+        }
+        
         console.log('Found chemical data:', chemicalData);
         
         if (chemicalData && chemicalData.data) {
@@ -158,7 +172,7 @@ export class ChemicalDetailsPage implements OnInit {
           this.chemicalInfoSections = this.extractChemicalInformation(chemicalData.data);
           console.log('Extracted chemical info sections:', this.chemicalInfoSections);
         } else {
-          console.log('No chemical data found');
+          console.log('No chemical data found for', this.chemical.name);
           this.chemicalInfoSections = [];
         }
       } else {
@@ -173,8 +187,7 @@ export class ChemicalDetailsPage implements OnInit {
 
   private findChemicalData(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
     console.log('Looking for chemical with name:', chemicalName);
-    
-    // Step 1: Try exact match first
+
     let chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       item.name && item.name.toLowerCase() === chemicalName.toLowerCase()
@@ -185,11 +198,8 @@ export class ChemicalDetailsPage implements OnInit {
       return chemical;
     }
 
-    // Step 2: Try all possible aliases and related names
     const allPossibleNames = this.getAllPossibleNamesForChemical(chemicalName);
     console.log('All possible names for', chemicalName, ':', allPossibleNames);
-
-    // Try each possible name for exact match
     for (const possibleName of allPossibleNames) {
       chemical = allData.find((item: AllDataItem) => 
         item.type === 'chemical' && 
@@ -202,7 +212,6 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
-    // Step 3: Try normalized matching
     for (const possibleName of allPossibleNames) {
       const searchName = this.normalizeChemicalName(possibleName);
       
@@ -221,13 +230,27 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
-    // Step 4: Try partial matching for compound names
+    for (const possibleName of allPossibleNames) {
+      const potentialIds = this.generatePotentialIds(possibleName);
+      
+      for (const potentialId of potentialIds) {
+        chemical = allData.find((item: AllDataItem) => {
+          if (item.type !== 'chemical') return false;
+          const itemId = item.id?.replace('id#', '') || '';
+          return this.normalizeChemicalName(itemId) === this.normalizeChemicalName(potentialId);
+        });
+
+        if (chemical) {
+          console.log('Found by ID transformation:', chemical.name, 'using ID:', potentialId);
+          return chemical;
+        }
+      }
+    }
+
     for (const possibleName of allPossibleNames) {
       chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
         const itemName = item.name || '';
-        
-        // Check if the item name contains key parts of the search name
         const searchParts = possibleName.toLowerCase().split(/[\s,\[\]().]+/).filter(part => part.length > 2);
         const itemParts = itemName.toLowerCase().split(/[\s,\[\]().]+/).filter(part => part.length > 2);
         
@@ -235,7 +258,7 @@ export class ChemicalDetailsPage implements OnInit {
           itemParts.some(itemPart => itemPart.includes(searchPart) || searchPart.includes(itemPart))
         );
         
-        return matchingParts.length >= Math.min(searchParts.length, 2); // At least 2 parts or all parts if less than 2
+        return matchingParts.length >= Math.min(searchParts.length, 2);
       });
 
       if (chemical) {
@@ -244,48 +267,50 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
-    // Step 5: Special handling for comma-separated compound names
-    if (chemicalName.includes(',')) {
-      const parts = chemicalName.split(',').map(part => part.trim());
-      const combinations = [
-        parts.join(' '), 
-        parts.reverse().join(' '),
-        parts[0], // Try just the first part
-        parts[1]  // Try just the second part
-      ];
-
-      for (const combination of combinations) {
-        const result = this.findChemicalData(allData, combination);
-        if (result) {
-          console.log('Found by compound name transformation:', result.name, 'using:', combination);
-          return result;
-        }
-      }
-    }
-
-    // Step 6: Try looking for any chemical that might be a parent compound
-    const baseChemicalName = chemicalName.split(/[,\[\]()]/)[0].trim();
-    if (baseChemicalName !== chemicalName) {
-      const result = this.findChemicalData(allData, baseChemicalName);
-      if (result) {
-        console.log('Found by base chemical name:', result.name, 'using base:', baseChemicalName);
-        return result;
-      }
-    }
-
     console.log('No chemical data found for:', chemicalName);
     return null;
+  }
+
+  private generatePotentialIds(chemicalName: string): string[] {
+    const potentialIds: string[] = [];
+    
+    const cleanName = chemicalName
+      .replace(/[,\[\]()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
+    
+    potentialIds.push(cleanName);
+    
+    if (chemicalName.includes(',')) {
+      const parts = chemicalName.split(',').map(part => part.trim());
+      const joinedWithDots = parts.join('..');
+      potentialIds.push(joinedWithDots);
+      
+      const capitalizedParts = parts.map(part => 
+        part.split(' ').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join('')
+      );
+      potentialIds.push(capitalizedParts.join('..'));
+    }
+    
+    const withNumbers = cleanName.replace(/(\d+)/g, '$1');
+    if (withNumbers !== cleanName) {
+      potentialIds.push(withNumbers);
+    }
+    
+    return potentialIds;
   }
 
   private getAllPossibleNamesForChemical(chemicalName: string): string[] {
     const allNames = new Set<string>();
     allNames.add(chemicalName);
-
-    // Add direct aliases
     const directAliases = this.chemicalAliases[chemicalName] || [];
     directAliases.forEach(alias => allNames.add(alias));
 
-    // Check if this chemical is listed as an alias for another chemical
     for (const [mainName, aliases] of Object.entries(this.chemicalAliases)) {
       if (aliases.some(alias => alias.toLowerCase() === chemicalName.toLowerCase())) {
         allNames.add(mainName);
@@ -294,21 +319,18 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
-    // Handle comma-separated names
     if (chemicalName.includes(',')) {
       const parts = chemicalName.split(',').map(part => part.trim());
       allNames.add(parts.join(' '));
       allNames.add(parts.reverse().join(' '));
-      allNames.add(parts[0]); // Add first part
-      if (parts[1]) allNames.add(parts[1]); // Add second part if exists
+      allNames.add(parts[0]);
+      if (parts[1]) allNames.add(parts[1]);
     }
 
-    // Handle bracketed names and parentheses
     if (chemicalName.includes('(') || chemicalName.includes('[')) {
       const cleanName = chemicalName.replace(/[\[\]()]/g, '').trim();
       allNames.add(cleanName);
       
-      // Extract content within brackets/parentheses
       const bracketContent = chemicalName.match(/\[([^\]]+)\]/);
       if (bracketContent) {
         allNames.add(bracketContent[1]);
@@ -320,7 +342,6 @@ export class ChemicalDetailsPage implements OnInit {
       }
     }
 
-    // Handle special cases with dots
     if (chemicalName.includes('..')) {
       const withComma = chemicalName.replace('..', ', ');
       allNames.add(withComma);
