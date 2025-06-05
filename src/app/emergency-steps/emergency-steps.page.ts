@@ -51,74 +51,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
- private chemicalAliases: { [key: string]: string[] } = {
-  '1,2,3-Benzenetriol': ['Pyrogallic Acid', '1,2,3-Trihydroxybenzene'],
-  '1,2,3-Propanetriol': ['Glycerin'],
-  '1,2-Benzenedicarboxylic Acid Monopotassium Salt': ['Potassium Bitphthlate', 'Pthalic Acid Monopotassium Salt'],
-  '2,2\'-Oxydiethanol': ['Diethylene Glycol', 'Carbitol'],
-  '2,4,6-Triamino-s-Triazine': ['Melamine'],
-  '2-Amino-2-(hydroxymethyl)propane-1,3-diol Hydrochloride': ['Tris(hydroxymethyl)methylamine'],
-  '2-Hydroxy-1,2,3-propanetricarboxylic Acid': ['Citric Acid'],
-  '2-hydroxy-3,5-dinitrobenzoic Acid': ['3,5-Dinitrosalicylic Acid'],
-  '2-Hydroxybenzoic Acid': ['Salicylic Acid'],
-  '2-propanone': ['Acetone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
-  'ABL': ['Lauric Acid', 'Dodecanoic Acid', 'Dodecylic Acid', 'Laurostearic Acid', 'Neo-fat12', 'Neo-fat12-43', 'Vulvic Acid', 'n-Dodecanoic Acid'],
-  'Absolute Ethanol': ['Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol'],
-  'Acetic Acid': ['Glacial Acetic Acid', 'Acetic Acid,Ethyl Ester', 'AceticAcid..EthylEster', 'Ethyl Acetate', 'Acetoxyethane'],
-  'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
-  'Alpha-alumina': ['Aluminum Oxide', 'Aluminia', 'Aluminum Oxide Powder'],
-  'Ametox, Antichlor': ['Sodium Thiosulfate Pentahydrate'],
-  'Ammonium Chloratum': ['Ammonium Chloride', 'Ammonium Chloridum', 'Ammonium Muriate', 'Sal Ammonia', 'Salmiac'],
-  'Ammonium Hydroxide': ['Aqueous Ammonia', 'Strong Ammonia Solution', 'Stronger Ammonia Water'],
-  'Ammonium Iron (II) Sulfate, Hexahydrate': ['Di-ammonium (II) Sulfate Hexahydrate', 'Ferrous Ammonium Sulfate Hexahydrate'],
-  'Ammonium Nitrate': ['Ammonium Salt with Nitric Acid', 'Ammonium Saltpeter'],
-  'Ammonium Sulfate': ['Diammonium Salt with Sulfuric Acid'],
-  'Anilinobenzene': ['Diphenylamine'],
-  'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
-  'Acetone and Nitric Acid': ['Acetone with Nitric Acid', 'Mixed Acetone and Nitric Acid'],
-  'Acetoxyethane': ['Ethyl Acetate', 'Acetic Acid Ethyl Ester'],
-  
-  'Barium Chloride Anhydrous': ['Barium Dichloride Anhydrous'],
-  'Barium Chloride Dihydrate': ['Barium Dichloride Dihydrate'],
-  'Benzene': ['Benzine', 'Benzol'],
-  'beta-d-galactopyranosyl-o-4D-glucopyrannose': ['Lactose', 'Lactose (Anhydrous)'],
-  'Bichloride of Mercury': ['Mercuric Chloride', 'Calochlor'],
-  'Bichromate of Potash': ['Potassium Dichromate'],
-  'Blue Vitriol': ['Copper Sulfate Pentahydrate'],
-  'Butanaminim,N,N,N-tributyl,chloride,monohydrate': ['Tetrabutylammonium Chloride Hydrate'],
-  'Calcined Brucite': ['Magnesium Oxide', 'Magnesia', 'Magnesium Oxide Heavy Powder'],
-  'Carbinol': ['Methyl Alcohol'],
-  'Caustic Soda': ['Sodium Hydroxide'],
-  'Chloroform': ['Trichloromethane'],
-  'Hydrogen Potassium Pthalate': ['Potassium Bitphthlate'],
-  'Hydrogen Sulfite Sodium': ['Sodium Bisulfite'],
-  'Kaolin Colloidal Powder': ['Kaolin Powder'],
-  'Magnesium Sulfate': ['Anhydrous'],
-  'Oxalic Acid': ['Oxalic Acid (Anhydrous)'],
-  'Phenolphthalien (0.5% in 50% Isopropanol)': [],
-  'Phosphorus Pentoxide': ['Di-phosphorus Pentoxide'],
-  'Copper (II) Sulfate Pentahydrate': ['Copper Sulfate Pentahydrate'],
-  'Cupric Chloride Dihydrate': ['Copper Chloride Dihydrate', 'Coppertrace'],
-  'Cupric Oxide': ['Copper (II) Oxide'],
-  'D-Glucose': ['Dextrose (Anhydrous)', 'Dextrose'],
-  'Di-phosphorus Pentoxide': ['Phosphorus Pentoxide'],
-  'Ferrous Sulfate': ['Ferrous Sulfate Dried Powder', 'Ferrous Sulfate Hydrate'],
-  'Formaldehyde (37% Solution)': ['Formalin'],
-  'Formic Acid (85%)': ['FormicAcid, 85Percent, F.C.C'],
-  'Polyethylene Glycol 400': ['PEG400', 'PEG-8', 'Poly(oxy-1,2-ethanediyl).alpha.-hydro-.omega.-hydroxy-'],
-  'Polysorbate 80': ['Polyethylene Oxide Sorbitan Mono-oleate', 'Polyoxyethylene 20 Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Oleate', 'Sorbitan Mono-9-otadecenoate Poly(Oxy-1,2-ethanediyl) Derivatives', 'Sorethytanop20cpMonooleate', 'TWEEN80'],
-  'Potassium Phosphate Dibasic': ['Dipotassium Phosphate'],
-  'Potassium Phosphate Monobasic': ['Monopotassium Phosphate', 'PhosphoricAcid,MonopotassiumSalt', 'Potassium Dihydrogen Phospate'],
-  'Sodium Azide': ['Hydrazoic Acid, Sodium Salt', 'Smite'],
-  'Sodium Bisulfite': ['Hydrogen Sulfite Sodium', 'Monosodium Salt Sulfurous Acid', 'Monosodium Sulfite', 'Sodium Acid Sulfite', 'Sodium Hydrogen Sulfite', 'Sodium Sulhydrate'],
-  'Sodium Lauryl Sulfate': ['Sodium Dodecyl Sulfate', 'Sulfuric Acid, Monododecyl Ester, Sodium Salt'],
-  'Sodium Phosphate Dibasic': ['Dibasic Sodium Phosphate', 'Disodium Hydrogen Phosphate', 'Disodium Monohydrogen Phosphate', 'Disodium Orthophosphate', 'Disodium Phosphoric Acid', 'Phosphoric Acid, Disodium Salt', 'Soda Phosphate', 'Sodium Hydrogen Phosphate', 'Sodium Monohydrogen Phosphate'],
-  'Sulfuric Acid': ['Oil of Vitriol'],
-  'Triethanolamine': ['Ethanol,2,2,2-nitrilotris', 'Tri(2-hydroxyethyl)amine', 'Trolamine'],
-  'Vinyl Acetate': ['Vinyl Acetate Monomer'],
-  'Zinc Acetate': ['Zinc Diacetate, Dihydrate'],
-  'Zinc Metal': ['Zin', 'Zinc Metal Sheets', 'Zinc Metal Shot', 'Zinc Metal Strips']
-};
+  private chemicalAliases: { [key: string]: string[] } = {
+    'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
+    'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
+    'Acetic Acid': ['Glacial Acetic Acid'],
+    'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
+    '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
+  };
 
   private emergencyTypeMapping: { [key: string]: string[] } = {
     'Eye Contact': ['id#hasFirstAidEye', 'hasFirstAidEye'],
@@ -230,10 +169,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  private findChemicalData(allData: AllDataItem[]): AllDataItem | undefined {
+  private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
     console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
- 
-    // First try to find by exact ID match
+    
+    // First, try to find by exact ID match
     let chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
@@ -241,35 +180,35 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
 
     if (chemical) {
       console.log('Found by ID:', chemical.id);
-      return chemical;
+      return this.resolveChemicalReference(chemical, allData);
     }
 
-    // If not found by ID, try by name and aliases
+    // Try to find by name
     if (this.chemicalName) {
-      const possibleNames = this.getAllRelatedChemicalNames(this.chemicalName);
-      console.log('Searching for possible names:', possibleNames);
+      const searchName = this.normalizeChemicalName(this.chemicalName);
+      console.log('Normalized search name:', searchName);
       
-      for (const searchName of possibleNames) {
-        console.log('Trying search name:', searchName);
+      chemical = allData.find((item: AllDataItem) => {
+        if (item.type !== 'chemical') return false;
+        
+        const itemName = this.normalizeChemicalName(item.name || '');
+        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+        
+        console.log('Comparing with item:', itemName, 'ID:', itemId);
+        
+        return itemName === searchName || itemId === searchName;
+      });
 
-        // Try exact name match first
-        chemical = allData.find((item: AllDataItem) => {
-          if (item.type !== 'chemical') return false;
-          
-          const itemName = item.name || '';
-          const itemId = item.id?.replace('id#', '') || '';
-          
-          return itemName === searchName || itemId === searchName;
-        });
+      if (chemical) {
+        console.log('Found by name:', chemical.name);
+        return this.resolveChemicalReference(chemical, allData);
+      }
 
-        if (chemical) {
-          console.log('Found chemical by exact name match:', chemical.name, 'for search term:', searchName);
-          return chemical;
-        }
-
-        // Try normalized name match
-        const normalizedSearchName = this.normalizeChemicalName(searchName);
-        console.log('Trying normalized name:', normalizedSearchName);
+      // Try aliases
+      const mainChemicalName = this.getMainChemicalName(this.chemicalName);
+      if (mainChemicalName !== this.chemicalName) {
+        const aliasSearchName = this.normalizeChemicalName(mainChemicalName);
+        console.log('Trying alias search:', aliasSearchName);
         
         chemical = allData.find((item: AllDataItem) => {
           if (item.type !== 'chemical') return false;
@@ -277,282 +216,147 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
           const itemName = this.normalizeChemicalName(item.name || '');
           const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
           
-          return itemName === normalizedSearchName || itemId === normalizedSearchName;
+          return itemName === aliasSearchName || itemId === aliasSearchName;
         });
-
+        
         if (chemical) {
-          console.log('Found chemical by normalized name:', chemical.name, 'for search term:', searchName);
-          return chemical;
+          console.log('Found by alias:', chemical.name);
+          return this.resolveChemicalReference(chemical, allData);
         }
-
-        // Try partial match
-        chemical = allData.find((item: AllDataItem) => {
-          if (item.type !== 'chemical') return false;
-          
-          const itemName = item.name?.toLowerCase() || '';
-          const itemId = item.id?.replace('id#', '').toLowerCase() || '';
-          const searchLower = searchName.toLowerCase();
-          
-          return itemName.includes(searchLower) || searchLower.includes(itemName) ||
-                 itemId.includes(searchLower) || searchLower.includes(itemId);
-        });
-
-        if (chemical) {
-          console.log('Found chemical by partial match:', chemical.name, 'for search term:', searchName);
-          return chemical;
-        }
-      }
-
-      // If still not found, try to find by related chemicals (owl#sameAs relationships)
-      chemical = this.findBySameAsRelationships(allData, possibleNames);
-      if (chemical) {
-        console.log('Found chemical by owl#sameAs relationship:', chemical.name);
-        return chemical;
-      }
-
-      // Try to find by main component analysis
-      chemical = this.findByMainComponent(allData, this.chemicalName);
-      if (chemical) {
-        console.log('Found chemical by main component analysis:', chemical.name);
-        return chemical;
       }
     }
 
     const chemicals = allData.filter(item => item.type === 'chemical');
     console.log('Available chemicals:', chemicals.map(c => ({ id: c.id, name: c.name })));
 
-    return undefined;
+    return null;
   }
 
-  private findBySameAsRelationships(allData: AllDataItem[], possibleNames: string[]): AllDataItem | undefined {
-    for (const name of possibleNames) {
-      const normalizedSearchName = this.normalizeChemicalName(name);
-      const searchId = `id#${normalizedSearchName.replace(/\s+/g, '').replace(/\./g, '..')}`;
+  /**
+   * Resolves owl:sameAs references to find the chemical with actual emergency data
+   */
+  private resolveChemicalReference(chemical: AllDataItem, allData: AllDataItem[]): AllDataItem {
+    console.log('Resolving chemical reference for:', chemical.name);
+    
+    // Check if this chemical has emergency data
+    if (this.hasEmergencyData(chemical.data)) {
+      console.log('Chemical has direct emergency data');
+      return chemical;
+    }
 
-      // Find all items that have this chemical as a sameAs reference
-      const referencedItems = allData.filter(item => {
-        if (!item.data || typeof item.data !== 'object') return false;
+    // Check for owl:sameAs relationships
+    const sameAsProperty = 'http://www.w3.org/2002/07/owl#sameAs';
+    if (chemical.data && chemical.data[sameAsProperty]) {
+      console.log('Found sameAs relationship:', chemical.data[sameAsProperty]);
+      
+      const sameAsRefs = Array.isArray(chemical.data[sameAsProperty]) 
+        ? chemical.data[sameAsProperty] 
+        : [chemical.data[sameAsProperty]];
+      
+      for (const ref of sameAsRefs) {
+        let refId = '';
         
-        const sameAs = item.data['http://www.w3.org/2002/07/owl#sameAs'];
-        if (!sameAs) return false;
-        
-        if (Array.isArray(sameAs)) {
-          return sameAs.some(ref => {
-            if (ref && ref['@id']) {
-              return ref['@id'] === searchId || 
-                     ref['@id'].toLowerCase() === normalizedSearchName.toLowerCase() ||
-                     ref['@id'].replace('id#', '').toLowerCase() === normalizedSearchName.toLowerCase();
-            }
-            return false;
-          });
-        } else if (sameAs['@id']) {
-          return sameAs['@id'] === searchId || 
-                 sameAs['@id'].toLowerCase() === normalizedSearchName.toLowerCase() ||
-                 sameAs['@id'].replace('id#', '').toLowerCase() === normalizedSearchName.toLowerCase();
+        if (typeof ref === 'string') {
+          refId = ref;
+        } else if (ref && ref['@id']) {
+          refId = ref['@id'];
         }
         
-        return false;
-      });
-
-      if (referencedItems.length > 0) {
-        console.log(`Found ${referencedItems.length} items referencing ${name} via owl#sameAs`);
-        
-        // Now find the original chemical that these items reference
-        for (const refItem of referencedItems) {
-          const originalChemical = allData.find(item => 
+        if (refId) {
+          console.log('Looking for referenced chemical:', refId);
+          
+          // Find the referenced chemical
+          const referencedChemical = allData.find(item => 
             item.type === 'chemical' && 
-            (item.id === refItem.id || item.name?.toLowerCase() === refItem.name?.toLowerCase())
+            (item.id === refId || item.id === refId.replace('id#', ''))
           );
           
-          if (originalChemical) {
-            console.log('Found original chemical via sameAs reference:', originalChemical.name);
-            return originalChemical;
-          }
-        }
-      }
-    }
-    
-    return undefined;
-  }
-
-  private findByMainComponent(allData: AllDataItem[], chemicalName: string): AllDataItem | undefined {
-    const normalizedInput = chemicalName.toLowerCase().trim();
- 
-    const components = this.extractMainComponents(normalizedInput);
-    console.log('Extracted components:', components);
-    
-    for (const component of components) {
-      // First try exact match
-      let chemical = allData.find((item: AllDataItem) => {
-        if (item.type !== 'chemical') return false;
-        
-        const itemName = item.name?.toLowerCase() || '';
-        const itemId = item.id?.replace('id#', '').toLowerCase() || '';
-  
-        return itemName === component || 
-               itemId === component;
-      });
-      
-      if (chemical) {
-        console.log(`Found chemical by exact component '${component}':`, chemical.name);
-        return chemical;
-      }
-      
-      // Then try partial match
-      chemical = allData.find((item: AllDataItem) => {
-        if (item.type !== 'chemical') return false;
-        
-        const itemName = item.name?.toLowerCase() || '';
-        const itemId = item.id?.replace('id#', '').toLowerCase() || '';
-  
-        return itemName.includes(component) ||
-               itemId.includes(component);
-      });
-      
-      if (chemical) {
-        console.log(`Found chemical by partial component '${component}':`, chemical.name);
-        return chemical;
-      }
-    
-      // Then try aliases
-      const relatedNames = this.getAllRelatedChemicalNames(component);
-      for (const alias of relatedNames) {
-        const chemical = allData.find((item: AllDataItem) => {
-          if (item.type !== 'chemical') return false;
-          
-          const itemName = item.name?.toLowerCase() || '';
-          const itemId = item.id?.replace('id#', '').toLowerCase() || '';
-          
-          return itemName === alias.toLowerCase() || 
-                 itemId === alias.toLowerCase() ||
-                 itemName.includes(alias.toLowerCase()) ||
-                 itemId.includes(alias.toLowerCase());
-        });
-        
-        if (chemical) {
-          console.log(`Found chemical by component alias '${alias}':`, chemical.name);
-          return chemical;
-        }
-      }
-    }
-    
-    return undefined;
-  }
-
-  private extractMainComponents(chemicalName: string): string[] {
-    const components: string[] = [];
-    const normalizedName = chemicalName.toLowerCase().trim();
- 
-    const separators = [' and ', ' with ', ' + ', ' mixed with ', ' containing '];
-    let parts = [normalizedName];
-    
-    for (const separator of separators) {
-      const newParts: string[] = [];
-      for (const part of parts) {
-        newParts.push(...part.split(separator));
-      }
-      parts = newParts;
-    }
- 
-    for (const part of parts) {
-      const cleaned = part.trim();
-      if (cleaned.length > 2) {
-        components.push(cleaned);
-      }
-    }
-   
-    if (components.length > 0) {
-      const mainComponent = components[0];
- 
-      for (const [mainChemical, aliases] of Object.entries(this.chemicalAliases)) {
-        if (mainChemical.toLowerCase() === mainComponent || 
-            aliases.some(alias => alias.toLowerCase() === mainComponent)) {
-          components.push(mainChemical.toLowerCase());
-          aliases.forEach(alias => components.push(alias.toLowerCase()));
-          break;
-        }
-      }
-    }
-  
-    return [...new Set(components)];
-  }
-
-  private getAllRelatedChemicalNames(chemicalName: string): string[] {
-    const relatedNames = new Set<string>();
-    relatedNames.add(chemicalName);
-
-    const normalizedInput = chemicalName.toLowerCase().trim();
-    
-    for (const [mainChemical, aliases] of Object.entries(this.chemicalAliases)) {
-      const normalizedMainChemical = mainChemical.toLowerCase();
-   
-      if (normalizedMainChemical === normalizedInput) {
-        relatedNames.add(mainChemical);
-        aliases.forEach(alias => relatedNames.add(alias));
-        console.log(`Found direct match for main chemical: ${mainChemical}`);
-        break;
-      }
-    
-      const matchingAlias = aliases.find(alias => alias.toLowerCase() === normalizedInput);
-      if (matchingAlias) {
-        relatedNames.add(mainChemical);
-        aliases.forEach(alias => relatedNames.add(alias));
-        console.log(`Found match via alias: ${matchingAlias} -> ${mainChemical}`);
-        break;
-      }
-    }
-
-    if (normalizedInput.includes(' and ') || normalizedInput.includes(' with ') || 
-        normalizedInput.includes(' + ') || normalizedInput.includes(' mixed with ')) {
-      
-      const components = this.extractMainComponents(normalizedInput);
-      console.log(`Compound chemical detected. Components: ${components.join(', ')}`);
-     
-      for (const component of components) {
-        relatedNames.add(component);
-        
-        for (const [mainChemical, aliases] of Object.entries(this.chemicalAliases)) {
-          const normalizedMainChemical = mainChemical.toLowerCase();
-          
-          if (normalizedMainChemical === component || 
-              normalizedMainChemical.includes(component) || 
-              component.includes(normalizedMainChemical)) {
-            relatedNames.add(mainChemical);
-            aliases.forEach(alias => relatedNames.add(alias));
-            console.log(`Found component match: ${component} -> ${mainChemical}`);
-          }
-          
-          const matchingAlias = aliases.find(alias => 
-            alias.toLowerCase() === component || 
-            alias.toLowerCase().includes(component) || 
-            component.includes(alias.toLowerCase())
-          );
-          if (matchingAlias) {
-            relatedNames.add(mainChemical);
-            aliases.forEach(alias => relatedNames.add(alias));
-            console.log(`Found component via alias: ${component} -> ${mainChemical}`);
+          if (referencedChemical && this.hasEmergencyData(referencedChemical.data)) {
+            console.log('Found referenced chemical with emergency data:', referencedChemical.name);
+            return referencedChemical;
           }
         }
       }
     }
 
-    console.log('Related chemical names for', chemicalName, ':', Array.from(relatedNames));
-    return Array.from(relatedNames);
+    // If no reference found, check if any other chemical references this one
+    console.log('Checking for reverse references to:', chemical.id);
+    
+    const alternateIds = [
+      chemical.id,
+      chemical.id?.replace('id#', ''),
+      `id#${chemical.id?.replace('id#', '')}`
+    ].filter(Boolean);
+    
+    for (const otherChemical of allData) {
+      if (otherChemical.type !== 'chemical' || otherChemical.id === chemical.id) {
+        continue;
+      }
+      
+      if (otherChemical.data && otherChemical.data[sameAsProperty]) {
+        const otherSameAsRefs = Array.isArray(otherChemical.data[sameAsProperty]) 
+          ? otherChemical.data[sameAsProperty] 
+          : [otherChemical.data[sameAsProperty]];
+        
+        for (const ref of otherSameAsRefs) {
+          let refId = '';
+          
+          if (typeof ref === 'string') {
+            refId = ref;
+          } else if (ref && ref['@id']) {
+            refId = ref['@id'];
+          }
+          
+          if (refId && alternateIds.includes(refId)) {
+            if (this.hasEmergencyData(otherChemical.data)) {
+              console.log('Found reverse reference with emergency data:', otherChemical.name);
+              return otherChemical;
+            }
+          }
+        }
+      }
+    }
+
+    console.log('No chemical with emergency data found, returning original');
+    return chemical;
+  }
+
+  /**
+   * Checks if a chemical data object has any emergency information
+   */
+  private hasEmergencyData(data: any): boolean {
+    if (!data) return false;
+    
+    const emergencyProperties = [
+      'id#hasFirstAidEye', 'hasFirstAidEye',
+      'id#hasFirstAidIngestion', 'hasFirstAidIngestion',
+      'id#hasFirstAidInhalation', 'hasFirstAidInhalation',
+      'id#hasFirstAidSkin', 'hasFirstAidSkin',
+      'id#hasFirstAidSeriousInhalation', 'hasFirstAidSeriousInhalation',
+      'id#hasFirstAidSeriousSkin', 'hasFirstAidSeriousSkin',
+      'id#hasFirstAidGeneral', 'hasFirstAidGeneral',
+      'id#hasSmallSpill', 'hasSmallSpill',
+      'id#hasLargeSpill', 'hasLargeSpill',
+      'id#hasSmallFireFighting', 'hasSmallFireFighting',
+      'id#hasLargeFireFighting', 'hasLargeFireFighting',
+      'id#hasConditionsOfInstability', 'hasConditionsOfInstability',
+      'id#hasAccidentalGeneral', 'hasAccidentalGeneral'
+    ];
+    
+    return emergencyProperties.some(prop => data[prop]);
   }
 
   private normalizeChemicalName(name: string): string {
     return name
       .toLowerCase()
-      .replace(/[^\w]/g, '') 
+      .replace(/[^a-z0-9]/g, '')  
       .trim();
   }
 
   private getMainChemicalName(name: string): string {
-    const normalizedInput = name.toLowerCase().trim();
-    
     for (const [mainName, aliases] of Object.entries(this.chemicalAliases)) {
-      if (mainName.toLowerCase() === normalizedInput || 
-          aliases.some(alias => alias.toLowerCase() === normalizedInput)) {
+      if (mainName.toLowerCase() === name.toLowerCase() || 
+          aliases.some(alias => alias.toLowerCase() === name.toLowerCase())) {
         return mainName;
       }
     }
