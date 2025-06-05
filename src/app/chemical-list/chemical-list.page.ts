@@ -124,7 +124,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       this.isLoading = true;
       
       this.subscription = this.databaseService.chemicals$.subscribe(chemicals => {
-        console.log('Chemicals loaded:', chemicals.length);
+        console.log('Raw chemicals loaded:', chemicals.length);
         this.chemicals = chemicals;
         this.filterChemicalsByDataAvailability();
         this.applySearch();
@@ -143,35 +143,44 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     const allData = this.databaseService.getCurrentAllData();
     
     if (!allData || allData.length === 0) {
+      console.log('No allData available');
       this.chemicals = [];
       return;
     }
 
-    if (this.isEmergencyMode) {
-      // Filter chemicals that have emergency data
-      this.chemicals = this.chemicals.filter(chemical => 
-        this.hasEmergencyData(chemical, allData)
-      );
-      console.log('Filtered chemicals with emergency data:', this.chemicals.length);
-    } else {
-      // Filter chemicals that have chemical details data
-      this.chemicals = this.chemicals.filter(chemical => 
-        this.hasChemicalDetailsData(chemical, allData)
-      );
-      console.log('Filtered chemicals with details data:', this.chemicals.length);
+    console.log('Starting filtering with', this.chemicals.length, 'chemicals');
+    console.log('AllData length:', allData.length);
+
+    const filteredChemicals: Chemical[] = [];
+
+    for (const chemical of this.chemicals) {
+      const hasData = this.isEmergencyMode 
+        ? this.hasEmergencyData(chemical, allData)
+        : this.hasChemicalDetailsData(chemical, allData);
+
+      if (hasData) {
+        filteredChemicals.push(chemical);
+        console.log(`✓ Chemical "${chemical.name}" has required data`);
+      } else {
+        console.log(`✗ Chemical "${chemical.name}" does not have required data`);
+      }
     }
+
+    this.chemicals = filteredChemicals;
+    
+    console.log(`Filtered to ${this.chemicals.length} chemicals with ${this.isEmergencyMode ? 'emergency' : 'details'} data`);
   }
 
   private hasEmergencyData(chemical: Chemical, allData: AllDataItem[]): boolean {
-    const chemicalData = this.findChemicalData(allData, chemical.name);
+    const chemicalDataItem = this.findChemicalDataWithReferences(allData, chemical.name);
     
-    if (!chemicalData || !chemicalData.data) {
+    if (!chemicalDataItem || !chemicalDataItem.data) {
       return false;
     }
 
-    const data = chemicalData.data;
+    const data = chemicalDataItem.data;
     
-    // Check for emergency properties
+    // Emergency properties to check for
     const emergencyProperties = [
       'id#hasFirstAidEye', 'hasFirstAidEye',
       'id#hasFirstAidIngestion', 'hasFirstAidIngestion',
@@ -188,19 +197,31 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       'id#hasAccidentalGeneral', 'hasAccidentalGeneral'
     ];
     
-    return emergencyProperties.some(prop => data[prop]);
+    const hasEmergencyData = emergencyProperties.some(prop => {
+      const value = data[prop];
+      return value && (
+        (Array.isArray(value) && value.length > 0) ||
+        (!Array.isArray(value) && value)
+      );
+    });
+
+    if (hasEmergencyData) {
+      console.log(`Emergency data found for ${chemical.name}:`, emergencyProperties.filter(prop => data[prop]));
+    }
+
+    return hasEmergencyData;
   }
 
   private hasChemicalDetailsData(chemical: Chemical, allData: AllDataItem[]): boolean {
-    const chemicalData = this.findChemicalData(allData, chemical.name);
+    const chemicalDataItem = this.findChemicalDataWithReferences(allData, chemical.name);
     
-    if (!chemicalData || !chemicalData.data) {
+    if (!chemicalDataItem || !chemicalDataItem.data) {
       return false;
     }
 
-    const data = chemicalData.data;
+    const data = chemicalDataItem.data;
     
-    // Check for chemical details properties
+    // Chemical details properties to check for
     const detailsProperties = [
       'id#hasHealthLevel', 'hasHealthLevel',
       'id#hasFlammabilityLevel', 'hasFlammabilityLevel',
@@ -214,71 +235,102 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       'id#hasPolymerization', 'hasPolymerization'
     ];
     
-    return detailsProperties.some(prop => data[prop]);
-  }
+    const hasDetailsData = detailsProperties.some(prop => {
+      const value = data[prop];
+      return value && (
+        (Array.isArray(value) && value.length > 0) ||
+        (!Array.isArray(value) && value)
+      );
+    });
 
-  private findChemicalData(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
-    console.log('Looking for chemical with name:', chemicalName);
-
-    // First, try to find by exact name match
-    let chemical = allData.find((item: AllDataItem) => 
-      item.type === 'chemical' && 
-      item.name && item.name.toLowerCase() === chemicalName.toLowerCase()
-    );
-
-    if (chemical) {
-      console.log('Found by exact name match:', chemical.name);
-      return this.resolveChemicalReference(chemical, allData);
+    if (hasDetailsData) {
+      console.log(`Details data found for ${chemical.name}:`, detailsProperties.filter(prop => data[prop]));
     }
 
-    // Try using aliases
+    return hasDetailsData;
+  }
+
+  private findChemicalDataWithReferences(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
+    console.log('=== Looking for chemical data for:', chemicalName);
+
+    // Step 1: Find all possible names for this chemical
     const allPossibleNames = this.getAllPossibleNamesForChemical(chemicalName);
-    console.log('All possible names for', chemicalName, ':', allPossibleNames);
-    
+    console.log('All possible names:', allPossibleNames);
+
+    // Step 2: Try to find chemical by any of these names
+    let foundChemical: AllDataItem | null = null;
+
+    // Try exact matches first
     for (const possibleName of allPossibleNames) {
-      chemical = allData.find((item: AllDataItem) => 
+      foundChemical = allData.find((item: AllDataItem) => 
         item.type === 'chemical' && 
         item.name && item.name.toLowerCase() === possibleName.toLowerCase()
-      );
+      ) ?? null; // FIX: Convert undefined to null
 
-      if (chemical) {
-        console.log('Found by alias match:', chemical.name, 'using alias:', possibleName);
-        return this.resolveChemicalReference(chemical, allData);
+      if (foundChemical) {
+        console.log(`Found chemical by exact name match: "${foundChemical.name}" using name: "${possibleName}"`);
+        break;
       }
     }
 
-    // Try normalized name matching
-    for (const possibleName of allPossibleNames) {
-      const searchName = this.normalizeChemicalName(possibleName);
-      
-      chemical = allData.find((item: AllDataItem) => {
-        if (item.type !== 'chemical') return false;
+    // Try normalized matches if exact match failed
+    if (!foundChemical) {
+      for (const possibleName of allPossibleNames) {
+        const searchName = this.normalizeChemicalName(possibleName);
         
-        const itemName = this.normalizeChemicalName(item.name || '');
-        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-        
-        return itemName === searchName || itemId === searchName;
-      });
+        foundChemical = allData.find((item: AllDataItem) => {
+          if (item.type !== 'chemical') return false;
+          
+          const itemName = this.normalizeChemicalName(item.name || '');
+          const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+          
+          return itemName === searchName || itemId === searchName;
+        }) ?? null; // FIX: Convert undefined to null
 
-      if (chemical) {
-        console.log('Found by normalized name:', chemical.name, 'using normalized alias:', possibleName);
-        return this.resolveChemicalReference(chemical, allData);
+        if (foundChemical) {
+          console.log(`Found chemical by normalized match: "${foundChemical.name}" using normalized name: "${possibleName}"`);
+          break;
+        }
       }
     }
 
-    console.log('No chemical data found for:', chemicalName);
-    return null;
+    if (!foundChemical) {
+      console.log('No chemical found in allData for:', chemicalName);
+      return null;
+    }
+
+    // Step 3: Check if this chemical has data or needs to follow owl:sameAs references
+    console.log('Found chemical:', foundChemical.name, 'ID:', foundChemical.id);
+    
+    // Check if current chemical has the required data
+    if (this.hasDirectRelevantData(foundChemical.data)) {
+      console.log('Chemical has direct relevant data');
+      return foundChemical;
+    }
+
+    // Step 4: Follow owl:sameAs references to find chemical with actual data
+    const chemicalWithData = this.followSameAsReferences(foundChemical, allData);
+    
+    if (chemicalWithData && chemicalWithData !== foundChemical) {
+      console.log(`Found referenced chemical with data: "${chemicalWithData.name}"`);
+      return chemicalWithData;
+    }
+
+    console.log('No chemical with relevant data found for:', chemicalName);
+    return foundChemical; // Return original even if no data, let the calling method decide
   }
 
-  /**
-   * Resolves owl:sameAs references to find the chemical with actual data
-   */
-  private resolveChemicalReference(chemical: AllDataItem, allData: AllDataItem[]): AllDataItem {
-    console.log('Resolving chemical reference for:', chemical.name);
-    
-    // Check if this chemical has any relevant data
-    if (this.hasAnyRelevantData(chemical.data)) {
-      console.log('Chemical has direct relevant data');
+  private followSameAsReferences(chemical: AllDataItem, allData: AllDataItem[], visited: Set<string> = new Set()): AllDataItem | null {
+    // Prevent infinite loops
+    if (visited.has(chemical.id || '')) {
+      return null;
+    }
+    visited.add(chemical.id || '');
+
+    console.log('Following sameAs references for:', chemical.name);
+
+    // Check if current chemical has data
+    if (this.hasDirectRelevantData(chemical.data)) {
       return chemical;
     }
 
@@ -303,25 +355,36 @@ export class ChemicalListPage implements OnInit, OnDestroy {
         if (refId) {
           console.log('Looking for referenced chemical:', refId);
           
-          // Find the referenced chemical
-          const referencedChemical = allData.find(item => 
-            item.type === 'chemical' && 
-            (item.id === refId || item.id === refId.replace('id#', ''))
-          );
+          // Clean up the reference ID
+          const cleanRefId = refId.replace('id#', '');
           
-          if (referencedChemical && this.hasAnyRelevantData(referencedChemical.data)) {
-            console.log('Found referenced chemical with relevant data:', referencedChemical.name);
-            return referencedChemical;
+          // Find the referenced chemical
+          const referencedChemical = allData.find(item => {
+            if (item.type !== 'chemical') return false;
+            
+            const itemId = (item.id || '').replace('id#', '');
+            return itemId === cleanRefId || item.id === refId;
+          }) ?? null; // FIX: Convert undefined to null
+          
+          if (referencedChemical) {
+            console.log('Found referenced chemical:', referencedChemical.name);
+            
+            // Recursively check the referenced chemical
+            const chemicalWithData = this.followSameAsReferences(referencedChemical, allData, visited);
+            if (chemicalWithData) {
+              return chemicalWithData;
+            }
+          } else {
+            console.log('Referenced chemical not found:', refId);
           }
         }
       }
     }
 
-    console.log('No chemical with relevant data found, returning original');
-    return chemical;
+    return null;
   }
 
-  private hasAnyRelevantData(data: any): boolean {
+  private hasDirectRelevantData(data: any): boolean {
     if (!data) return false;
     
     const allRelevantProperties = [
@@ -351,7 +414,13 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       'id#hasPolymerization', 'hasPolymerization'
     ];
     
-    return allRelevantProperties.some(prop => data[prop]);
+    return allRelevantProperties.some(prop => {
+      const value = data[prop];
+      return value && (
+        (Array.isArray(value) && value.length > 0) ||
+        (!Array.isArray(value) && value)
+      );
+    });
   }
 
   private getAllPossibleNamesForChemical(chemicalName: string): string[] {
@@ -396,12 +465,27 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       }
     }
 
-    // Handle double dots
+    // Handle double dots (AceticAcid..EthylEster -> Acetic Acid, Ethyl Ester)
     if (chemicalName.includes('..')) {
       const withComma = chemicalName.replace('..', ', ');
       allNames.add(withComma);
       const withSpace = chemicalName.replace('..', ' ');
       allNames.add(withSpace);
+    }
+
+    // Handle special naming patterns
+    if (chemicalName.includes('Acid') && chemicalName.includes('Ester')) {
+      // Handle patterns like "Acetic Acid,Ethyl Ester" -> "Ethyl Acetate"
+      const parts = chemicalName.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        const acidPart = parts[0];
+        const esterPart = parts[1];
+        
+        if (acidPart.includes('Acetic') && esterPart.includes('Ethyl')) {
+          allNames.add('Ethyl Acetate');
+          allNames.add('EthylAcetate');
+        }
+      }
     }
 
     return Array.from(allNames);
@@ -499,7 +583,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
 
   navigateToHistory() {
     console.log('History feature coming soon');
-    // TODO: Implement history navigation when ready
+    // TODO: Implement history navigation when ready  
   }
 
   navigateToProfile() {
