@@ -51,16 +51,8 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
-  private chemicalAliases: { [key: string]: string[] } = {
-    'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
-    'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
-    'Acetic Acid': ['Glacial Acetic Acid', 'AceticAcid'],
-    'Ethyl Acetate': ['Acetic Acid Ethyl Ester', 'AceticAcid..EthylEster', 'Acetidin'],
-    'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
-    '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid', '2-hydroxy-3..5-dinitrobenzoicAcid'],
-    'Ethyl Alcohol': ['Absolute Ethanol', 'AbsoluteEthanol', 'EthylAlcohol200Proof'],
-    'Lauric Acid': ['ABL']
-  };
+  // Dynamic alias mapping built from JSON-LD data
+  private dynamicAliasMap: Map<string, string[]> = new Map();
 
   private emergencyTypeMapping: { [key: string]: string[] } = {
     'Eye Contact': ['id#hasFirstAidEye', 'hasFirstAidEye'],
@@ -109,13 +101,16 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       this.loadEmergencySteps();
     });
 
+    // Handle Android back button
     this.backButtonSubscription = this.platform.backButton.subscribeWithPriority(10, () => {
       this.goBack();
     });
 
+    // Subscribe to database loading state
     this.dataSubscription = this.databaseService.allData$.subscribe(data => {
       if (data && data.length > 0) {
-        console.log('Database data received, reloading steps');
+        console.log('Database data received, rebuilding alias map and reloading steps');
+        this.buildDynamicAliasMap(data);
         this.loadEmergencySteps();
       }
     });
@@ -130,6 +125,88 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Build dynamic alias mapping from JSON-LD owl:sameAs relationships
+   */
+  private buildDynamicAliasMap(allData: AllDataItem[]) {
+    console.log('Building dynamic alias map from JSON-LD data...');
+    this.dynamicAliasMap.clear();
+    
+    // Create a map to store all aliases for each canonical chemical
+    const aliasGroups: Map<string, Set<string>> = new Map();
+    
+    // First pass: collect all sameAs relationships
+    allData.forEach(item => {
+      if (item.type === 'chemical' && item.data) {
+        const sameAsProperty = item.data['http://www.w3.org/2002/07/owl#sameAs'];
+        if (sameAsProperty) {
+          const currentId = item.id;
+          const currentName = this.extractChemicalName(item);
+          
+          // Get all sameAs references
+          const sameAsRefs = Array.isArray(sameAsProperty) ? sameAsProperty : [sameAsProperty];
+          
+          sameAsRefs.forEach(ref => {
+            if (ref && ref['@id']) {
+              const canonicalId = ref['@id'];
+              
+              // Initialize alias group if it doesn't exist
+              if (!aliasGroups.has(canonicalId)) {
+                aliasGroups.set(canonicalId, new Set());
+              }
+              
+              // Add current chemical to the canonical group
+              aliasGroups.get(canonicalId)!.add(currentId);
+              aliasGroups.get(canonicalId)!.add(currentName);
+            }
+          });
+        }
+      }
+    });
+    
+    // Second pass: build bidirectional alias mapping
+    aliasGroups.forEach((aliases, canonicalId) => {
+      const aliasArray = Array.from(aliases).filter(alias => alias && alias.trim());
+      
+      // For each alias, map it to all other aliases in the group
+      aliasArray.forEach(alias => {
+        const otherAliases = aliasArray.filter(a => a !== alias);
+        this.dynamicAliasMap.set(this.normalizeChemicalName(alias), otherAliases);
+      });
+    });
+    
+    console.log('Dynamic alias map built:', this.dynamicAliasMap.size, 'entries');
+    
+    // Log some examples for debugging
+    this.dynamicAliasMap.forEach((aliases, key) => {
+      if (key.includes('acetone') || key.includes('acetic')) {
+        console.log(`Aliases for "${key}":`, aliases);
+      }
+    });
+  }
+
+  /**
+   * Extract chemical name from item data
+   */
+  private extractChemicalName(item: AllDataItem): string {
+    if (item.name) return item.name;
+    
+    // Try to extract from rdfs:label
+    if (item.data && item.data['http://www.w3.org/2000/01/rdf-schema#label']) {
+      const label = item.data['http://www.w3.org/2000/01/rdf-schema#label'];
+      if (typeof label === 'string') return label;
+      if (Array.isArray(label) && label.length > 0) {
+        const firstLabel = label[0];
+        if (typeof firstLabel === 'string') return firstLabel;
+        if (firstLabel && firstLabel['@value']) return firstLabel['@value'];
+      }
+      if (label && label['@value']) return label['@value'];
+    }
+    
+    // Fall back to ID without prefix
+    return item.id ? item.id.replace('id#', '') : '';
+  }
+
   private loadEmergencySteps() {
     this.isLoading = true;
     
@@ -138,7 +215,12 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       console.log('All data length:', allData.length);
       
       if (allData && allData.length > 0) {
-        const chemical = this.findChemicalDataWithAliases(allData);
+        // Build alias map if not already built
+        if (this.dynamicAliasMap.size === 0) {
+          this.buildDynamicAliasMap(allData);
+        }
+        
+        const chemical = this.findChemicalData(allData);
         console.log('Found chemical:', chemical);
         
         if (chemical && chemical.data) {
@@ -148,9 +230,18 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
           console.log('Extracted step groups:', this.allStepGroups.length);
           console.log('Step groups:', this.allStepGroups);
         } else {
-          this.hasData = false;
-          this.allStepGroups = [];
-          console.log('No chemical data found');
+          // Try to find data using aliases
+          const aliasData = this.findChemicalDataByAliases(allData);
+          if (aliasData && aliasData.data) {
+            console.log('Found chemical data via aliases:', aliasData);
+            this.allStepGroups = this.extractEmergencyProcedures(aliasData.data);
+            this.hasData = this.allStepGroups.length > 0;
+            console.log('Extracted step groups via aliases:', this.allStepGroups.length);
+          } else {
+            this.hasData = false;
+            this.allStepGroups = [];
+            console.log('No chemical data found');
+          }
         }
       } else {
         this.hasData = false;
@@ -170,9 +261,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  private findChemicalDataWithAliases(allData: AllDataItem[]): AllDataItem | undefined {
+  private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
     console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
     
+    // Try direct ID match first
     let chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
@@ -183,6 +275,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       return chemical;
     }
 
+    // Try direct name match
     if (this.chemicalName) {
       const searchName = this.normalizeChemicalName(this.chemicalName);
       console.log('Normalized search name:', searchName);
@@ -190,116 +283,57 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
         
-        const itemName = this.normalizeChemicalName(item.name || '');
+        const itemName = this.normalizeChemicalName(this.extractChemicalName(item));
         const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-        
-        console.log('Comparing with item:', itemName, 'ID:', itemId);
         
         return itemName === searchName || itemId === searchName;
       });
 
       if (chemical) {
-        console.log('Found by name:', chemical.name);
+        console.log('Found by name:', chemical.name || chemical.id);
         return chemical;
       }
+    }
 
-      chemical = this.findChemicalThroughSameAs(allData, this.chemicalName);
+    return null;
+  }
+
+  private findChemicalDataByAliases(allData: AllDataItem[]): AllDataItem | null {
+    if (!this.chemicalName) return null;
+    
+    const searchName = this.normalizeChemicalName(this.chemicalName);
+    console.log('Searching for aliases of:', searchName);
+    
+    // Get aliases for the search term
+    const aliases = this.dynamicAliasMap.get(searchName);
+    if (!aliases || aliases.length === 0) {
+      console.log('No aliases found for:', searchName);
+      return null;
+    }
+    
+    console.log('Found aliases:', aliases);
+    
+    // Search for chemicals using aliases
+    for (const alias of aliases) {
+      const normalizedAlias = this.normalizeChemicalName(alias);
+      
+      const chemical = allData.find((item: AllDataItem) => {
+        if (item.type !== 'chemical') return false;
+        
+        const itemName = this.normalizeChemicalName(this.extractChemicalName(item));
+        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+        
+        return itemName === normalizedAlias || itemId === normalizedAlias;
+      });
+      
       if (chemical) {
-        console.log('Found through sameAs relationship:', chemical.name);
+        console.log('Found chemical via alias:', alias, '-> Chemical:', chemical.name || chemical.id);
         return chemical;
       }
-
-      const mainChemicalName = this.getMainChemicalName(this.chemicalName);
-      if (mainChemicalName !== this.chemicalName) {
-        const aliasSearchName = this.normalizeChemicalName(mainChemicalName);
-        console.log('Trying alias search:', aliasSearchName);
-        
-        chemical = allData.find((item: AllDataItem) => {
-          if (item.type !== 'chemical') return false;
-          
-          const itemName = this.normalizeChemicalName(item.name || '');
-          const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-          
-          return itemName === aliasSearchName || itemId === aliasSearchName;
-        });
-        
-        if (chemical) {
-          console.log('Found by alias:', chemical.name);
-          return chemical;
-        }
-      }
-    }
-
-    const chemicals = allData.filter(item => item.type === 'chemical');
-    console.log('Available chemicals:', chemicals.map(c => ({ id: c.id, name: c.name })));
-
-    return undefined;
-  }
-
-  private findChemicalThroughSameAs(allData: AllDataItem[], searchName: string): AllDataItem | undefined {
-    const normalizedSearchName = this.normalizeChemicalName(searchName);
-    
-    for (const item of allData) {
-      if (item.type !== 'chemical' || !item.data) continue;
-      
-      const itemName = this.normalizeChemicalName(item.name || '');
-      const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-      
-      if (itemName === normalizedSearchName || itemId === normalizedSearchName) {
-        const sameAsData = item.data['http://www.w3.org/2002/07/owl#sameAs'];
-        if (sameAsData) {
-          const sameAsIds = this.extractSameAsIds(sameAsData);
-          console.log('Found sameAs relationships for', item.name, ':', sameAsIds);
-          
-          for (const sameAsId of sameAsIds) {
-            const mainChemical = allData.find(chem => 
-              chem.type === 'chemical' && 
-              (chem.id === sameAsId || chem.id === `id#${sameAsId}`)
-            );
-            if (mainChemical && mainChemical.data && Object.keys(mainChemical.data).length > 1) {
-              console.log('Found main chemical through sameAs:', mainChemical.name);
-              return mainChemical;
-            }
-          }
-        }
-        return item;
-      }
     }
     
-    for (const item of allData) {
-      if (item.type !== 'chemical' || !item.data) continue;
-      
-      const sameAsData = item.data['http://www.w3.org/2002/07/owl#sameAs'];
-      if (sameAsData) {
-        const sameAsIds = this.extractSameAsIds(sameAsData);
-        
-        for (const sameAsId of sameAsIds) {
-          const normalizedSameAsId = this.normalizeChemicalName(sameAsId.replace('id#', ''));
-          if (normalizedSameAsId === normalizedSearchName) {
-            console.log('Found chemical that references our search term in sameAs:', item.name);
-            return item;
-          }
-        }
-      }
-    }
-    
-    return undefined;
-  }
-
-  private extractSameAsIds(sameAsData: any): string[] {
-    const ids: string[] = [];
-    
-    if (Array.isArray(sameAsData)) {
-      for (const item of sameAsData) {
-        if (item['@id']) {
-          ids.push(item['@id']);
-        }
-      }
-    } else if (sameAsData['@id']) {
-      ids.push(sameAsData['@id']);
-    }
-    
-    return ids;
+    console.log('No chemical found via aliases');
+    return null;
   }
 
   private normalizeChemicalName(name: string): string {
@@ -307,16 +341,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '')  
       .trim();
-  }
-
-  private getMainChemicalName(name: string): string {
-    for (const [mainName, aliases] of Object.entries(this.chemicalAliases)) {
-      if (mainName.toLowerCase() === name.toLowerCase() || 
-          aliases.some(alias => alias.toLowerCase() === name.toLowerCase())) {
-        return mainName;
-      }
-    }
-    return name;
   }
 
   private extractEmergencyProcedures(data: any): StepGroup[] {
