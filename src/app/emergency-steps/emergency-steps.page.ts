@@ -233,6 +233,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private findChemicalData(allData: AllDataItem[]): AllDataItem | undefined {
     console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
  
+    // First try to find by exact ID match
     let chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
@@ -243,6 +244,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       return chemical;
     }
 
+    // If not found by ID, try by name and aliases
     if (this.chemicalName) {
       const possibleNames = this.getAllRelatedChemicalNames(this.chemicalName);
       console.log('Searching for possible names:', possibleNames);
@@ -250,6 +252,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       for (const searchName of possibleNames) {
         console.log('Trying search name:', searchName);
 
+        // Try exact name match first
         chemical = allData.find((item: AllDataItem) => {
           if (item.type !== 'chemical') return false;
           
@@ -264,6 +267,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
           return chemical;
         }
 
+        // Try normalized name match
         const normalizedSearchName = this.normalizeChemicalName(searchName);
         console.log('Trying normalized name:', normalizedSearchName);
         
@@ -281,6 +285,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
           return chemical;
         }
 
+        // Try partial match
         chemical = allData.find((item: AllDataItem) => {
           if (item.type !== 'chemical') return false;
           
@@ -298,6 +303,14 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         }
       }
 
+      // If still not found, try to find by related chemicals (owl#sameAs relationships)
+      chemical = this.findBySameAsRelationships(allData, possibleNames);
+      if (chemical) {
+        console.log('Found chemical by owl#sameAs relationship:', chemical.name);
+        return chemical;
+      }
+
+      // Try to find by main component analysis
       chemical = this.findByMainComponent(allData, this.chemicalName);
       if (chemical) {
         console.log('Found chemical by main component analysis:', chemical.name);
@@ -311,6 +324,57 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     return undefined;
   }
 
+  private findBySameAsRelationships(allData: AllDataItem[], possibleNames: string[]): AllDataItem | undefined {
+    for (const name of possibleNames) {
+      const normalizedSearchName = this.normalizeChemicalName(name);
+      const searchId = `id#${normalizedSearchName.replace(/\s+/g, '').replace(/\./g, '..')}`;
+
+      // Find all items that have this chemical as a sameAs reference
+      const referencedItems = allData.filter(item => {
+        if (!item.data || typeof item.data !== 'object') return false;
+        
+        const sameAs = item.data['http://www.w3.org/2002/07/owl#sameAs'];
+        if (!sameAs) return false;
+        
+        if (Array.isArray(sameAs)) {
+          return sameAs.some(ref => {
+            if (ref && ref['@id']) {
+              return ref['@id'] === searchId || 
+                     ref['@id'].toLowerCase() === normalizedSearchName.toLowerCase() ||
+                     ref['@id'].replace('id#', '').toLowerCase() === normalizedSearchName.toLowerCase();
+            }
+            return false;
+          });
+        } else if (sameAs['@id']) {
+          return sameAs['@id'] === searchId || 
+                 sameAs['@id'].toLowerCase() === normalizedSearchName.toLowerCase() ||
+                 sameAs['@id'].replace('id#', '').toLowerCase() === normalizedSearchName.toLowerCase();
+        }
+        
+        return false;
+      });
+
+      if (referencedItems.length > 0) {
+        console.log(`Found ${referencedItems.length} items referencing ${name} via owl#sameAs`);
+        
+        // Now find the original chemical that these items reference
+        for (const refItem of referencedItems) {
+          const originalChemical = allData.find(item => 
+            item.type === 'chemical' && 
+            (item.id === refItem.id || item.name?.toLowerCase() === refItem.name?.toLowerCase())
+          );
+          
+          if (originalChemical) {
+            console.log('Found original chemical via sameAs reference:', originalChemical.name);
+            return originalChemical;
+          }
+        }
+      }
+    }
+    
+    return undefined;
+  }
+
   private findByMainComponent(allData: AllDataItem[], chemicalName: string): AllDataItem | undefined {
     const normalizedInput = chemicalName.toLowerCase().trim();
  
@@ -318,23 +382,39 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     console.log('Extracted components:', components);
     
     for (const component of components) {
-      const chemical = allData.find((item: AllDataItem) => {
+      // First try exact match
+      let chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
         
         const itemName = item.name?.toLowerCase() || '';
         const itemId = item.id?.replace('id#', '').toLowerCase() || '';
   
         return itemName === component || 
-               itemId === component ||
-               itemName.includes(component) ||
+               itemId === component;
+      });
+      
+      if (chemical) {
+        console.log(`Found chemical by exact component '${component}':`, chemical.name);
+        return chemical;
+      }
+      
+      // Then try partial match
+      chemical = allData.find((item: AllDataItem) => {
+        if (item.type !== 'chemical') return false;
+        
+        const itemName = item.name?.toLowerCase() || '';
+        const itemId = item.id?.replace('id#', '').toLowerCase() || '';
+  
+        return itemName.includes(component) ||
                itemId.includes(component);
       });
       
       if (chemical) {
-        console.log(`Found chemical by component '${component}':`, chemical.name);
+        console.log(`Found chemical by partial component '${component}':`, chemical.name);
         return chemical;
       }
     
+      // Then try aliases
       const relatedNames = this.getAllRelatedChemicalNames(component);
       for (const alias of relatedNames) {
         const chemical = allData.find((item: AllDataItem) => {
