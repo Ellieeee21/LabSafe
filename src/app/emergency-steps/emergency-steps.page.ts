@@ -51,162 +51,107 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
 
-  private chemicalAliases: { [key: string]: string[] } = {
-    // Acetone and its combinations
-    'Acetone': ['2-propanone', 'Acetone and Potassium Dichromate', 'Acetone and Nitric Acid', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
-    
-    // Activated Carbon variations
-    'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
-    
-    // Acetic Acid variations
-    'Acetic Acid': ['Glacial Acetic Acid', 'AceticAcid..EthylEster', 'Acetic Acid | Ethyl Ester', 'Ethyl Acetate', 'Acetoxyethane'],
-    
-    // Aluminum variations
-    'Aluminum': ['Aluminum and Diethyl Ether', 'Aluminum Powder'],
-    'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
-    
-    // Ammonia variations
-    'Ammonia': ['Acetylene and Ammonia'],
-    'Ammonium Hydroxide': ['Aqueous Ammonia', 'Strong Ammonia Solution', 'Stronger Ammonia Water', 'Ammonium Hydroxide and Silver Oxide'],
-    'Ammonium Chloride': ['Ammonium Chloratum', 'Ammonium Chloridum', 'Ammonium Muriate', 'Sal Ammonia', 'Salmiac'],
-    'Ammonium Nitrate': ['Ammonium Salt with Nitric Acid', 'Ammonium Saltpeter'],
-    'Ammonium Sulfate': ['Diammonium Salt with Sulfuric Acid'],
-    
-    // Antimony variations
-    'Antimony': ['Antimony Powder', 'Antimony Salt'],
-    
-    // Arsenic variations
-    'Arsenic': ['Arsenic Pentafluoride and Potassium Methoxide in Trichlorotrifluoroethane'],
-    
-    // Barium variations
-    'Barium Chloride': ['Barium Chloride Anhydrous', 'Barium Dichloride Anhydrous', 'Barium Chloride Dihydrate', 'Barium Dichloride Dihydrate'],
-    
-    // Benzene variations
-    'Benzene': ['Benzine', 'Benzol'],
-    
-    // Beryllium variations
-    'Beryllium': ['Beryllium Dihydride'],
-    
-    // Bromine variations
-    'Bromine': ['Bromine Pentafluoride', 'Bromine Trichloride'],
-    
-    // Carbon variations
-    'Carbon Tetrachloride': ['Chlorine Trifluoride and Carbon'],
-    
-    // Chlorine variations
-    'Chlorine': ['Chlorine Dioxide', 'Chlorine Trifluoride'],
-    'Chloroform': ['Trichloromethane', 'Chloroform and Sodium Methoxide', 'Chloroform-methanol'],
-    
-    // Citric Acid
-    'Citric Acid': ['2-Hydroxy-1,2,3-propanetricarboxylic Acid'],
-    
-    // Copper variations
-    'Copper Sulfate Pentahydrate': ['Blue Vitriol', 'Copper (II) Sulfate Pentahydrate'],
-    'Copper Chloride': ['Cupric Chloride Dihydrate', 'Copper Chloride Dihydrate', 'Coppertrace'],
-    'Copper Oxide': ['Cupric Oxide', 'Copper (II) Oxide'],
-    'Cuprous Chloride': [],
-    
-    // Dinitrosalicylic Acid
-    '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
-    
-    // Ethanol variations
-    'Ethanol': ['Absolute Ethanol', 'Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol', 'Carbinol', 'Methyl Alcohol'],
-    
-    // Formaldehyde variations
-    'Formaldehyde': ['Formaldehyde (37% Solution)', 'Formalin'],
-    'Formic Acid': ['Formic Acid (85%)', 'FormicAcid, 85Percent, F.C.C'],
-    
-    // Glucose variations
-    'Glucose': ['D-Glucose', 'Dextrose (Anhydrous)', 'Dextrose'],
-    
-    // Glycerin variations
-    'Glycerin': ['1,2,3-Propanetriol'],
-    
-    // Hydrogen Peroxide variations
-    'Hydrogen Peroxide': ['Hydrogen Peroxide (30%)', '1-Phenyl-2-Methylpropyl Alcohol and Hydrogen Peroxide', 'Alcohols and Hydrogen Peroxide', 'Hydrogen Peroxide and Sulfuric Acid'],
-    
-    // Iodine variations
-    'Iodine': ['Iodine and Methanol and Mercuric Oxide', 'Iodine Bromide', 'Iodine Heptafluroide'],
-    
-    // Iron variations
-    'Iron': ['Iron Oxide', 'Iron Powder'],
-    'Ferrous Sulfate': ['Ferrous Sulfate Dried Powder', 'Ferrous Sulfate Hydrate'],
-    'Ferrous Ammonium Sulfate': ['Ammonium Iron (II) Sulfate, Hexahydrate', 'Di-ammonium (II) Sulfate Hexahydrate', 'Ferrous Ammonium Sulfate Hexahydrate'],
-    
-    // Lactose variations
-    'Lactose': ['beta-d-galactopyranosyl-o-4D-glucopyrannose', 'Lactose (Anhydrous)'],
-    
-    // Lauric Acid variations
-    'Lauric Acid': ['ABL', 'Dodecanoic Acid', 'Dodecylic Acid', 'Laurostearic Acid', 'Neo-fat12', 'Neo-fat12-43', 'Vulvic Acid', 'n-Dodecanoic Acid'],
-    
-    // Magnesium variations
-    'Magnesium Oxide': ['Calcined Brucite', 'Magnesia', 'Magnesium Oxide Heavy Powder'],
-    'Magnesium Sulfate': ['Magnesium Sulfate (Anhydrous)'],
-    
-    // Melamine variations
-    'Melamine': ['2,4,6-Triamino-s-Triazine'],
-    
-    // Mercury variations
-    'Mercuric Chloride': ['Bichloride of Mercury', 'Calochlor'],
-    
-    // Naphthalene variations
-    'Naphthalene': ['1,5-Dinitronaphthalene And Sulfur'],
-    
-    // Nitric Acid variations
-    'Nitric Acid': ['Indane and Nitric Acid'],
-    
-    // Oxalic Acid variations
-    'Oxalic Acid': ['Oxalic Acid (Anhydrous)'],
-    
-    // Phosphorus variations
-    'Phosphorus Pentoxide': ['Di-phosphorus Pentoxide'],
-    
-    // Polyethylene Glycol variations
-    'Polyethylene Glycol 400': ['PEG400', 'PEG-8', 'Poly(oxy-1,2-ethanediyl).alpha.-hydro-.omega.-hydroxy-'],
-    
-    // Polysorbate variations
-    'Polysorbate 80': ['Polyethylene Oxide Sorbitan Mono-oleate', 'Polyoxyethylene 20 Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Oleate', 'Sorbitan Mono-9-otadecenoate Poly(Oxy-1,2-ethanediyl) Derivatives', 'Sorethytanop20cpMonooleate', 'TWEEN80'],
-    
-    // Potassium variations
-    'Potassium Dichromate': ['Bichromate of Potash'],
-    'Potassium Phthalate': ['1,2-Benzenedicarboxylic Acid Monopotassium Salt', 'Potassium Bitphthlate', 'Pthalic Acid Monopotassium Salt', 'Hydrogen Potassium Pthalate'],
-    'Potassium Phosphate Monobasic': ['Monopotassium Phosphate', 'PhosphoricAcid,MonopotassiumSalt', 'Potassium Dihydrogen Phospate'],
-    'Potassium Phosphate Dibasic': ['Dipotassium Phosphate'],
-    
-    // Pyrogallic Acid variations
-    'Pyrogallic Acid': ['1,2,3-Benzenetriol', '1,2,3-Trihydroxybenzene'],
-    
-    // Salicylic Acid variations
-    'Salicylic Acid': ['2-Hydroxybenzoic Acid'],
-    
-    // Sodium variations
-    'Sodium Azide': ['Hydrazoic Acid, Sodium Salt', 'Smite'],
-    'Sodium Bisulfite': ['Hydrogen Sulfite Sodium', 'Monosodium Salt Sulfurous Acid', 'Monosodium Sulfite', 'Sodium Acid Sulfite', 'Sodium Hydrogen Sulfite', 'Sodium Sulhydrate'],
-    'Sodium Hydroxide': ['Caustic Soda'],
-    'Sodium Lauryl Sulfate': ['Sodium Dodecyl Sulfate', 'Sulfuric Acid, Monododecyl Ester, Sodium Salt'],
-    'Sodium Phosphate Dibasic': ['Dibasic Sodium Phosphate', 'Disodium Hydrogen Phosphate', 'Disodium Monohydrogen Phosphate', 'Disodium Orthophosphate', 'Disodium Phosphoric Acid', 'Phosphoric Acid, Disodium Salt', 'Soda Phosphate', 'Sodium Hydrogen Phosphate', 'Sodium Monohydrogen Phosphate'],
-    'Sodium Thiosulfate': ['Ametox, Antichlor', 'Sodium Thiosulfate Pentahydrate'],
-    
-    // Sulfuric Acid variations
-    'Sulfuric Acid': ['Oil of Vitriol'],
-    
-    // Triethanolamine variations
-    'Triethanolamine': ['Ethanol,2,2,2-nitrilotris', 'Tri(2-hydroxyethyl)amine', 'Trolamine'],
-    
-    // Tris variations
-    'Tris': ['2-Amino-2-(hydroxymethyl)propane-1,3-diol Hydrochloride', 'Tris(hydroxymethyl)methylamine'],
-    
-    // Vinyl Acetate variations
-    'Vinyl Acetate': ['Vinyl Acetate Monomer'],
-    
-    // Zinc variations
-    'Zinc Acetate': ['Zinc Diacetate, Dihydrate'],
-    'Zinc': ['Zinc Metal', 'Zin', 'Zinc Metal Sheets', 'Zinc Metal Shot', 'Zinc Metal Strips']
+ private chemicalAliases: { [key: string]: string[] } = {
+  'Acetone': ['2-propanone', 'Acetone and Nitric Acid', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
+  'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
+  'Acetic Acid': ['Glacial Acetic Acid'],
+  'Ethyl Acetate': ['AceticAcid..EthylEster', 'Acetic Acid | Ethyl Ester', 'Acetoxyethane'],
+  'Aluminum': ['Aluminum Powder'],
+  'Aluminum and Diethyl Ether': [],
+  'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
+  'Ammonia': [],
+  'Acetylene and Ammonia': [],
+  'Ammonium Hydroxide': ['Aqueous Ammonia', 'Strong Ammonia Solution', 'Stronger Ammonia Water'],
+  'Ammonium Hydroxide and Silver Oxide': [],
+  'Ammonium Chloride': ['Ammonium Chloratum', 'Ammonium Chloridum', 'Ammonium Muriate', 'Sal Ammonia', 'Salmiac'],
+  'Ammonium Nitrate': ['Ammonium Salt with Nitric Acid', 'Ammonium Saltpeter'],
+  'Ammonium Sulfate': ['Diammonium Salt with Sulfuric Acid'],
+  'Antimony': ['Antimony Powder', 'Antimony Salt'],
+  'Arsenic': [],
+  'Arsenic Pentafluoride and Potassium Methoxide in Trichlorotrifluoroethane': [],
+  'Barium Chloride': ['Barium Chloride Anhydrous', 'Barium Dichloride Anhydrous'],
+  'Barium Chloride Dihydrate': ['Barium Dichloride Dihydrate'],
+  'Benzene': ['Benzine', 'Benzol'],
+  'Beryllium': [],
+  'Beryllium Dihydride': [],
+  'Bromine': [],
+  'Bromine Pentafluoride': [],
+  'Bromine Trichloride': [],
+  'Carbon Tetrachloride': [],
+  'Chlorine Trifluoride and Carbon': [],
+  'Chlorine': [],
+  'Chlorine Dioxide': [],
+  'Chlorine Trifluoride': [],
+  'Chloroform': ['Trichloromethane'],
+  'Chloroform and Sodium Methoxide': [],
+  'Chloroform-methanol': [],
+  'Citric Acid': ['2-Hydroxy-1,2,3-propanetricarboxylic Acid'],
+  'Copper Sulfate Pentahydrate': ['Blue Vitriol', 'Copper (II) Sulfate Pentahydrate'],
+  'Copper Chloride': ['Cupric Chloride Dihydrate', 'Copper Chloride Dihydrate', 'Coppertrace'],
+  'Copper Oxide': ['Cupric Oxide', 'Copper (II) Oxide'],
+  'Cuprous Chloride': [],
+  '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
+  'Ethanol': ['Absolute Ethanol', 'Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol', 'Carbinol'],
+  'Methyl Alcohol': [],
+  'Formaldehyde': ['Formalin'],
+  'Formaldehyde (37% Solution)': [],
+  'Formic Acid': ['Formic Acid (85%)', 'FormicAcid, 85Percent, F.C.C'],
+  'Glucose': ['D-Glucose', 'Dextrose (Anhydrous)', 'Dextrose'],
+  'Glycerin': ['1,2,3-Propanetriol'],
+  'Hydrogen Peroxide': ['Hydrogen Peroxide (30%)'],
+  '1-Phenyl-2-Methylpropyl Alcohol and Hydrogen Peroxide': [],
+  'Alcohols and Hydrogen Peroxide': [],
+  'Hydrogen Peroxide and Sulfuric Acid': [],
+  'Iodine': [],
+  'Iodine and Methanol and Mercuric Oxide': [],
+  'Iodine Bromide': [],
+  'Iodine Heptafluroide': [],
+  'Iron': ['Iron Powder'],
+  'Iron Oxide': [],
+  'Ferrous Sulfate': ['Ferrous Sulfate Dried Powder', 'Ferrous Sulfate Hydrate'],
+  'Ferrous Ammonium Sulfate': ['Ammonium Iron (II) Sulfate, Hexahydrate', 'Di-ammonium (II) Sulfate Hexahydrate', 'Ferrous Ammonium Sulfate Hexahydrate'],
+  'Lactose': ['beta-d-galactopyranosyl-o-4D-glucopyrannose'],
+  'Lactose (Anhydrous)': [],
+  'Lauric Acid': ['ABL', 'Dodecanoic Acid', 'Dodecylic Acid', 'Laurostearic Acid', 'Neo-fat12', 'Neo-fat12-43', 'Vulvic Acid', 'n-Dodecanoic Acid'],
+  'Magnesium Oxide': ['Calcined Brucite', 'Magnesia', 'Magnesium Oxide Heavy Powder'],
+  'Magnesium Sulfate': [],
+  'Magnesium Sulfate (Anhydrous)': [],
+  'Melamine': ['2,4,6-Triamino-s-Triazine'],
+  'Mercuric Chloride': ['Bichloride of Mercury', 'Calochlor'],
+  'Naphthalene': [],
+  '1,5-Dinitronaphthalene And Sulfur': [],
+  'Nitric Acid': [],
+  'Indane and Nitric Acid': [],
+  'Oxalic Acid': [],
+  'Oxalic Acid (Anhydrous)': [],
+  'Phosphorus Pentoxide': ['Di-phosphorus Pentoxide'],
+  'Polyethylene Glycol 400': ['PEG400', 'PEG-8', 'Poly(oxy-1,2-ethanediyl).alpha.-hydro-.omega.-hydroxy-'],
+  'Polysorbate 80': ['Polyethylene Oxide Sorbitan Mono-oleate', 'Polyoxyethylene 20 Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Oleate', 'Sorbitan Mono-9-otadecenoate Poly(Oxy-1,2-ethanediyl) Derivatives', 'Sorethytanop20cpMonooleate', 'TWEEN80'],
+  'Potassium Dichromate': ['Bichromate of Potash'],
+  'Potassium Phthalate': ['1,2-Benzenedicarboxylic Acid Monopotassium Salt', 'Potassium Bitphthlate', 'Pthalic Acid Monopotassium Salt', 'Hydrogen Potassium Pthalate'],
+  'Potassium Phosphate Monobasic': ['Monopotassium Phosphate', 'PhosphoricAcid,MonopotassiumSalt', 'Potassium Dihydrogen Phospate'],
+  'Potassium Phosphate Dibasic': ['Dipotassium Phosphate'],
+  'Pyrogallic Acid': ['1,2,3-Benzenetriol', '1,2,3-Trihydroxybenzene'],
+  'Salicylic Acid': ['2-Hydroxybenzoic Acid'],
+  'Sodium Azide': ['Hydrazoic Acid, Sodium Salt', 'Smite'],
+  'Sodium Bisulfite': ['Hydrogen Sulfite Sodium', 'Monosodium Salt Sulfurous Acid', 'Monosodium Sulfite', 'Sodium Acid Sulfite', 'Sodium Hydrogen Sulfite', 'Sodium Sulhydrate'],
+  'Sodium Hydroxide': ['Caustic Soda'],
+  'Sodium Lauryl Sulfate': ['Sodium Dodecyl Sulfate', 'Sulfuric Acid, Monododecyl Ester, Sodium Salt'],
+  'Sodium Phosphate Dibasic': ['Dibasic Sodium Phosphate', 'Disodium Hydrogen Phosphate', 'Disodium Monohydrogen Phosphate', 'Disodium Orthophosphate', 'Disodium Phosphoric Acid', 'Phosphoric Acid, Disodium Salt', 'Soda Phosphate', 'Sodium Hydrogen Phosphate', 'Sodium Monohydrogen Phosphate'],
+  'Sodium Thiosulfate': ['Ametox, Antichlor'],
+  'Sodium Thiosulfate Pentahydrate': [],
+  'Sulfuric Acid': ['Oil of Vitriol'],
+  'Triethanolamine': ['Ethanol,2,2,2-nitrilotris', 'Tri(2-hydroxyethyl)amine', 'Trolamine'],
+  'Tris': ['2-Amino-2-(hydroxymethyl)propane-1,3-diol Hydrochloride', 'Tris(hydroxymethyl)methylamine'],
+  'Vinyl Acetate': [],
+  'Vinyl Acetate Monomer': [],
+  'Zinc Acetate': ['Zinc Diacetate, Dihydrate'],
+  'Zinc': ['Zinc Metal', 'Zin', 'Zinc Metal Sheets', 'Zinc Metal Shot', 'Zinc Metal Strips']
 };
 
   private emergencyTypeMapping: { [key: string]: string[] } = {
     'Eye Contact': ['id#hasFirstAidEye', 'hasFirstAidEye'],
-    'Fire Fighting': ['id#hasSmallFireFighting', 'hasSmallFireFighting', 'id#hasLargeFireFighting', 'hasLargeFireFighting'],
+    'Fire': ['id#hasSmallFireFighting', 'hasSmallFireFighting', 'id#hasLargeFireFighting', 'hasLargeFireFighting'],
     'Ingestion': ['id#hasFirstAidIngestion', 'hasFirstAidIngestion'],
     'Inhalation': ['id#hasFirstAidInhalation', 'hasFirstAidInhalation', 'id#hasFirstAidSeriousInhalation', 'hasFirstAidSeriousInhalation'],
     'Skin Contact': ['id#hasFirstAidSkin', 'hasFirstAidSkin', 'id#hasFirstAidSeriousSkin', 'hasFirstAidSeriousSkin'],
@@ -374,12 +319,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     return null;
   }
 
-  private normalizeChemicalName(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')  
-      .trim();
-  }
+private normalizeChemicalName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')  
+    .replace(/\s+/g, ' ')        
+    .trim();
+}
 
   private getMainChemicalName(name: string): string {
     for (const [mainName, aliases] of Object.entries(this.chemicalAliases)) {
