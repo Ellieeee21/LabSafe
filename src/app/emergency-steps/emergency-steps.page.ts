@@ -52,7 +52,7 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private dataSubscription: Subscription = new Subscription();
 
  private chemicalAliases: { [key: string]: string[] } = {
-  'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
+  'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid', 'Acetone and Nitric Acid'],
   'Acetone and Nitric Acid': [],
   'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
   'Acetic Acid': ['Glacial Acetic Acid', 'Acetic Acid, Ethyl Ester', 'Acetoxyethane', 'Ethyl Acetate'],
@@ -92,14 +92,14 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   'Copper Oxide': ['Cupric Oxide', 'Copper (II) Oxide'],
   'Cuprous Chloride': [],
   '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
-  'Ethanol': ['Absolute Ethanol', 'Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol', 'Carbinol'],
+  'Ethanol': ['Absolute Ethanol', 'Ethyl Alcohol', 'Ethyl Alcohol and Hydrogen Peroxide', 'Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol', 'Carbinol'],
   'Methyl Alcohol': [],
   'Formaldehyde': ['Formalin'],
   'Formaldehyde (37% Solution)': [],
   'Formic Acid': ['Formic Acid (85%)', 'FormicAcid, 85Percent, F.C.C'],
   'Glucose': ['D-Glucose', 'Dextrose (Anhydrous)', 'Dextrose'],
   'Glycerin': ['1,2,3-Propanetriol'],
-  'Hydrogen Peroxide': ['Hydrogen Peroxide (30%)'],
+  'Hydrogen Peroxide': ['Hydrogen Peroxide (30%)', 'Alcohols and Hydrogen Peroxide'],
   '1-Phenyl-2-Methylpropyl Alcohol and Hydrogen Peroxide': [],
   'Alcohols and Hydrogen Peroxide': [],
   'Hydrogen Peroxide and Sulfuric Acid': [],
