@@ -98,9 +98,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
       this.filteredChemicals = [...this.chemicals];
     } else {
       this.filteredChemicals = this.chemicals.filter(chemical =>
-        chemical.name.toLowerCase().includes(this.searchTerm) ||
-        (chemical.formula && chemical.formula.toLowerCase().includes(this.searchTerm)) ||
-        (chemical.casNumber && chemical.casNumber.toLowerCase().includes(this.searchTerm))
+        chemical.name.toLowerCase().includes(this.searchTerm)
       );
     }
   }

@@ -7,22 +7,13 @@ import { map } from 'rxjs/operators';
 export interface Chemical {
   id: number;
   name: string;
-  formula?: string;
-  casNumber?: string;
+  aliases: string[];
+  canonicalId: string; // The main chemical ID this represents
   hazards?: string;
   precautions?: string;
   firstAid?: string;
   description?: string;
   hazardClass?: string;
-  storageClass?: string;
-  riskPhrases?: string;
-  safetyPhrases?: string;
-  type?: string;
-  molecularWeight?: string;
-  meltingPoint?: string;
-  boilingPoint?: string;
-  density?: string;
-  solubility?: string;
 }
 
 export interface EmergencyClass {
@@ -38,6 +29,8 @@ export interface AllDataItem {
   id: string;
   name: string;
   type: string;
+  canonicalId?: string; // For tracking which chemical this is an alias of
+  aliases?: string[]; // List of all names for this chemical
   data: any;
 }
 
@@ -49,6 +42,8 @@ export class DatabaseService {
   private db: SQLiteDBConnection | null = null;
   private allDataSubject = new BehaviorSubject<AllDataItem[]>([]);
   private loadingSubject = new BehaviorSubject<boolean>(false);
+  private chemicalAliasMap = new Map<string, string>(); // Maps alias ID to canonical ID
+  private canonicalChemicals = new Map<string, AllDataItem>(); // Maps canonical ID to main chemical data
   
   public allData$ = this.allDataSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
@@ -64,10 +59,11 @@ export class DatabaseService {
   }
 
   private extractChemicalsFromAllData(allData: AllDataItem[]): Chemical[] {
+    // Only return canonical chemicals (not aliases)
     return allData
-      .filter(item => item.type === 'chemical')
+      .filter(item => item.type === 'chemical' && !item.canonicalId) // Only canonical chemicals
       .map(item => this.convertToChemical(item))
-      .filter(chemical => chemical !== null)
+      .filter((chemical): chemical is Chemical => chemical !== null)
       .sort((a, b) => {
         const aStartsWithNumber = /^[0-9]/.test(a.name);
         const bStartsWithNumber = /^[0-9]/.test(b.name);
@@ -104,9 +100,9 @@ export class DatabaseService {
     }
   }
 
-public getCurrentAllData(): AllDataItem[] {
-  return this.allDataSubject.value;
-}
+  public getCurrentAllData(): AllDataItem[] {
+    return this.allDataSubject.value;
+  }
 
   private async createTables(): Promise<void> {
     if (!this.db) return;
@@ -116,6 +112,8 @@ public getCurrentAllData(): AllDataItem[] {
         id TEXT PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
         type TEXT NOT NULL,
+        canonical_id TEXT,
+        aliases TEXT,
         data TEXT NOT NULL
       );
     `;
@@ -201,6 +199,8 @@ public getCurrentAllData(): AllDataItem[] {
 
   private parseAllJsonLdData(jsonData: any): AllDataItem[] {
     const allItems: AllDataItem[] = [];
+    this.chemicalAliasMap.clear();
+    this.canonicalChemicals.clear();
     
     let items = [];
     if (Array.isArray(jsonData)) {
@@ -215,10 +215,43 @@ public getCurrentAllData(): AllDataItem[] {
       items = [jsonData];
     }
     
+    // First pass: identify all chemicals and their aliases
+    const chemicalItems = items.filter((item: any) => this.isChemicalObject(item));
+    
+    // Build alias map
+    for (const item of chemicalItems) {
+      const id = this.extractId(item);
+      const sameAsRefs = this.extractSameAsReferences(item);
+      
+      if (sameAsRefs.length > 0) {
+        // This is an alias, map it to its canonical form
+        for (const canonicalRef of sameAsRefs) {
+          const canonicalId = canonicalRef.startsWith('id#') ? canonicalRef.substring(3) : canonicalRef;
+          this.chemicalAliasMap.set(id, canonicalId);
+        }
+      }
+    }
+    
+    // Second pass: process all items and group aliases
+    const processedCanonicalIds = new Set<string>();
+    
     for (const item of items) {
       try {
         const dataItem = this.parseDataItemFromJsonLd(item);
-        if (dataItem) {
+        if (dataItem && dataItem.type === 'chemical') {
+          const canonicalId = this.chemicalAliasMap.get(dataItem.id) || dataItem.id;
+          
+          if (!processedCanonicalIds.has(canonicalId)) {
+            // This is either a canonical chemical or the first time we see this canonical ID
+            const canonicalItem = this.createCanonicalChemicalItem(canonicalId, chemicalItems);
+            if (canonicalItem) {
+              allItems.push(canonicalItem);
+              this.canonicalChemicals.set(canonicalId, canonicalItem);
+              processedCanonicalIds.add(canonicalId);
+            }
+          }
+        } else if (dataItem && dataItem.type !== 'chemical') {
+          // Non-chemical items are added as-is
           allItems.push(dataItem);
         }
       } catch (e) {
@@ -227,6 +260,99 @@ public getCurrentAllData(): AllDataItem[] {
     }
     
     return allItems;
+  }
+
+  private createCanonicalChemicalItem(canonicalId: string, chemicalItems: any[]): AllDataItem | null {
+    // Find the main chemical (the one that others reference as sameAs)
+    let mainChemical = chemicalItems.find((item: any) => {
+      const id = this.extractId(item);
+      return id === canonicalId;
+    });
+
+    // If we can't find the main chemical, use the first alias we find
+    if (!mainChemical) {
+      mainChemical = chemicalItems.find((item: any) => {
+        const id = this.extractId(item);
+        return this.chemicalAliasMap.get(id) === canonicalId;
+      });
+    }
+
+    if (!mainChemical) {
+      return null;
+    }
+
+    // Collect all aliases for this canonical chemical
+    const aliases: string[] = [];
+    const aliasData: any[] = [];
+    
+    for (const item of chemicalItems) {
+      const id = this.extractId(item);
+      const mappedCanonicalId = this.chemicalAliasMap.get(id) || id;
+      
+      if (mappedCanonicalId === canonicalId) {
+        const name = this.extractName(item);
+        if (name && name !== 'Unknown') {
+          aliases.push(name);
+          aliasData.push(item);
+        }
+      }
+    }
+
+    // Use the main chemical's name, or the first alias if main chemical has no good name
+    let primaryName = this.extractName(mainChemical);
+    if (!primaryName || primaryName === 'Unknown') {
+      primaryName = aliases.find(name => name !== 'Unknown') || 'Unknown';
+    }
+
+    // Merge data from all aliases to get the most complete information
+    const mergedData = this.mergeChemicalData(mainChemical, aliasData);
+
+    return {
+      id: canonicalId,
+      name: primaryName,
+      type: 'chemical',
+      aliases: [...new Set(aliases)], // Remove duplicates
+      data: mergedData
+    };
+  }
+
+  private mergeChemicalData(mainChemical: any, aliasData: any[]): any {
+    const merged = { ...mainChemical };
+    
+    // Merge properties from all aliases, preferring non-empty values
+    for (const alias of aliasData) {
+      for (const [key, value] of Object.entries(alias)) {
+        if (value && (!merged[key] || (Array.isArray(value) && value.length > 0))) {
+          if (Array.isArray(merged[key]) && Array.isArray(value)) {
+            // Merge arrays and remove duplicates
+            merged[key] = [...new Set([...merged[key], ...value])];
+          } else if (!merged[key]) {
+            merged[key] = value;
+          }
+        }
+      }
+    }
+    
+    return merged;
+  }
+
+  private extractSameAsReferences(item: any): string[] {
+    const sameAsRefs: string[] = [];
+    const sameAsProp = item['http://www.w3.org/2002/07/owl#sameAs'];
+    
+    if (sameAsProp) {
+      if (Array.isArray(sameAsProp)) {
+        for (const ref of sameAsProp) {
+          if (ref['@id']) {
+            sameAsRefs.push(ref['@id']);
+          }
+        }
+      } else if (sameAsProp['@id']) {
+        sameAsRefs.push(sameAsProp['@id']);
+      }
+    }
+    
+    return sameAsRefs;
   }
 
   private parseDataItemFromJsonLd(jsonObject: any): AllDataItem | null {
@@ -238,7 +364,7 @@ public getCurrentAllData(): AllDataItem[] {
         return null;
       }
 
-      // Determine type based on @type and properties
+      // Determine type - simplified since JSON should contain all chemicals
       let type = 'unknown';
       if (this.isChemicalObject(jsonObject)) {
         type = 'chemical';
@@ -261,53 +387,28 @@ public getCurrentAllData(): AllDataItem[] {
   }
 
   private isChemicalObject(jsonObject: any): boolean {
-    const name = this.extractName(jsonObject);
-    
-    // Check for chemical-specific properties
-    const hasChemicalProperties = !!(
-      jsonObject.molecularFormula || 
-      jsonObject.formula || 
-      jsonObject.casNumber ||
-      jsonObject['id#hasFlammabilityLevel'] ||
-      jsonObject['id#hasHealthLevel'] ||
-      jsonObject['id#hasInstabilityOrReactivityLevel']
-    );
-
-    // Check @type for chemical indicators - improved logic
+    // Simplified: assume all NamedIndividual items are chemicals unless they're clearly classes
     if (jsonObject['@type']) {
       const types = Array.isArray(jsonObject['@type']) ? 
                    jsonObject['@type'] : 
                    [jsonObject['@type']];
       
-      // Look for NamedIndividual type which indicates chemical entities in your JSON
       const hasNamedIndividualType = types.some((t: string) => 
         t === 'http://www.w3.org/2002/07/owl#NamedIndividual'
       );
       
       if (hasNamedIndividualType) {
-        // Check if it has chemical-related properties or looks like a chemical name
-        if (hasChemicalProperties || this.looksLikeChemicalName(name)) {
-          return true;
-        }
+        // Check if it's not a class
+        const isClass = types.some((t: string) => 
+          t === 'http://www.w3.org/2002/07/owl#Class' ||
+          t.includes('Class')
+        );
         
-        // Check if it has the ProductName type in rdf:type property
-        if (jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']) {
-          const rdfTypes = Array.isArray(jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']) ?
-                          jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type'] :
-                          [jsonObject['http://www.w3.org/1999/02/22-rdf-syntax-ns#type']];
-          
-          const hasProductNameType = rdfTypes.some((rdfType: any) => 
-            rdfType['@id'] === 'id#ProductName'
-          );
-          
-          if (hasProductNameType) {
-            return true;
-          }
-        }
+        return !isClass;
       }
     }
 
-    return hasChemicalProperties;
+    return false;
   }
 
   private isClass(item: any): boolean {
@@ -332,17 +433,6 @@ public getCurrentAllData(): AllDataItem[] {
     return stepKeywords.some(keyword => 
       name.toLowerCase().includes(keyword.toLowerCase())
     );
-  }
-
-  private looksLikeChemicalName(name: string): boolean {
-    const chemicalPatterns = [
-      /acid$/i, /\d,\d/, /^[A-Z][a-z]*-\d/, /oxide$/i,
-      /chloride$/i, /sulfate$/i, /nitrate$/i, /carbonate$/i,
-      /hydroxide$/i, /benzene/i, /methyl/i, /ethyl/i,
-      /propyl/i, /^[A-Z][a-z]*ane$/i, /^[A-Z][a-z]*ene$/i,
-      /^[A-Z][a-z]*yne$/i, /iodide$/i, /dioxide$/i
-    ];
-    return chemicalPatterns.some(pattern => pattern.test(name));
   }
 
   private extractId(item: any): string {
@@ -396,8 +486,15 @@ public getCurrentAllData(): AllDataItem[] {
     if (!this.db) return;
     
     await this.db.run(
-      'INSERT OR REPLACE INTO all_data (id, name, type, data) VALUES (?, ?, ?, ?)',
-      [item.id, item.name, item.type, JSON.stringify(item.data)]
+      'INSERT OR REPLACE INTO all_data (id, name, type, canonical_id, aliases, data) VALUES (?, ?, ?, ?, ?, ?)',
+      [
+        item.id, 
+        item.name, 
+        item.type, 
+        item.canonicalId || null,
+        JSON.stringify(item.aliases || []),
+        JSON.stringify(item.data)
+      ]
     );
   }
 
@@ -408,6 +505,8 @@ public getCurrentAllData(): AllDataItem[] {
       const result = await this.db.query('SELECT * FROM all_data ORDER BY name');
       const allItems: AllDataItem[] = (result.values || []).map(row => ({
         ...row,
+        canonicalId: row.canonical_id,
+        aliases: JSON.parse(row.aliases || '[]'),
         data: JSON.parse(row.data)
       }));
       
@@ -425,148 +524,175 @@ public getCurrentAllData(): AllDataItem[] {
   }
 
   public getEmergencyStepsForChemical(chemicalId: string): string[] {
-  const allData = this.allDataSubject.value;
-  const steps: string[] = [];
-  
-  // Find the specific chemical
-  const chemical = allData.find(item => 
-    item.type === 'chemical' && (item.id === chemicalId || item.id === `id#${chemicalId}`)
-  );
-  
-  if (chemical && chemical.data) {
-    const emergencySteps = this.extractEmergencyStepsFromChemical(chemical.data);
-    steps.push(...emergencySteps);
-  }
-  
-  // If no specific steps found, get general emergency steps
-  if (steps.length === 0) {
-    return this.getAllEmergencySteps();
-  }
-  
-  return steps;
-}
-
-public getAllEmergencySteps(): string[] {
-  const allData = this.allDataSubject.value;
-  const steps: string[] = [];
-  
-  // Get emergency steps from all chemicals
-  const chemicals = allData.filter(item => item.type === 'chemical');
-  
-  for (const chemical of chemicals) {
-    const emergencySteps = this.extractEmergencyStepsFromChemical(chemical.data);
-    steps.push(...emergencySteps);
-  }
-  
-  // Remove duplicates and return
-  return [...new Set(steps)];
-}
-
-private extractEmergencyStepsFromChemical(chemicalData: any): string[] {
-  const steps: string[] = [];
-  
-  // Define emergency-related properties to look for
-  const emergencyProperties = [
-    'id#hasAccidentalGeneral',
-    'id#hasFirstAidGeneral',
-    'id#hasFirstAidEye',
-    'id#hasFirstAidIngestion',
-    'id#hasFirstAidInhalation',
-    'id#hasFirstAidSeriousInhalation',
-    'id#hasFirstAidSeriousSkin',
-    'id#hasFirstAidSkin',
-    'id#hasLargeSpill',
-    'id#hasSmallSpill',
-    'id#hasLargeFireFighting',
-    'id#hasConditionsOfInstability',
-    'id#hasHealthHazards',
-    'id#hasPhysicalHazards',
-    'id#hasIncompatibilityIssuesWith',
-    'id#hasReactivityWith',
-    'id#hasStabilityAtNormalConditions',
-    'id#hasPolymerization'
-  ];
-  
-  // Extract steps from each emergency property
-  for (const property of emergencyProperties) {
-    if (chemicalData[property]) {
-      const propertySteps = this.extractStepsFromProperty(chemicalData[property], property);
-      steps.push(...propertySteps);
-    }
-  }
-  
-  return steps;
-}
-
-private extractStepsFromProperty(propertyValue: any, propertyName: string): string[] {
-  const steps: string[] = [];
-  
-  // Get a readable name for the emergency category
-  const categoryName = this.getEmergencyCategoryName(propertyName);
-  
-  if (Array.isArray(propertyValue)) {
-    const items = propertyValue.map(item => {
-      if (typeof item === 'object' && item['@id']) {
-        return this.formatEmergencyStepName(item['@id']);
-      }
-      return item;
-    }).filter(item => item);
+    const allData = this.allDataSubject.value;
+    const steps: string[] = [];
     
-    if (items.length > 0) {
-      steps.push(`${categoryName}: ${items.join(', ')}`);
+    // Find the chemical by ID or by checking if it's an alias
+    let chemical = allData.find(item => 
+      item.type === 'chemical' && (item.id === chemicalId || item.id === `id#${chemicalId}`)
+    );
+    
+    // If not found, check if this ID is an alias
+    if (!chemical) {
+      const canonicalId = this.chemicalAliasMap.get(chemicalId);
+      if (canonicalId) {
+        chemical = allData.find(item => 
+          item.type === 'chemical' && item.id === canonicalId
+        );
+      }
     }
-  } else if (typeof propertyValue === 'object' && propertyValue['@id']) {
-    const stepName = this.formatEmergencyStepName(propertyValue['@id']);
-    if (stepName) {
-      steps.push(`${categoryName}: ${stepName}`);
+    
+    if (chemical && chemical.data) {
+      const emergencySteps = this.extractEmergencyStepsFromChemical(chemical.data);
+      steps.push(...emergencySteps);
     }
-  } else if (typeof propertyValue === 'string') {
-    steps.push(`${categoryName}: ${propertyValue}`);
+    
+    // If no specific steps found, get general emergency steps
+    if (steps.length === 0) {
+      return this.getAllEmergencySteps();
+    }
+    
+    return steps;
   }
-  
-  return steps;
-}
 
-private getEmergencyCategoryName(propertyName: string): string {
-  const categoryMap: { [key: string]: string } = {
-    'id#hasAccidentalGeneral': 'Accidental Release',
-    'id#hasFirstAidGeneral': 'General First Aid',
-    'id#hasFirstAidEye': 'Eye Contact First Aid',
-    'id#hasFirstAidIngestion': 'Ingestion First Aid',
-    'id#hasFirstAidInhalation': 'Inhalation First Aid',
-    'id#hasFirstAidSeriousInhalation': 'Serious Inhalation First Aid',
-    'id#hasFirstAidSeriousSkin': 'Serious Skin Contact First Aid',
-    'id#hasFirstAidSkin': 'Skin Contact First Aid',
-    'id#hasLargeSpill': 'Large Spill Procedures',
-    'id#hasSmallSpill': 'Small Spill Procedures',
-    'id#hasLargeFireFighting': 'Fire Fighting Procedures',
-    'id#hasConditionsOfInstability': 'Instability Conditions',
-    'id#hasHealthHazards': 'Health Hazards',
-    'id#hasPhysicalHazards': 'Physical Hazards',
-    'id#hasIncompatibilityIssuesWith': 'Incompatible Materials',
-    'id#hasReactivityWith': 'Reactive Materials',
-    'id#hasStabilityAtNormalConditions': 'Stability Information',
-    'id#hasPolymerization': 'Polymerization Information'
-  };
-  
-  return categoryMap[propertyName] || propertyName.replace('id#has', '').replace(/([A-Z])/g, ' $1').trim();
-}
+  public getAllEmergencySteps(): string[] {
+    const allData = this.allDataSubject.value;
+    const steps: string[] = [];
+    
+    // Get emergency steps from all chemicals
+    const chemicals = allData.filter(item => item.type === 'chemical');
+    
+    for (const chemical of chemicals) {
+      const emergencySteps = this.extractEmergencyStepsFromChemical(chemical.data);
+      steps.push(...emergencySteps);
+    }
+    
+    // Remove duplicates and return
+    return [...new Set(steps)];
+  }
 
-private formatEmergencyStepName(idValue: string): string {
-  if (!idValue) return '';
-  
-  // Remove 'id#' prefix if present
-  let name = idValue.startsWith('id#') ? idValue.substring(3) : idValue;
-  
-  // Convert camelCase to readable format
-  name = name
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/([0-9])([A-Z])/g, '$1 $2')
-    .replace(/\.\./g, ', ')
-    .trim();
-  
-  return name;
-}
+  // Method to find chemical by name (including aliases)
+  public findChemicalByName(name: string): Chemical | null {
+    const chemicals = this.getChemicals();
+    
+    // First try exact match on main name
+    let chemical = chemicals.find(c => c.name.toLowerCase() === name.toLowerCase());
+    
+    // If not found, search in aliases
+    if (!chemical) {
+      chemical = chemicals.find(c => 
+        c.aliases.some(alias => alias.toLowerCase() === name.toLowerCase())
+      );
+    }
+    
+    return chemical || null;
+  }
+
+  private extractEmergencyStepsFromChemical(chemicalData: any): string[] {
+    const steps: string[] = [];
+    
+    // Define emergency-related properties to look for
+    const emergencyProperties = [
+      'id#hasAccidentalGeneral',
+      'id#hasFirstAidGeneral',
+      'id#hasFirstAidEye',
+      'id#hasFirstAidIngestion',
+      'id#hasFirstAidInhalation',
+      'id#hasFirstAidSeriousInhalation',
+      'id#hasFirstAidSeriousSkin',
+      'id#hasFirstAidSkin',
+      'id#hasLargeSpill',
+      'id#hasSmallSpill',
+      'id#hasLargeFireFighting',
+      'id#hasConditionsOfInstability',
+      'id#hasHealthHazards',
+      'id#hasPhysicalHazards',
+      'id#hasIncompatibilityIssuesWith',
+      'id#hasReactivityWith',
+      'id#hasStabilityAtNormalConditions',
+      'id#hasPolymerization'
+    ];
+    
+    // Extract steps from each emergency property
+    for (const property of emergencyProperties) {
+      if (chemicalData[property]) {
+        const propertySteps = this.extractStepsFromProperty(chemicalData[property], property);
+        steps.push(...propertySteps);
+      }
+    }
+    
+    return steps;
+  }
+
+  private extractStepsFromProperty(propertyValue: any, propertyName: string): string[] {
+    const steps: string[] = [];
+    
+    // Get a readable name for the emergency category
+    const categoryName = this.getEmergencyCategoryName(propertyName);
+    
+    if (Array.isArray(propertyValue)) {
+      const items = propertyValue.map(item => {
+        if (typeof item === 'object' && item['@id']) {
+          return this.formatEmergencyStepName(item['@id']);
+        }
+        return item;
+      }).filter(item => item);
+      
+      if (items.length > 0) {
+        steps.push(`${categoryName}: ${items.join(', ')}`);
+      }
+    } else if (typeof propertyValue === 'object' && propertyValue['@id']) {
+      const stepName = this.formatEmergencyStepName(propertyValue['@id']);
+      if (stepName) {
+        steps.push(`${categoryName}: ${stepName}`);
+      }
+    } else if (typeof propertyValue === 'string') {
+      steps.push(`${categoryName}: ${propertyValue}`);
+    }
+    
+    return steps;
+  }
+
+  private getEmergencyCategoryName(propertyName: string): string {
+    const categoryMap: { [key: string]: string } = {
+      'id#hasAccidentalGeneral': 'Accidental Release',
+      'id#hasFirstAidGeneral': 'General First Aid',
+      'id#hasFirstAidEye': 'Eye Contact First Aid',
+      'id#hasFirstAidIngestion': 'Ingestion First Aid',
+      'id#hasFirstAidInhalation': 'Inhalation First Aid',
+      'id#hasFirstAidSeriousInhalation': 'Serious Inhalation First Aid',
+      'id#hasFirstAidSeriousSkin': 'Serious Skin Contact First Aid',
+      'id#hasFirstAidSkin': 'Skin Contact First Aid',
+      'id#hasLargeSpill': 'Large Spill Procedures',
+      'id#hasSmallSpill': 'Small Spill Procedures',
+      'id#hasLargeFireFighting': 'Fire Fighting Procedures',
+      'id#hasConditionsOfInstability': 'Instability Conditions',
+      'id#hasHealthHazards': 'Health Hazards',
+      'id#hasPhysicalHazards': 'Physical Hazards',
+      'id#hasIncompatibilityIssuesWith': 'Incompatible Materials',
+      'id#hasReactivityWith': 'Reactive Materials',
+      'id#hasStabilityAtNormalConditions': 'Stability Information',
+      'id#hasPolymerization': 'Polymerization Information'
+    };
+    
+    return categoryMap[propertyName] || propertyName.replace('id#has', '').replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  private formatEmergencyStepName(idValue: string): string {
+    if (!idValue) return '';
+    
+    // Remove 'id#' prefix if present
+    let name = idValue.startsWith('id#') ? idValue.substring(3) : idValue;
+    
+    // Convert camelCase to readable format
+    name = name
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([0-9])([A-Z])/g, '$1 $2')
+      .replace(/\.\./g, ', ')
+      .trim();
+    
+    return name;
+  }
 
   private convertToChemical(item: AllDataItem): Chemical | null {
     try {
@@ -574,11 +700,6 @@ private formatEmergencyStepName(idValue: string): string {
       const idString = item.id;
       const id = Math.abs(this.hashCode(idString.toString()));
       
-      const formula = this.extractValue(jsonObject, 'molecularFormula') || 
-                     this.extractValue(jsonObject, 'formula') || 
-                     this.extractValue(jsonObject, 'chemicalFormula');
-      
-      const casNumber = this.extractValue(jsonObject, 'casNumber');
       const hazards = this.extractHazards(jsonObject);
       const precautions = this.extractPrecautions(jsonObject);
       const description = this.extractDescription(jsonObject);
@@ -586,22 +707,13 @@ private formatEmergencyStepName(idValue: string): string {
       const chemical: Chemical = {
         id,
         name: item.name,
-        formula,
-        casNumber,
+        aliases: item.aliases || [],
+        canonicalId: item.id,
         hazards,
         precautions,
         firstAid: this.extractValue(jsonObject, 'firstAid'),
         description,
-        hazardClass: this.extractValue(jsonObject, 'hazardClass'),
-        storageClass: this.extractValue(jsonObject, 'storageClass'),
-        riskPhrases: this.extractValue(jsonObject, 'riskPhrases'),
-        safetyPhrases: this.extractValue(jsonObject, 'safetyPhrases'),
-        type: this.extractValue(jsonObject, 'type'),
-        molecularWeight: this.extractValue(jsonObject, 'molecularWeight'),
-        meltingPoint: this.extractValue(jsonObject, 'meltingPoint'),
-        boilingPoint: this.extractValue(jsonObject, 'boilingPoint'),
-        density: this.extractValue(jsonObject, 'density'),
-        solubility: this.extractValue(jsonObject, 'solubility')
+        hazardClass: this.extractValue(jsonObject, 'hazardClass')
       };
       
       return chemical;
