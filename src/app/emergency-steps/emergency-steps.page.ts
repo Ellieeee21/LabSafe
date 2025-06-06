@@ -54,66 +54,62 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private chemicalAliases: { [key: string]: string[] } = {
   'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
   'Acetone': ['2-propanone', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
+  'Acetic Acid': ['Glacial Acetic Acid'],
   'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
   '3,5-Dinitrosalicylic Acid': ['2-hydroxy-3,5-dinitrobenzoic Acid'],
-  '1,2,3-Benzenetriol': ['Pyrogallic Acid', '1,2,3-Trihydroxybenzene'],
-  '1,2,3-Propanetriol': ['Glycerin'],
-  '1,2-Benzenedicarboxylic Acid Monopotassium Salt': ['Potassium Bitphthlate', 'Pthalic Acid Monopotassium Salt'],
-  '2,2\'-Oxydiethanol': ['Diethylene Glycol', 'Carbitol'],
-  '2,4,6-Triamino-s-Triazine': ['Melamine'],
-  '2-Amino-2-(hydroxymethyl)propane-1,3-diol Hydrochloride': ['Tris(hydroxymethyl)methylamine'],
-  '2-Furan Percarboxylic Acid': [],
-  '2-Hydroxy-1,2,3-propanetricarboxylic Acid': ['Citric Acid'],
-  '2-hydroxy-3,5-dinitrobenzoic Acid': ['3,5-Dinitrosalicylic Acid'],
-  '2-Hydroxybenzoic Acid': ['Salicylic Acid'],
-  'ABL': ['Lauric Acid', 'Dodecanoic Acid', 'Dodecylic Acid', 'Laurostearic Acid', 'Neo-fat12', 'Neo-fat12-43', 'Vulvic Acid', 'n-Dodecanoic Acid'],
-  'Absolute Ethanol': ['Ethyl Alcohol (200 Proof)', 'Anhydrous Ethyl Alcohol'],
-  'Acetic Acid': ['Glacial Acetic Acid', 'Acetic Acid,Ethyl Ester', 'Ethyl Acetate', 'Acetoxyethane'],
-  'AceticAcid..EthylEster': ['Acetic Acid', 'Ethyl Ester', 'Ethyl Acetate', 'Acetoxyethane'],
-  'Alpha-alumina': ['Aluminum Oxide', 'Aluminia', 'Aluminum Oxide Powder'],
-  'Ametox': ['Antichlor', 'Sodium Thiosulfate Pentahydrate'],
-  'Ammonium Chloratum': ['Ammonium Chloride', 'Ammonium Chloridum', 'Ammonium Muriate', 'Sal Ammonia', 'Salmiac'],
-  'Ammonium Hydroxide': ['Aqueous Ammonia', 'Strong Ammonia Solution', 'Stronger Ammonia Water'],
-  'Ammonium Iron (II) Sulfate, Hexahydrate': ['Di-ammonium (II) Sulfate Hexahydrate', 'Ferrous Ammonium Sulfate Hexahydrate'],
-  'Ammonium Nitrate': ['Ammonium Salt with Nitric Acid', 'Ammonium Saltpeter'],
-  'Ammonium Sulfate': ['Diammonium Salt with Sulfuric Acid'],
-  'Anilinobenzene': ['Diphenylamine'],
-  'Benzene': ['Benzine', 'Benzol'],
-  'beta-d-galactopyranosyl-o-4D-glucopyrannose': ['Lactose', 'Lactose (Anhydrous)'],
-  'Bichloride of Mercury': ['Mercuric Chloride', 'Calochlor'],
-  'Bichromate of Potash': ['Potassium Dichromate'],
-  'Blue Vitriol': ['Copper Sulfate Pentahydrate'],
-  'Butanaminim,N,N,N-tributyl,chloride,monohydrate': ['Tetrabutylammonium Chloride Hydrate'],
-  'Calcined Brucite': ['Magnesium Oxide', 'Magnesia', 'Magnesium Oxide Heavy Powder'],
-  'Carbinol': ['Methyl Alcohol'],
-  'Caustic Soda': ['Sodium Hydroxide'],
-  'Chloroform': ['Trichloromethane'],
-  'Copper (II) Sulfate Pentahydrate': ['Copper Sulfate Pentahydrate'],
-  'Cupric Chloride Dihydrate': ['Copper Chloride Dihydrate', 'Coppertrace'],
-  'Cupric Oxide': ['Copper (II) Oxide'],
-  'D-Glucose': ['Dextrose (Anhydrous)', 'Dextrose'],
-  'Di-phosphorus Pentoxide': ['Phosphorus Pentoxide'],
-  'Ferrous Sulfate': ['Ferrous Sulfate Dried Powder', 'Ferrous Sulfate Hydrate'],
-  'Formaldehyde (37% Solution)': ['Formalin'],
-  'Formic Acid (85%)': ['FormicAcid, 85Percent, F.C.C'],
-  'Hydrogen Potassium Pthalate': ['Potassium Bitphthlate'],
-  'Hydrogen Sulfite Sodium': ['Sodium Bisulfite'],
-  'Kaolin Colloidal Powder': ['Kaolin Powder'],
-  'Oxalic Acid': ['Oxalic Acid (Anhydrous)'],
+  'Pyrogallic Acid': ['1,2,3-Benzenetriol', '1,2,3-Trihydroxybenzene'],
+  'Glycerin': ['1,2,3-Propanetriol'],
+  'Potassium Bitphthlate': ['1,2-Benzenedicarboxylic Acid Monopotassium Salt', 'Pthalic Acid Monopotassium Salt'],
+  'Diethylene Glycol': ['2,2\'-Oxydiethanol', 'Carbitol'],
+  'Melamine': ['2,4,6-Triamino-s-Triazine'],
+  'Tris(hydroxymethyl)methylamine': ['2-Amino-2-(hydroxymethyl)propane-1,3-diol Hydrochloride'],
+  'Citric Acid': ['2-Hydroxy-1,2,3-propanetricarboxylic Acid'],
+  'Salicylic Acid': ['2-Hydroxybenzoic Acid'],
+  'Lauric Acid': ['ABL', 'Dodecanoic Acid', 'Dodecylic Acid', 'Laurostearic Acid', 'Neo-fat12', 'Neo-fat12-43', 'Vulvic Acid', 'n-Dodecanoic Acid'],
+  'Ethyl Alcohol (200 Proof)': ['Absolute Ethanol', 'Anhydrous Ethyl Alcohol'],
+  'Ethyl Acetate': ['AceticAcid..EthylEster', 'Acetic Acid Ethyl Ester', 'Acetoxyethane'],
+  'Sodium Thiosulfate Pentahydrate': ['Ametox', 'Antichlor'],
+  'Ammonium Chloride': ['Ammonium Chloratum', 'Ammonium Chloridum', 'Ammonium Muriate', 'Sal Ammonia', 'Salmiac'],
+  'Aqueous Ammonia': ['Ammonium Hydroxide', 'Strong Ammonia Solution', 'Stronger Ammonia Water'],
+  'Ferrous Ammonium Sulfate Hexahydrate': ['Ammonium Iron (II) Sulfate, Hexahydrate', 'Di-ammonium (II) Sulfate Hexahydrate'],
+  'Ammonium Saltpeter': ['Ammonium Nitrate', 'Ammonium Salt with Nitric Acid'],
+  'Diammonium Salt with Sulfuric Acid': ['Ammonium Sulfate'],
+  'Diphenylamine': ['Anilinobenzene'],
+  'Barium Dichloride Anhydrous': ['Barium Chloride Anhydrous'],
+  'Barium Dichloride Dihydrate': ['Barium Chloride Dihydrate'],
+  'Benzol': ['Benzene', 'Benzine'],
+  'Lactose': ['beta-d-galactopyranosyl-o-4D-glucopyrannose', 'Lactose (Anhydrous)'],
+  'Mercuric Chloride': ['Bichloride of Mercury', 'Calochlor'],
+  'Potassium Dichromate': ['Bichromate of Potash'],
+  'Tetrabutylammonium Chloride Hydrate': ['Butanaminim,N,N,N-tributyl,chloride,monohydrate'],
+  'Magnesium Oxide': ['Calcined Brucite', 'Magnesia', 'Magnesium Oxide Heavy Powder'],
+  'Methyl Alcohol': ['Carbinol'],
+  'Sodium Hydroxide': ['Caustic Soda'],
+  'Trichloromethane': ['Chloroform'],
+  'Hydrogen Potassium Pthalate': ['Hydrogen Potassium Pthalate'],
+  'Sodium Bisulfite': ['Hydrogen Sulfite Sodium'],
+  'Kaolin Powder': ['Kaolin Colloidal Powder'],
+  'Copper Sulfate Pentahydrate': ['Copper (II) Sulfate Pentahydrate', 'Blue Vitriol'],
+  'Copper Chloride Dihydrate': ['Cupric Chloride Dihydrate', 'Coppertrace'],
+  'Copper (II) Oxide': ['Cupric Oxide'],
+  'Dextrose': ['D-Glucose', 'Dextrose (Anhydrous)'],
   'Phosphorus Pentoxide': ['Di-phosphorus Pentoxide'],
-  'Polyethylene Glycol 400': ['PEG400', 'PEG-8', 'Poly(oxy-1,2-ethanediyl).alpha.-hydro-.omega.-hydroxy-'],
-  'Polysorbate 80': ['Polyethylene Oxide Sorbitan Mono-oleate', 'Polyoxyethylene 20 Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Oleate', 'Sorbitan Mono-9-otadecenoate Poly(Oxy-1,2-ethanediyl) Derivatives', 'Sorethytanop20cpMonooleate', 'TWEEN80'],
-  'Potassium Phosphate Dibasic': ['Dipotassium Phosphate'],
-  'Potassium Phosphate Monobasic': ['Monopotassium Phosphate', 'PhosphoricAcid,MonopotassiumSalt', 'Potassium Dihydrogen Phospate'],
-  'Sodium Azide': ['Hydrazoic Acid, Sodium Salt', 'Smite'],
-  'Sodium Bisulfite': ['Hydrogen Sulfite Sodium', 'Monosodium Salt Sulfurous Acid', 'Monosodium Sulfite', 'Sodium Acid Sulfite', 'Sodium Hydrogen Sulfite', 'Sodium Sulhydrate'],
-  'Sodium Lauryl Sulfate': ['Sodium Dodecyl Sulfate', 'Sulfuric Acid, Monododecyl Ester, Sodium Salt'],
-  'Sodium Phosphate Dibasic': ['Dibasic Sodium Phosphate', 'Disodium Hydrogen Phosphate', 'Disodium Monohydrogen Phosphate', 'Disodium Orthophosphate', 'Disodium Phosphoric Acid', 'Phosphoric Acid, Disodium Salt', 'Soda Phosphate', 'Sodium Hydrogen Phosphate', 'Sodium Monohydrogen Phosphate'],
-  'Sulfuric Acid': ['Oil of Vitriol'],
-  'Triethanolamine': ['Ethanol,2,2,2-nitrilotris', 'Tri(2-hydroxyethyl)amine', 'Trolamine'],
-  'Vinyl Acetate': ['Vinyl Acetate Monomer'],
-  'Zinc Acetate': ['Zinc Diacetate, Dihydrate'],
-  'Zinc Metal': ['Zin', 'Zinc Metal Sheets', 'Zinc Metal Shot', 'Zinc Metal Strips']
+  'Ferrous Sulfate Dried Powder': ['Ferrous Sulfate', 'Ferrous Sulfate Hydrate'],
+  'Formalin': ['Formaldehyde (37% Solution)'],
+  'FormicAcid, 85Percent, F.C.C': ['Formic Acid (85%)'],
+  'PEG400': ['Polyethylene Glycol 400', 'PEG-8', 'Poly(oxy-1,2-ethanediyl).alpha.-hydro-.omega.-hydroxy-'],
+  'TWEEN80': ['Polysorbate 80', 'Polyethylene Oxide Sorbitan Mono-oleate', 'Polyoxyethylene 20 Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Monooleate', 'Polyoxyethylene Sorbitan Oleate', 'Sorbitan Mono-9-otadecenoate Poly(Oxy-1,2-ethanediyl) Derivatives', 'Sorethytanop20cpMonooleate'],
+  'Dipotassium Phosphate': ['Potassium Phosphate Dibasic'],
+  'Monopotassium Phosphate': ['Potassium Phosphate Monobasic', 'PhosphoricAcid,MonopotassiumSalt', 'Potassium Dihydrogen Phospate'],
+  'Smite': ['Sodium Azide', 'Hydrazoic Acid, Sodium Salt'],
+  'Monosodium Salt Sulfurous Acid': ['Sodium Bisulfite', 'Monosodium Sulfite', 'Sodium Acid Sulfite', 'Sodium Hydrogen Sulfite', 'Sodium Sulhydrate'],
+  'Sodium Dodecyl Sulfate': ['Sodium Lauryl Sulfate', 'Sulfuric Acid, Monododecyl Ester, Sodium Salt'],
+  'Dibasic Sodium Phosphate': ['Sodium Phosphate Dibasic', 'Disodium Hydrogen Phosphate', 'Disodium Monohydrogen Phosphate', 'Disodium Orthophosphate', 'Disodium Phosphoric Acid', 'Phosphoric Acid, Disodium Salt', 'Soda Phosphate', 'Sodium Hydrogen Phosphate', 'Sodium Monohydrogen Phosphate'],
+  'Oil of Vitriol': ['Sulfuric Acid'],
+  'Tri(2-hydroxyethyl)amine': ['Triethanolamine', 'Ethanol,2,2,2-nitrilotris', 'Trolamine'],
+  'Vinyl Acetate Monomer': ['Vinyl Acetate'],
+  'Zinc Diacetate, Dihydrate': ['Zinc Acetate'],
+  'Zin': ['Zinc Metal', 'Zinc Metal Sheets', 'Zinc Metal Shot', 'Zinc Metal Strips']
 };
 
   private emergencyTypeMapping: { [key: string]: string[] } = {
@@ -227,44 +223,21 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
-  console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
-  
-  // First try to find by exact ID match
-  let chemical = allData.find((item: AllDataItem) => 
-    item.type === 'chemical' && 
-    (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
-  );
-
-  if (chemical) {
-    console.log('Found by ID:', chemical.id);
-    return chemical;
-  }
-
-  if (this.chemicalName) {
-    const searchName = this.normalizeChemicalName(this.chemicalName);
-    console.log('Normalized search name:', searchName);
+    console.log('Looking for chemical with ID:', this.chemicalId, 'Name:', this.chemicalName);
     
-    // Try to find by exact name match
-    chemical = allData.find((item: AllDataItem) => {
-      if (item.type !== 'chemical') return false;
-      
-      const itemName = this.normalizeChemicalName(item.name || '');
-      const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-      
-      return itemName === searchName || itemId === searchName;
-    });
+    let chemical = allData.find((item: AllDataItem) => 
+      item.type === 'chemical' && 
+      (item.id === this.chemicalId || item.id === `id#${this.chemicalId}`)
+    );
 
     if (chemical) {
-      console.log('Found by exact name:', chemical.name);
+      console.log('Found by ID:', chemical.id);
       return chemical;
     }
 
-    // Try to find using alias system - check if the search name is an alias
-    const relatedChemicals = this.getAllRelatedChemicalNames(this.chemicalName);
-    console.log('Related chemicals for', this.chemicalName, ':', relatedChemicals);
-    
-    for (const relatedName of relatedChemicals) {
-      const normalizedRelated = this.normalizeChemicalName(relatedName);
+    if (this.chemicalName) {
+      const searchName = this.normalizeChemicalName(this.chemicalName);
+      console.log('Normalized search name:', searchName);
       
       chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
@@ -272,40 +245,42 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         const itemName = this.normalizeChemicalName(item.name || '');
         const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
         
-        return itemName === normalizedRelated || itemId === normalizedRelated;
+        console.log('Comparing with item:', itemName, 'ID:', itemId);
+        
+        return itemName === searchName || itemId === searchName;
       });
-      
+
       if (chemical) {
-        console.log('Found by alias relation:', chemical.name, 'for search term:', this.chemicalName);
+        console.log('Found by name:', chemical.name);
         return chemical;
+      }
+
+      const mainChemicalName = this.getMainChemicalName(this.chemicalName);
+      if (mainChemicalName !== this.chemicalName) {
+        const aliasSearchName = this.normalizeChemicalName(mainChemicalName);
+        console.log('Trying alias search:', aliasSearchName);
+        
+        chemical = allData.find((item: AllDataItem) => {
+          if (item.type !== 'chemical') return false;
+          
+          const itemName = this.normalizeChemicalName(item.name || '');
+          const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+          
+          return itemName === aliasSearchName || itemId === aliasSearchName;
+        });
+        
+        if (chemical) {
+          console.log('Found by alias:', chemical.name);
+          return chemical;
+        }
       }
     }
 
-    // Final fallback: try partial matching for very similar names
-    chemical = allData.find((item: AllDataItem) => {
-      if (item.type !== 'chemical') return false;
-      
-      const itemName = this.normalizeChemicalName(item.name || '');
-      const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-      
-      // Check if the search name contains the item name or vice versa
-      return (itemName.includes(searchName) && itemName.length - searchName.length < 5) ||
-             (searchName.includes(itemName) && searchName.length - itemName.length < 5) ||
-             (itemId.includes(searchName) && itemId.length - searchName.length < 5) ||
-             (searchName.includes(itemId) && searchName.length - itemId.length < 5);
-    });
+    const chemicals = allData.filter(item => item.type === 'chemical');
+    console.log('Available chemicals:', chemicals.map(c => ({ id: c.id, name: c.name })));
 
-    if (chemical) {
-      console.log('Found by partial match:', chemical.name);
-      return chemical;
-    }
+    return null;
   }
-
-  console.log('No chemical found. Available chemicals:', 
-    allData.filter(item => item.type === 'chemical').map(c => ({ id: c.id, name: c.name })));
-
-  return null;
-}
 
   private normalizeChemicalName(name: string): string {
     return name
@@ -323,33 +298,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
     return name;
   }
-
-private getAllRelatedChemicalNames(searchName: string): string[] {
-  const relatedNames: string[] = [searchName];
-  
-  // Find all names related to the search name
-  for (const [mainName, aliases] of Object.entries(this.chemicalAliases)) {
-    const allNamesInGroup = [mainName, ...aliases];
-    
-    // Check if the search name matches any name in this group
-    if (allNamesInGroup.some(name => 
-      name.toLowerCase() === searchName.toLowerCase() ||
-      this.normalizeChemicalName(name) === this.normalizeChemicalName(searchName)
-    )) {
-      // Add all names from this group to related names
-      allNamesInGroup.forEach(name => {
-        if (!relatedNames.some(existing => 
-          existing.toLowerCase() === name.toLowerCase()
-        )) {
-          relatedNames.push(name);
-        }
-      });
-      break;
-    }
-  }
-  
-  return relatedNames;
-}
 
   private extractEmergencyProcedures(data: any): StepGroup[] {
     const stepGroups: StepGroup[] = [];
