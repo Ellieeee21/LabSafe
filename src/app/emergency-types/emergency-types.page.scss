@@ -114,7 +114,7 @@ ion-searchbar {
   padding: 8px 4px;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: #999; // Gray for inactive
+  color: #999;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
@@ -152,7 +152,6 @@ ion-content {
 
 // iOS-Specific Styles
 .ios {
-  // Header
   ion-header ion-toolbar {
     --background: #C00000 !important;
     --color: white !important;
@@ -172,7 +171,7 @@ ion-content {
     min-height: calc(60px + env(safe-area-inset-bottom));
   }
 
-  // iOS specific search bar styling
+  // Search bar styling
   ion-searchbar {
     --border-radius: 10px;
     margin: 8px 16px;
@@ -216,7 +215,6 @@ ion-content {
   }
 }
 
-// Material Design specific (Android)
 .md {
   ion-content {
     --padding-bottom: 80px;
@@ -228,7 +226,6 @@ ion-content {
     }
   }
 
-  // Android-specific ripple effects
   .nav-button {
     &:active {
       background-color: rgba(255, 255, 255, 0.1);
@@ -236,18 +233,17 @@ ion-content {
   }
 }
 
-// Additional iOS enhancements
 .ios {
   ion-content {
     --scroll-behavior: smooth;
   }
 
-  // iOS-style loading states
+  // Loading states
   .emergency-types-container {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
-  // iOS-specific search focus states
+  // Search focus states
   ion-searchbar.searchbar-has-focus {
     --border-radius: 8px;
     --box-shadow: 0 0 0 2px #007AFF;

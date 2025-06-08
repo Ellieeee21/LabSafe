@@ -12,7 +12,7 @@
   font-size: 20px;
 }
 
-// Header styling with iOS-specific adjustments
+// Header styling
 ion-header ion-toolbar {
   --background: #C00000 !important;
   --color: white !important;
@@ -128,7 +128,7 @@ ion-searchbar {
   }
 }
 
-// Steps Container and Cards with iOS styling
+// Steps Container and Cards
 .steps-container {
   margin-bottom: 16px;
   
@@ -152,7 +152,7 @@ ion-searchbar {
   }
 }
 
-// Step headers with iOS typography
+// Step headers
 .step-header {
   font-size: 20px;
   font-weight: 600;
@@ -174,7 +174,7 @@ ion-searchbar {
   }
 }
 
-// Chemical Information with iOS styling
+// Chemical Information
 .chemical-info-content {
   .chemical-info-item {
     margin-bottom: 8px;
@@ -203,7 +203,7 @@ ion-searchbar {
   }
 }
 
-// Emergency steps content with iOS styling
+// Emergency steps
 .emergency-steps-content {
   .step-item {
     margin-bottom: 8px;
@@ -237,7 +237,7 @@ ion-searchbar {
   }
 }
 
-// Info card for no data states with iOS styling
+// Info card
 .info-card {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -293,7 +293,7 @@ ion-card-content {
   }
 }
 
-// Bottom Navigation with iOS styling
+// Bottom Navigation
 .bottom-navigation {
   position: fixed;
   bottom: 0;
@@ -446,7 +446,7 @@ ion-spinner.ios {
   --color: #007AFF;
 }
 
-// iOS haptic feedback classes (to be used with Haptics plugin)
+// iOS haptic feedback
 .ios-haptic-light {
   .ios & {
     transition: transform 0.1s ease;

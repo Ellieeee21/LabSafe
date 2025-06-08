@@ -371,7 +371,7 @@ ion-content {
   }
 }
 
-// iOS haptic feedback (add this class to elements that should have haptic feedback)
+// iOS haptic feedback
 .ios-haptic {
   .ios & {
     -webkit-tap-highlight-color: transparent;

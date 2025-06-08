@@ -5,10 +5,7 @@ import { CommonModule } from '@angular/common';
 import { Platform } from '@ionic/angular';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, 
-  IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, 
-  IonButton, IonIcon, IonSpinner, IonBackButton, IonButtons,
-  IonText
-  // Removed unused imports: IonFooter, IonTabBar, IonTabButton, IonLabel
+   IonCardContent,IonIcon, IonSpinner,IonText
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -59,7 +56,6 @@ constructor(
 }
 
   async ngOnInit() {
-    // Set iOS status bar style
     if (this.isIos) {
       this.setStatusBarStyle();
     }
@@ -74,14 +70,12 @@ constructor(
   }
 
   private setStatusBarStyle() {
-    // iOS-specific status bar configuration
     if (this.isIos && (window as any).StatusBar) {
       (window as any).StatusBar.styleDefault();
       (window as any).StatusBar.backgroundColorByHexString('#C00000');
     }
   }
 
-  // Get iOS-specific classes
   getHeaderClass(): string {
     return this.isIos ? 'ios-header' : 'md-header';
   }
@@ -588,9 +582,7 @@ private normalizeChemicalName(name: string): string {
   // iOS-specific scroll behavior
   onScroll(event: any) {
     if (this.isIos) {
-      // Add iOS-specific scroll handling if needed
       const scrollTop = event.detail.scrollTop;
-      // You can add bounce effects or other iOS-specific behaviors here
     }
   }
 

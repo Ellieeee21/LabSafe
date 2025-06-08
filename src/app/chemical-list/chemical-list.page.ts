@@ -73,9 +73,8 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Configure iOS-specific settings
-   */
+  
+   //Configure iOS-specific settings
   private async configureIOSSettings() {
     if (this.isIOS) {
       try {
@@ -242,7 +241,7 @@ export class ChemicalListPage implements OnInit, OnDestroy {
     }
   }
 
-  // Enhanced Bottom Navigation Methods with iOS feedback
+  // Bottom Navigation Methods with iOS feedback
   async navigateToHome() {
     console.log('Navigating to emergency types...');
     

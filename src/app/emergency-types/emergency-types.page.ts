@@ -76,7 +76,6 @@ export class EmergencyTypesPage implements OnInit {
 
   private async setupAndroid() {
     try {
-      // Android-specific status bar
       await StatusBar.setStyle({ style: Style.Light });
       await StatusBar.setBackgroundColor({ color: '#C00000' });
     } catch (error) {
@@ -128,7 +127,6 @@ export class EmergencyTypesPage implements OnInit {
   }
 
   async navigateToSteps(emergencyType: EmergencyType) {
-    // Add haptic feedback for iOS
     if (this.platform.is('ios')) {
       try {
         await Haptics.impact({ style: ImpactStyle.Light });
@@ -146,7 +144,7 @@ export class EmergencyTypesPage implements OnInit {
     });
   }
 
-  // Bottom Navigation Methods with haptic feedback
+  // Bottom Navigation Methods
   async navigateToHome() {
     console.log('Already on Home (Emergency Types)');
     if (this.platform.is('ios')) {

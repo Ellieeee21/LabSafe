@@ -153,7 +153,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   private async initializePlatformFeatures() {
     if (this.isIOS) {
       try {
-        // Set iOS status bar style
         await StatusBar.setStyle({ style: Style.Light });
         await StatusBar.setBackgroundColor({ color: '#C00000' });
         
@@ -173,13 +172,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
         this.goBack();
       });
     } else if (this.isIOS) {
-      // iOS swipe back gesture is handled automatically by Ionic
-      // But we can add custom behavior if needed
       console.log('iOS swipe back gesture enabled');
     }
   }
 
-  // iOS keyboard handling
  // iOS keyboard handling
 private async setupIOSKeyboardHandling() {
   if (this.platform.is('capacitor')) {

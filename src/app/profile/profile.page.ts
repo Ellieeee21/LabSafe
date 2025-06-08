@@ -168,7 +168,7 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Authentication Methods with iOS-specific styling
+  // Authentication Methods
   async showLoginModal() {
     const alert = await this.alertController.create({
       header: 'Login',
@@ -298,10 +298,7 @@ export class ProfilePage implements OnInit {
         await this.showToast('Please enter a valid email address.', 'danger');
         return false;
       }
-
       console.log('Login attempt with:', this.loginData);
-      
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Store user data
@@ -352,10 +349,7 @@ export class ProfilePage implements OnInit {
         await this.showToast('Passwords do not match.', 'danger');
         return false;
       }
-
       console.log('Signup attempt with:', this.signupData);
-      
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Store user data
@@ -409,11 +403,8 @@ export class ProfilePage implements OnInit {
   }
 
   logout() {
-    // Clear user data
     this.clearUserData();
     this.isLoggedIn = false;
-    
-    // Reset profile to default
     this.profileData = {
       fullname: '',
       address: '',
@@ -435,7 +426,6 @@ export class ProfilePage implements OnInit {
   }
 
   clearUserData() {
-    // Clear stored user data
     console.log('User data cleared');
   }
 
@@ -446,14 +436,11 @@ export class ProfilePage implements OnInit {
       this.emailError = 'Email is required';
       return false;
     }
-    
-    // Check for @ and .com
     if (!email.includes('@') || !email.includes('.com')) {
       this.emailError = 'Email must be valid';
       return false;
     }
-    
-    // More thorough email validation
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
     if (!emailRegex.test(email)) {
       this.emailError = 'Please enter a valid email address ending with .com';
@@ -464,7 +451,7 @@ export class ProfilePage implements OnInit {
     return true;
   }
 
-  // Phone number validation - only numbers, exactly 10 digits with formatting
+  // Phone number validation
   validatePhoneNumber(type: 'phone' | 'emergency') {
     const phoneNumber = type === 'phone' ? this.profileData.phoneNumber : this.profileData.emergencyContactNumber;
     
@@ -500,8 +487,7 @@ export class ProfilePage implements OnInit {
       }
       return false;
     }
-    
-    // Clear error if valid
+
     if (type === 'phone') {
       this.phoneError = '';
     } else {
