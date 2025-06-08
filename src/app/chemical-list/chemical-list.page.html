@@ -4,7 +4,13 @@
   </ion-toolbar>
 </ion-header>
 
+<ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)" *ngIf="isIOS">
+  <ion-refresher-content></ion-refresher-content>
+</ion-refresher>
+
 <ion-content [fullscreen]="true" class="ion-padding white-background">
+  <ion-content [class]="getIOSClass()"></ion-content>
+  
   <!-- Search Bar -->
   <ion-searchbar 
     [(ngModel)]="searchTerm"

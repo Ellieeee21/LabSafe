@@ -2,6 +2,7 @@ import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Platform } from '@ionic/angular/standalone';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 @Component({
   selector: 'app-root',
@@ -20,9 +21,12 @@ export class AppComponent implements OnInit {
   async initializeApp() {
     await this.platform.ready();
     
-    // Configure status bar
     if (this.platform.is('capacitor')) {
       await StatusBar.setStyle({ style: Style.Default });
     }
+
+    setTimeout(async () => {
+      await SplashScreen.hide();
+    }, 500);
   }
 }

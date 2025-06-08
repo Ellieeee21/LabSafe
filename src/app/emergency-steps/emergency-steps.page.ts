@@ -6,6 +6,9 @@ import { DatabaseService, AllDataItem } from '../services/database.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChemicalAliasesService } from '../services/chemical-aliases.service';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Keyboard, KeyboardInfo } from '@capacitor/keyboard';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { 
   IonHeader,
   IonToolbar,
@@ -14,7 +17,10 @@ import {
   IonCard,
   IonCardContent,
   IonIcon,
-  IonSearchbar, IonSpinner, IonButton } from '@ionic/angular/standalone';
+  IonSearchbar, 
+  IonSpinner, 
+  IonButton 
+} from '@ionic/angular/standalone';
 
 interface StepGroup {
   category: string;
@@ -49,8 +55,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   filteredSteps: StepGroup[] = [];
   hasData: boolean = false;
   isLoading: boolean = true;
+  
+  // Platform-specific properties
+  isIOS: boolean = false;
+  isAndroid: boolean = false;
+  keyboardHeight: number = 0;
+  
   private backButtonSubscription: Subscription = new Subscription();
   private dataSubscription: Subscription = new Subscription();
+  private keyboardSubscription: Subscription = new Subscription();
 
   private emergencyTypeMapping: { [key: string]: string[] } = {
     'Eye Contact': ['id#hasFirstAidEye', 'hasFirstAidEye'],
@@ -78,14 +91,21 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   ];
 
   constructor(
-  private route: ActivatedRoute,
-  private router: Router,
-  private platform: Platform,
-  private databaseService: DatabaseService,
-  private chemicalAliasesService: ChemicalAliasesService
-) {}
+    private route: ActivatedRoute,
+    private router: Router,
+    private platform: Platform,
+    private databaseService: DatabaseService,
+    private chemicalAliasesService: ChemicalAliasesService
+  ) {
+    // Detect platform
+    this.isIOS = this.platform.is('ios');
+    this.isAndroid = this.platform.is('android');
+  }
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Initialize platform-specific features
+    await this.initializePlatformFeatures();
+    
     this.route.queryParams.subscribe(params => {
       this.chemicalId = params['chemicalId'] || '';
       this.chemicalName = params['chemicalName'] || '';
@@ -100,10 +120,13 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       this.loadEmergencySteps();
     });
 
-    // Handle Android back button
-    this.backButtonSubscription = this.platform.backButton.subscribeWithPriority(10, () => {
-      this.goBack();
-    });
+    // Handle platform-specific back button behavior
+    this.setupBackButtonHandling();
+
+    // Handle keyboard for iOS
+    if (this.isIOS) {
+      this.setupIOSKeyboardHandling();
+    }
 
     // Subscribe to database loading state
     this.dataSubscription = this.databaseService.allData$.subscribe(data => {
@@ -120,6 +143,89 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
     if (this.dataSubscription) {
       this.dataSubscription.unsubscribe();
+    }
+    if (this.keyboardSubscription) {
+      this.keyboardSubscription.unsubscribe();
+    }
+  }
+
+  // Platform-specific initialization
+  private async initializePlatformFeatures() {
+    if (this.isIOS) {
+      try {
+        // Set iOS status bar style
+        await StatusBar.setStyle({ style: Style.Light });
+        await StatusBar.setBackgroundColor({ color: '#C00000' });
+        
+        // Enable iOS haptic feedback
+        console.log('iOS features initialized');
+      } catch (error) {
+        console.warn('iOS features not available:', error);
+      }
+    }
+  }
+
+  // Setup platform-specific back button handling
+  private setupBackButtonHandling() {
+    if (this.isAndroid) {
+      // Android hardware back button
+      this.backButtonSubscription = this.platform.backButton.subscribeWithPriority(10, () => {
+        this.goBack();
+      });
+    } else if (this.isIOS) {
+      // iOS swipe back gesture is handled automatically by Ionic
+      // But we can add custom behavior if needed
+      console.log('iOS swipe back gesture enabled');
+    }
+  }
+
+  // iOS keyboard handling
+ // iOS keyboard handling
+private async setupIOSKeyboardHandling() {
+  if (this.platform.is('capacitor')) {
+    try {
+      const keyboardShowListener = await Keyboard.addListener('keyboardWillShow', info => {
+        this.keyboardHeight = info.keyboardHeight;
+        this.adjustViewForKeyboard(true);
+      });
+
+      const keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
+        this.keyboardHeight = 0;
+        this.adjustViewForKeyboard(false);
+      });
+      this.keyboardSubscription.add(() => {
+        keyboardShowListener.remove();
+        keyboardHideListener.remove();
+      });
+    } catch (error) {
+      console.warn('Keyboard plugin not available:', error);
+    }
+  }
+}
+
+  // Adjust view for iOS keyboard
+  private adjustViewForKeyboard(isVisible: boolean) {
+    if (this.isIOS && isVisible) {
+      const content = document.querySelector('ion-content');
+      if (content) {
+        content.style.setProperty('--padding-bottom', `${this.keyboardHeight + 20}px`);
+      }
+    } else {
+      const content = document.querySelector('ion-content');
+      if (content) {
+        content.style.setProperty('--padding-bottom', '80px');
+      }
+    }
+  }
+
+  // Enhanced haptic feedback for iOS
+  private async triggerHapticFeedback(style: ImpactStyle = ImpactStyle.Light) {
+    if (this.isIOS && this.platform.is('capacitor')) {
+      try {
+        await Haptics.impact({ style });
+      } catch (error) {
+        console.warn('Haptic feedback not available:', error);
+      }
     }
   }
 
@@ -164,36 +270,35 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
   private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
-  const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
-  const mainChemicalName = this.getMainChemicalName(this.chemicalName);
-  const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
+    const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
+    const mainChemicalName = this.getMainChemicalName(this.chemicalName);
+    const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
 
-  return allData.find((item: AllDataItem) => {
-    if (item.type !== 'chemical') return false;
-    
-    const itemName = this.normalizeChemicalName(item.name || '');
-    const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-    
-    return itemId === this.chemicalId || 
-           itemId === `id#${this.chemicalId}` ||
-           itemName === normalizedSearchName ||
-           itemId === normalizedSearchName ||
-           itemName === normalizedMainName ||
-           itemId === normalizedMainName;
-  }) || null;
-}
+    return allData.find((item: AllDataItem) => {
+      if (item.type !== 'chemical') return false;
+      
+      const itemName = this.normalizeChemicalName(item.name || '');
+      const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+      
+      return itemId === this.chemicalId || 
+             itemId === `id#${this.chemicalId}` ||
+             itemName === normalizedSearchName ||
+             itemId === normalizedSearchName ||
+             itemName === normalizedMainName ||
+             itemId === normalizedMainName;
+    }) || null;
+  }
 
- private normalizeChemicalName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
-}
+  private normalizeChemicalName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  }
 
   private getMainChemicalName(name: string): string {
-  return this.chemicalAliasesService.getMainChemicalName(name);
-}
-
+    return this.chemicalAliasesService.getMainChemicalName(name);
+  }
 
   private extractEmergencyProcedures(data: any): StepGroup[] {
     const stepGroups: StepGroup[] = [];
@@ -397,10 +502,15 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       .trim();
   }
 
-  onSearchChange(event: any) {
+  async onSearchChange(event: any) {
     const query = event.target.value.toLowerCase().trim();
     this.searchQuery = query;
     this.applySearch();
+    
+    // iOS haptic feedback on search
+    if (this.isIOS && query.length > 0) {
+      await this.triggerHapticFeedback(ImpactStyle.Light);
+    }
   }
 
   clearSearch() {
@@ -419,7 +529,10 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  goBack() {
+  async goBack() {
+    // Haptic feedback for navigation
+    await this.triggerHapticFeedback(ImpactStyle.Light);
+    
     const queryParams: any = {};
     
     if (this.emergencyType) {
@@ -436,19 +549,23 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  navigateToHome() {
+  async navigateToHome() {
+    await this.triggerHapticFeedback(ImpactStyle.Light);
     this.router.navigate(['/emergency-types']);
   }
 
-  navigateToChemicals() {
+  async navigateToChemicals() {
+    await this.triggerHapticFeedback(ImpactStyle.Light);
     this.router.navigate(['/chemical-list']);
   }
 
-  navigateToHistory() {
+  async navigateToHistory() {
+    await this.triggerHapticFeedback(ImpactStyle.Light);
     console.log('History feature coming soon');
   }
 
-  navigateToProfile() {
+  async navigateToProfile() {
+    await this.triggerHapticFeedback(ImpactStyle.Light);
     this.router.navigate(['/profile']);
   }
 }

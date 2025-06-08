@@ -2,12 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatabaseService } from '../services/database.service';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, Platform } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import { 
   homeOutline, flaskOutline, timeOutline, personOutline 
 } from 'ionicons/icons';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Keyboard } from '@capacitor/keyboard';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 interface EmergencyType {
   id: number;
@@ -30,7 +33,8 @@ export class EmergencyTypesPage implements OnInit {
 
   constructor(
     private router: Router,
-    private databaseService: DatabaseService
+    private databaseService: DatabaseService,
+    private platform: Platform
   ) {
     addIcons({ 
       homeOutline, flaskOutline, timeOutline, personOutline
@@ -38,7 +42,46 @@ export class EmergencyTypesPage implements OnInit {
   }
 
   async ngOnInit() {
+    await this.setupPlatformSpecifics();
     await this.loadEmergencyTypes();
+  }
+
+  private async setupPlatformSpecifics() {
+    if (this.platform.is('ios')) {
+      await this.setupiOS();
+    } else if (this.platform.is('android')) {
+      await this.setupAndroid();
+    }
+  }
+
+  private async setupiOS() {
+    try {
+      // Set status bar style for iOS
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: '#C00000' });
+      
+      // iOS keyboard handling
+      Keyboard.addListener('keyboardWillShow', (info) => {
+        document.body.style.transform = `translateY(-${info.keyboardHeight / 4}px)`;
+      });
+
+      Keyboard.addListener('keyboardWillHide', () => {
+        document.body.style.transform = 'translateY(0)';
+      });
+      
+    } catch (error) {
+      console.log('iOS setup error:', error);
+    }
+  }
+
+  private async setupAndroid() {
+    try {
+      // Android-specific status bar
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: '#C00000' });
+    } catch (error) {
+      console.log('Android setup error:', error);
+    }
   }
 
   async loadEmergencyTypes() {
@@ -84,33 +127,79 @@ export class EmergencyTypesPage implements OnInit {
     this.filteredEmergencyTypes = [...this.emergencyTypes];
   }
 
- navigateToSteps(emergencyType: EmergencyType) {
-  console.log('Navigating to chemical list for emergency type:', emergencyType.name);
-  this.router.navigate(['/chemical-list'], { 
-    queryParams: { 
-      emergencyType: emergencyType.name,
-      emergencyId: emergencyType.id.toString()
-    } 
-  });
-}
-
-  // Bottom Navigation Methods
-  navigateToHome() {
-    console.log('Already on Home (Emergency Types)');
+  async navigateToSteps(emergencyType: EmergencyType) {
+    // Add haptic feedback for iOS
+    if (this.platform.is('ios')) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
+    
+    console.log('Navigating to chemical list for emergency type:', emergencyType.name);
+    this.router.navigate(['/chemical-list'], { 
+      queryParams: { 
+        emergencyType: emergencyType.name,
+        emergencyId: emergencyType.id.toString()
+      } 
+    });
   }
 
-  navigateToChemicals() {
+  // Bottom Navigation Methods with haptic feedback
+  async navigateToHome() {
+    console.log('Already on Home (Emergency Types)');
+    if (this.platform.is('ios')) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
+  }
+
+  async navigateToChemicals() {
+    if (this.platform.is('ios')) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
     console.log('Navigating to chemicals...');
     this.router.navigate(['/chemical-list']);
   }
 
-  navigateToHistory() {
+  async navigateToHistory() {
+    if (this.platform.is('ios')) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
     console.log('History feature coming soon');
     // TODO: Implement history navigation when ready
   }
 
-  navigateToProfile() {
+  async navigateToProfile() {
+    if (this.platform.is('ios')) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (error) {
+        console.log('Haptics not available:', error);
+      }
+    }
     console.log('Navigating to profile...');
     this.router.navigate(['/profile']);
+  }
+
+  // Utility methods for template
+  get isIOS(): boolean {
+    return this.platform.is('ios');
+  }
+
+  get isAndroid(): boolean {
+    return this.platform.is('android');
   }
 }

@@ -3,7 +3,8 @@
   "appName": "LabSafe",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "https"
   },
   "plugins": {
     "SplashScreen": {
@@ -11,13 +12,31 @@
       "launchShowDuration": 0,
       "showSpinner": false,
       "splashFullScreen": false,
-      "splashImmersive": false
+      "splashImmersive": false,
+      "backgroundColor": "#C00000",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "iosLaunchStoryboard": "LaunchScreen"
     },
     "CapacitorSQLite": {
       "iosDatabaseLocation": "Library/CapacitorDatabase",
       "iosIsEncryption": false,
       "androidIsEncryption": false,
       "electronIsEncryption": false
+    },
+    "StatusBar": {
+      "style": "Light",
+      "backgroundColor": "#C00000"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "dark",
+      "resizeOnFullScreen": true
     }
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "allowsLinkPreview": false,
+    "handleApplicationNotifications": false
   }
 }

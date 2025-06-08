@@ -2,15 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatabaseService, Chemical, AllDataItem } from '../services/database.service';
 import { CommonModule } from '@angular/common';
+import { Platform } from '@ionic/angular';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, 
   IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent, 
   IonButton, IonIcon, IonSpinner, IonBackButton, IonButtons,
   IonText
+  // Removed unused imports: IonFooter, IonTabBar, IonTabButton, IonLabel
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
-  homeOutline, flaskOutline, timeOutline, personOutline, arrowBackOutline
+  homeOutline, flaskOutline, timeOutline, personOutline, arrowBackOutline,
+  chevronBackOutline
 } from 'ionicons/icons';
 import { ChemicalAliasesService } from '../services/chemical-aliases.service';
 
@@ -27,7 +30,7 @@ interface ChemicalInfoSection {
   imports: [
     CommonModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard,
-    IonCardContent, IonIcon, IonSpinner, IonText
+    IonCardContent, IonIcon, IonSpinner, IonText, 
   ]
 })
 export class ChemicalDetailsPage implements OnInit {
@@ -35,25 +38,74 @@ export class ChemicalDetailsPage implements OnInit {
   chemicalInfoSections: ChemicalInfoSection[] = [];
   isLoading = true;
   error: string | null = null;
+  isIos = false;
+  isMobile = false;
 
 constructor(
   private route: ActivatedRoute,
   private router: Router,
   private databaseService: DatabaseService,
-  private chemicalAliasesService: ChemicalAliasesService
+  private chemicalAliasesService: ChemicalAliasesService,
+  private platform: Platform
 ) {
   addIcons({ 
-    homeOutline, flaskOutline, timeOutline, personOutline, arrowBackOutline
+    homeOutline, flaskOutline, timeOutline, personOutline, arrowBackOutline,
+    chevronBackOutline
   });
+  
+  // Detect platform
+  this.isIos = this.platform.is('ios');
+  this.isMobile = this.platform.is('mobile');
 }
 
   async ngOnInit() {
+    // Set iOS status bar style
+    if (this.isIos) {
+      this.setStatusBarStyle();
+    }
+    
     const chemicalId = this.route.snapshot.paramMap.get('id');
     if (chemicalId) {
       await this.loadChemicalDetails(chemicalId);
     } else {
       this.error = 'Invalid chemical ID';
       this.isLoading = false;
+    }
+  }
+
+  private setStatusBarStyle() {
+    // iOS-specific status bar configuration
+    if (this.isIos && (window as any).StatusBar) {
+      (window as any).StatusBar.styleDefault();
+      (window as any).StatusBar.backgroundColorByHexString('#C00000');
+    }
+  }
+
+  // Get iOS-specific classes
+  getHeaderClass(): string {
+    return this.isIos ? 'ios-header' : 'md-header';
+  }
+
+  getContentClass(): string {
+    let classes = 'chemical-info-container';
+    if (this.isIos) {
+      classes += ' ios-content';
+    }
+    return classes;
+  }
+
+  getCardClass(): string {
+    return this.isIos ? 'info-card ios-card' : 'info-card md-card';
+  }
+
+  getBackButtonIcon(): string {
+    return this.isIos ? 'chevron-back-outline' : 'arrow-back-outline';
+  }
+
+  // iOS-specific haptic feedback
+  private triggerHapticFeedback(type: 'light' | 'medium' | 'heavy' = 'light') {
+    if (this.isIos && (window as any).Haptics) {
+      (window as any).Haptics.impact({ style: type });
     }
   }
 
@@ -502,29 +554,51 @@ private normalizeChemicalName(name: string): string {
       .trim();
   }
 
-  // Navigation methods
+  // Navigation methods with iOS haptic feedback
   navigateToHome() {
+    this.triggerHapticFeedback('light');
     console.log('Navigating to emergency types...');
     this.router.navigate(['/emergency-types']);
   }
 
   navigateToChemicals() {
+    this.triggerHapticFeedback('light');
     console.log('Navigating to chemical list...');
     this.router.navigate(['/chemical-list']);
   }
 
   navigateToHistory() {
+    this.triggerHapticFeedback('light');
     console.log('History feature coming soon');
     // TODO: Implement history navigation when ready
   }
 
   navigateToProfile() {
+    this.triggerHapticFeedback('light');
     console.log('Navigating to profile...');
     this.router.navigate(['/profile']);
   }
 
   goBack() {
+    this.triggerHapticFeedback('medium');
     console.log('Going back to chemical list...');
     this.navigateToChemicals();
+  }
+
+  // iOS-specific scroll behavior
+  onScroll(event: any) {
+    if (this.isIos) {
+      // Add iOS-specific scroll handling if needed
+      const scrollTop = event.detail.scrollTop;
+      // You can add bounce effects or other iOS-specific behaviors here
+    }
+  }
+
+  // iOS safe area handling
+  getSafeAreaClasses(): string {
+    if (this.isIos) {
+      return 'ion-padding-top ion-safe-area-top';
+    }
+    return '';
   }
 }

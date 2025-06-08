@@ -149,3 +149,115 @@ ion-searchbar {
 ion-content {
   --padding-bottom: 80px;
 }
+
+// iOS-Specific Styles
+.ios {
+  // Header
+  ion-header ion-toolbar {
+    --background: #C00000 !important;
+    --color: white !important;
+    padding-top: env(safe-area-inset-top);
+    --padding-top: env(safe-area-inset-top);
+  }
+
+  ion-content {
+    --padding-top: env(safe-area-inset-top);
+    --padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  // Bottom navigation iOS
+  .bottom-navigation {
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #2c2c2c;
+    min-height: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  // iOS specific search bar styling
+  ion-searchbar {
+    --border-radius: 10px;
+    margin: 8px 16px;
+    
+    .searchbar-clear-button {
+      color: #007AFF;
+    }
+  }
+
+  .emergency-card {
+    margin: 8px 16px 12px 16px;
+    border-radius: 10px; 
+    
+    &:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
+  }
+
+  // iOS navigation button adjustments
+  .nav-button {
+    &:active {
+      opacity: 0.6;
+      transform: scale(0.95);
+      transition: all 0.1s ease;
+    }
+  }
+
+  // iOS status bar overlay
+  ion-header {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top);
+      background-color: #C00000;
+      z-index: 1;
+    }
+  }
+}
+
+// Material Design specific (Android)
+.md {
+  ion-content {
+    --padding-bottom: 80px;
+  }
+  
+  .emergency-card {
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // Android-specific ripple effects
+  .nav-button {
+    &:active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+// Additional iOS enhancements
+.ios {
+  ion-content {
+    --scroll-behavior: smooth;
+  }
+
+  // iOS-style loading states
+  .emergency-types-container {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  // iOS-specific search focus states
+  ion-searchbar.searchbar-has-focus {
+    --border-radius: 8px;
+    --box-shadow: 0 0 0 2px #007AFF;
+  }
+}
+
+// Handle keyboard open state for iOS
+.keyboard-is-open.ios {
+  .bottom-navigation {
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+}

@@ -19,9 +19,9 @@ export class SplashPage implements OnInit {
 
   async ngOnInit() {
     await this.platform.ready();
-    //100 or .1 second delay before navigating to emergency types
+      
     setTimeout(() => {
       this.router.navigate(['/emergency-types'], { replaceUrl: true });
-    }, 100);
+    }, 300);
   }
 }

@@ -12,13 +12,35 @@
   font-size: 20px;
 }
 
-// Header styling
+// Header styling with iOS enhancements
 ion-header ion-toolbar {
   --background: #C00000 !important;
   --color: white !important;
+  
+  // iOS specific properties
+  --border-width: 0;
+  --min-height: 44px;
+  
+  .ios & {
+    --padding-top: env(safe-area-inset-top);
+    --padding-start: 16px;
+    --padding-end: 16px;
+  }
 }
 
-// Search bar styling
+// iOS status bar handling
+.ios ion-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: env(safe-area-inset-top);
+  background: var(--ion-color-primary, #C00000);
+  z-index: 1;
+}
+
+// Search bar styling with iOS enhancements
 ion-searchbar {
   --background: white !important;
   --border-radius: 12px;
@@ -26,6 +48,21 @@ ion-searchbar {
   --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   --color: #000000 !important;
   --placeholder-color: #666666 !important;
+  
+  // iOS specific search bar styling
+  .ios & {
+    --border-radius: 10px;
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --cancel-button-color: #C00000;
+    --clear-button-color: #666666;
+    --icon-color: #666666;
+  }
+  
+  // iOS search bar cancel button
+  .ios .searchbar-cancel-button {
+    color: #C00000 !important;
+    padding-left: 8px;
+  }
 }
 
 .loading-container {
@@ -38,12 +75,22 @@ ion-searchbar {
 
   ion-spinner {
     margin-bottom: 16px;
+    
+    // iOS specific spinner
+    .ios & {
+      --color: #C00000;
+    }
   }
 
   p {
     color: #000000;
     font-size: 16px;
     margin: 0;
+    
+    .ios & {
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+    }
   }
 }
 
@@ -55,9 +102,15 @@ ion-searchbar {
     color: #666;
     font-size: 14px;
     margin: 0;
+    
+    .ios & {
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+    }
   }
 }
 
+// Enhanced chemical card for iOS
 .chemical-card {
   margin-bottom: 12px;
   border-radius: 12px;
@@ -65,19 +118,41 @@ ion-searchbar {
   cursor: pointer;
   transition: all 0.3s ease;
   background: white;
+  
+  // iOS specific card styling
+  .ios & {
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    
+    .ios & {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
   }
 
   &:active {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    .ios & {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
   }
 
   ion-card-content {
     padding: 16px;
+    
+    .ios & {
+      padding: 12px 16px;
+    }
   }
 }
 
@@ -101,12 +176,24 @@ ion-searchbar {
       font-weight: 600;
       color: #000000;
       line-height: 1.3;
+      
+      .ios & {
+        font-weight: 600;
+        -webkit-font-smoothing: antialiased;
+        font-size: 17px;
+      }
     }
 
     .chemical-id {
       margin: 0;
       font-size: 14px;
       color: #666;
+      
+      .ios & {
+        font-size: 13px;
+        font-weight: 400;
+        -webkit-font-smoothing: antialiased;
+      }
     }
   }
 }
@@ -117,6 +204,11 @@ ion-searchbar {
   ion-card {
     background: white;
     text-align: center;
+    
+    .ios & {
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
   }
 
   .no-results-content {
@@ -133,17 +225,34 @@ ion-searchbar {
       font-size: 20px;
       font-weight: 600;
       color: #000000;
+      
+      .ios & {
+        font-size: 19px;
+        font-weight: 600;
+        -webkit-font-smoothing: antialiased;
+      }
     }
 
     p {
       margin: 0 0 20px 0;
       font-size: 16px;
       color: #666;
+      
+      .ios & {
+        font-size: 15px;
+        font-weight: 400;
+        -webkit-font-smoothing: antialiased;
+      }
     }
 
     ion-button {
       --border-color: #C00000;
       --color: #C00000;
+      
+      .ios & {
+        --border-radius: 8px;
+        font-weight: 600;
+      }
 
       &:hover {
         --background: #C00000;
@@ -153,7 +262,7 @@ ion-searchbar {
   }
 }
 
-// Bottom Navigation
+// Enhanced Bottom Navigation for iOS
 .bottom-navigation {
   position: fixed;
   bottom: 0;
@@ -162,6 +271,15 @@ ion-searchbar {
   background: #2c2c2c;
   z-index: 1000;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  
+  // iOS specific bottom navigation
+  .ios & {
+    background: rgba(44, 44, 44, 0.9);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 .nav-bar {
@@ -170,6 +288,11 @@ ion-searchbar {
   align-items: center;
   padding: 12px 0;
   min-height: 60px;
+  
+  .ios & {
+    padding: 6px 0 12px 0;
+    min-height: 49px;
+  }
 }
 
 .nav-button {
@@ -182,9 +305,19 @@ ion-searchbar {
   cursor: pointer;
   transition: all 0.3s ease;
   color: #999;
+  
+  .ios & {
+    padding: 4px;
+    transition: all 0.2s ease;
+  }
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
+    
+    .ios & {
+      background-color: transparent;
+      transform: scale(1.05);
+    }
   }
 
   &.active {
@@ -197,6 +330,10 @@ ion-searchbar {
     .nav-label {
       color: #4A90E2;
       font-weight: 600;
+      
+      .ios & {
+        font-weight: 600;
+      }
     }
   }
 
@@ -204,25 +341,111 @@ ion-searchbar {
     font-size: 24px;
     margin-bottom: 4px;
     transition: color 0.3s ease;
+    
+    .ios & {
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
   }
 
   .nav-label {
     font-size: 11px;
     font-weight: 500;
     transition: color 0.3s ease;
+    
+    .ios & {
+      font-size: 10px;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+    }
   }
 }
 
+// iOS specific content padding
 ion-content {
   --padding-bottom: 80px;
+  
+  .ios & {
+    --padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    --padding-top: 0;
+  }
 }
 
+// iOS haptic feedback (add this class to elements that should have haptic feedback)
+.ios-haptic {
+  .ios & {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+// iOS scrollbar styling
+.ios ion-content::part(scroll) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// iOS pull-to-refresh
+.ios ion-refresher {
+  --color: #C00000;
+}
+
+// Responsive adjustments for iOS
 @media (max-width: 576px) {
   .chemical-info {
     gap: 8px;
 
     .chemical-details .chemical-name {
       font-size: 16px;
+      
+      .ios & {
+        font-size: 15px;
+      }
+    }
+  }
+  
+  .ios .nav-button {
+    padding: 2px;
+    
+    ion-icon {
+      font-size: 20px;
+    }
+    
+    .nav-label {
+      font-size: 9px;
+    }
+  }
+}
+
+// Dark mode support for iOS
+@media (prefers-color-scheme: dark) {
+  .ios {
+    .white-background {
+      --background: #000000 !important;
+      background: #000000 !important;
+    }
+    
+    .chemical-card {
+      background: #1c1c1e;
+      border: 1px solid #38383a;
+    }
+    
+    .chemical-name {
+      color: #ffffff !important;
+    }
+    
+    .chemical-id {
+      color: #98989f !important;
+    }
+    
+    ion-searchbar {
+      --background: #1c1c1e !important;
+      --color: #ffffff !important;
+      --placeholder-color: #98989f !important;
     }
   }
 }

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Platform } from '@ionic/angular/standalone';
 
 import { 
   IonHeader, 
@@ -16,9 +17,6 @@ import {
   IonItem, 
   IonRadio, 
   IonRadioGroup, 
-  IonSelect, 
-  IonSelectOption, 
-  IonDatetime,
   ActionSheetController, 
   ToastController,
   AlertController,
@@ -36,7 +34,9 @@ import {
   imagesOutline,
   close,
   logIn,
-  personAdd
+  personAdd,
+  chevronBackOutline,
+  checkmarkOutline
 } from 'ionicons/icons';
 
 interface ProfileData {
@@ -86,6 +86,7 @@ export class ProfilePage implements OnInit {
   phoneError: string = '';
   emergencyPhoneError: string = '';
   isLoggedIn: boolean = false;
+  isIos: boolean = false;
   
   // Authentication data
   loginData: AuthData = {
@@ -109,7 +110,7 @@ export class ProfilePage implements OnInit {
     phoneNumber: '9123456789',
     emergencyContact: 'Maria Dela Cruz',
     emergencyContactNumber: '9987654321',
-    profileImage: '', // Empty by default to show icon
+    profileImage: '',
     location: 'Quezon City, Philippines'
   };
 
@@ -118,7 +119,8 @@ export class ProfilePage implements OnInit {
     private actionSheetController: ActionSheetController,
     private toastController: ToastController,
     private alertController: AlertController,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private platform: Platform
   ) {
     addIcons({ 
       homeOutline, 
@@ -130,30 +132,32 @@ export class ProfilePage implements OnInit {
       imagesOutline,
       close,
       logIn,
-      personAdd
+      personAdd,
+      chevronBackOutline,
+      checkmarkOutline
     });
 
     // Set max date to today for date of birth
     this.maxDate = new Date().toISOString().split('T')[0];
+    
+    // Detect iOS platform
+    this.isIos = this.platform.is('ios');
   }
 
   async ngOnInit() {
     await this.loadProfile();
     this.checkAuthStatus();
     console.log('Profile page loaded, testing editability...');
+    console.log('Platform is iOS:', this.isIos);
   }
 
   checkAuthStatus() {
-    // Check if user is logged in (you can implement your own logic here)
-    // For now, we'll check if there's user data in memory
     const userData = this.getUserData();
     this.isLoggedIn = !!userData;
   }
 
   getUserData() {
-    // In a real app, you might check localStorage or a service
-    // For now, we'll use a simple in-memory check
-    return null; // Return null for now, implement your storage logic
+    return null;
   }
 
   async loadProfile() {
@@ -164,34 +168,42 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Authentication Methods
+  // Authentication Methods with iOS-specific styling
   async showLoginModal() {
     const alert = await this.alertController.create({
       header: 'Login',
-      cssClass: 'login-alert',
+      cssClass: this.isIos ? 'login-alert ios-alert' : 'login-alert',
+      backdropDismiss: !this.isIos,
       inputs: [
         {
           name: 'email',
           type: 'email',
           placeholder: 'Email',
-          value: this.loginData.email
+          value: this.loginData.email,
+          attributes: {
+            autocomplete: 'email',
+            autocapitalize: 'none'
+          }
         },
         {
           name: 'password',
           type: 'password',
           placeholder: 'Password',
-          value: this.loginData.password
+          value: this.loginData.password,
+          attributes: {
+            autocomplete: 'current-password'
+          }
         }
       ],
       buttons: [
         {
           text: 'Cancel',
           role: 'cancel',
-          cssClass: 'secondary'
+          cssClass: this.isIos ? 'ios-cancel-button' : 'secondary'
         }, 
         {
           text: 'Login',
-          cssClass: 'login-button',
+          cssClass: this.isIos ? 'ios-confirm-button login-button' : 'login-button',
           handler: (data) => {
             this.loginData.email = data.email;
             this.loginData.password = data.password;
@@ -207,42 +219,57 @@ export class ProfilePage implements OnInit {
   async showSignupModal() {
     const alert = await this.alertController.create({
       header: 'Sign Up',
-      cssClass: 'signup-alert',
+      cssClass: this.isIos ? 'signup-alert ios-alert' : 'signup-alert',
+      backdropDismiss: !this.isIos,
       inputs: [
         {
           name: 'fullname',
           type: 'text',
           placeholder: 'Full Name',
-          value: this.signupData.fullname
+          value: this.signupData.fullname,
+          attributes: {
+            autocomplete: 'name',
+            autocapitalize: 'words'
+          }
         },
         {
           name: 'email',
           type: 'email',
           placeholder: 'Email',
-          value: this.signupData.email
+          value: this.signupData.email,
+          attributes: {
+            autocomplete: 'email',
+            autocapitalize: 'none'
+          }
         },
         {
           name: 'password',
           type: 'password',
           placeholder: 'Password',
-          value: this.signupData.password
+          value: this.signupData.password,
+          attributes: {
+            autocomplete: 'new-password'
+          }
         },
         {
           name: 'confirmPassword',
           type: 'password',
           placeholder: 'Confirm Password',
-          value: this.signupData.confirmPassword
+          value: this.signupData.confirmPassword,
+          attributes: {
+            autocomplete: 'new-password'
+          }
         }
       ],
       buttons: [
         {
           text: 'Cancel',
           role: 'cancel',
-          cssClass: 'secondary'
+          cssClass: this.isIos ? 'ios-cancel-button' : 'secondary'
         }, 
         {
           text: 'Sign Up',
-          cssClass: 'signup-button',
+          cssClass: this.isIos ? 'ios-confirm-button signup-button' : 'signup-button',
           handler: (data) => {
             this.signupData.fullname = data.fullname;
             this.signupData.email = data.email;
@@ -272,14 +299,12 @@ export class ProfilePage implements OnInit {
         return false;
       }
 
-      // Here you would implement your actual login logic
-      // For now, we'll simulate a successful login
       console.log('Login attempt with:', this.loginData);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store user data (in a real app, you'd get this from your API)
+      // Store user data
       this.storeUserData({
         email: this.loginData.email,
         fullname: 'Logged In User',
@@ -328,13 +353,12 @@ export class ProfilePage implements OnInit {
         return false;
       }
 
-      // Here you would implement your actual signup logic
       console.log('Signup attempt with:', this.signupData);
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store user data (in a real app, you'd get this from your API)
+      // Store user data
       this.storeUserData({
         email: this.signupData.email,
         fullname: this.signupData.fullname || 'New User',
@@ -363,13 +387,17 @@ export class ProfilePage implements OnInit {
     const alert = await this.alertController.create({
       header: 'Logout',
       message: 'Are you sure you want to logout?',
+      cssClass: this.isIos ? 'ios-alert' : '',
+      backdropDismiss: !this.isIos,
       buttons: [
         {
           text: 'Cancel',
-          role: 'cancel'
+          role: 'cancel',
+          cssClass: this.isIos ? 'ios-cancel-button' : ''
         },
         {
           text: 'Logout',
+          cssClass: this.isIos ? 'ios-destructive-button' : '',
           handler: () => {
             this.logout();
           }
@@ -403,8 +431,6 @@ export class ProfilePage implements OnInit {
   }
 
   storeUserData(userData: any) {
-    // In a real app, you might use Ionic Storage or localStorage
-    // For now, we'll just store in memory
     console.log('User data stored:', userData);
   }
 
@@ -487,6 +513,8 @@ export class ProfilePage implements OnInit {
   async changeProfileImage() {
     const actionSheet = await this.actionSheetController.create({
       header: 'Select Image Source',
+      cssClass: this.isIos ? 'ios-action-sheet' : '',
+      mode: this.isIos ? 'ios' : 'md',
       buttons: [
         {
           text: 'Camera',
@@ -505,7 +533,8 @@ export class ProfilePage implements OnInit {
         {
           text: 'Cancel',
           icon: 'close',
-          role: 'cancel'
+          role: 'cancel',
+          cssClass: this.isIos ? 'ios-cancel-action' : ''
         }
       ]
     });
@@ -585,8 +614,10 @@ export class ProfilePage implements OnInit {
     const toast = await this.toastController.create({
       message: message,
       duration: 3000,
-      position: 'bottom',
-      color: color
+      position: this.isIos ? 'top' : 'bottom',
+      color: color,
+      mode: this.isIos ? 'ios' : 'md',
+      cssClass: this.isIos ? 'ios-toast' : ''
     });
     await toast.present();
   }

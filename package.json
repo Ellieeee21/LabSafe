@@ -9,7 +9,26 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "ionic:serve": "ionic serve",
+    "ionic:build": "ionic build",
+    "ionic:lab": "ionic serve --lab",
+    "ionic:external": "ionic serve --external",
+    "cap:sync": "npx cap sync",
+    "cap:sync:ios": "npx cap sync ios",
+    "cap:sync:android": "npx cap sync android",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
+    "cap:run:ios": "npx cap run ios",
+    "cap:run:android": "npx cap run android",
+    "ios:build": "ionic build && npx cap sync ios",
+    "android:build": "ionic build && npx cap sync android",
+    "ios:dev": "ionic build && npx cap sync ios && npx cap open ios",
+    "android:dev": "ionic build && npx cap sync android && npx cap open android",
+    "dev:web": "ionic serve --lab",
+    "dev:external": "ionic serve --external",
+    "build:prod": "ionic build --prod",
+    "deploy:prep": "npm run build:prod && npx cap sync"
   },
   "private": true,
   "dependencies": {
@@ -26,9 +45,9 @@
     "@capacitor/app": "7.0.1",
     "@capacitor/camera": "^7.0.1",
     "@capacitor/core": "^7.2.0",
-    "@capacitor/haptics": "7.0.1",
-    "@capacitor/ios": "^7.2.0",
-    "@capacitor/keyboard": "7.0.1",
+    "@capacitor/haptics": "^7.0.1",
+    "@capacitor/ios": "^7.3.0",
+    "@capacitor/keyboard": "^7.0.1",
     "@capacitor/splash-screen": "^7.0.1",
     "@capacitor/status-bar": "^7.0.1",
     "@ionic/angular": "^8.5.7",
@@ -68,5 +87,5 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.5.4"
   },
-  "description": "An Ionic project"
+  "description": "A lab safety management Ionic project"
 }
