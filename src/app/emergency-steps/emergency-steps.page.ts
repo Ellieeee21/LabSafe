@@ -55,8 +55,6 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   filteredSteps: StepGroup[] = [];
   hasData: boolean = false;
   isLoading: boolean = true;
-  
-  // Platform-specific properties
   isIOS: boolean = false;
   isAndroid: boolean = false;
   keyboardHeight: number = 0;
@@ -97,13 +95,11 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     private databaseService: DatabaseService,
     private chemicalAliasesService: ChemicalAliasesService
   ) {
-    // Detect platform
     this.isIOS = this.platform.is('ios');
     this.isAndroid = this.platform.is('android');
   }
 
   async ngOnInit() {
-    // Initialize platform-specific features
     await this.initializePlatformFeatures();
     
     this.route.queryParams.subscribe(params => {
@@ -119,22 +115,18 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
       
       this.loadEmergencySteps();
     });
-
-    // Handle platform-specific back button behavior
     this.setupBackButtonHandling();
-
-    // Handle keyboard for iOS
     if (this.isIOS) {
       this.setupIOSKeyboardHandling();
     }
 
     // Subscribe to database loading state
-    this.dataSubscription = this.databaseService.allData$.subscribe(data => {
-      if (data && data.length > 0) {
-        console.log('Database data received, reloading steps');
-        this.loadEmergencySteps();
-      }
-    });
+    this.dataSubscription = this.databaseService.allData$.subscribe(async (data) => {
+  if (data && data.length > 0) {
+    console.log('Database data received, reloading steps');
+    await this.loadEmergencySteps(); // Add await here
+    }
+  });
   }
 
   ngOnDestroy() {
@@ -177,24 +169,24 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
   }
 
  // iOS keyboard handling
-private async setupIOSKeyboardHandling() {
-  if (this.platform.is('capacitor')) {
-    try {
-      const keyboardShowListener = await Keyboard.addListener('keyboardWillShow', info => {
-        this.keyboardHeight = info.keyboardHeight;
-        this.adjustViewForKeyboard(true);
-      });
+  private async setupIOSKeyboardHandling() {
+    if (this.platform.is('capacitor')) {
+      try {
+       const keyboardShowListener = await Keyboard.addListener('keyboardWillShow', info => {
+         this.keyboardHeight = info.keyboardHeight;
+         this.adjustViewForKeyboard(true);
+        });
 
-      const keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
-        this.keyboardHeight = 0;
-        this.adjustViewForKeyboard(false);
-      });
-      this.keyboardSubscription.add(() => {
-        keyboardShowListener.remove();
-        keyboardHideListener.remove();
-      });
-    } catch (error) {
-      console.warn('Keyboard plugin not available:', error);
+       const keyboardHideListener = await Keyboard.addListener('keyboardWillHide', () => {
+         this.keyboardHeight = 0;
+         this.adjustViewForKeyboard(false);
+       });
+       this.keyboardSubscription.add(() => {
+         keyboardShowListener.remove();
+         keyboardHideListener.remove();
+       });
+     } catch (error) {
+        console.warn('Keyboard plugin not available:', error);
     }
   }
 }
@@ -225,65 +217,65 @@ private async setupIOSKeyboardHandling() {
     }
   }
 
-  private loadEmergencySteps() {
-    this.isLoading = true;
+  private async loadEmergencySteps() {
+  this.isLoading = true;
+  
+  try {
+    const allData = this.databaseService.getCurrentAllData();
+    console.log('All data length:', allData.length);
     
-    try {
-      const allData = this.databaseService.getCurrentAllData();
-      console.log('All data length:', allData.length);
+    if (allData && allData.length > 0) {
+      const chemical = await this.findChemicalData(allData); // Now awaiting the async method
+      console.log('Found chemical:', chemical);
       
-      if (allData && allData.length > 0) {
-        const chemical = this.findChemicalData(allData);
-        console.log('Found chemical:', chemical);
-        
-        if (chemical && chemical.data) {
-          console.log('Chemical data keys:', Object.keys(chemical.data));
-          this.allStepGroups = this.extractEmergencyProcedures(chemical.data);
-          this.hasData = this.allStepGroups.length > 0;
-          console.log('Extracted step groups:', this.allStepGroups.length);
-          console.log('Step groups:', this.allStepGroups);
-        } else {
-          this.hasData = false;
-          this.allStepGroups = [];
-          console.log('No chemical data found');
-        }
+      if (chemical && chemical.data) {
+        console.log('Chemical data keys:', Object.keys(chemical.data));
+        this.allStepGroups = this.extractEmergencyProcedures(chemical.data);
+        this.hasData = this.allStepGroups.length > 0;
+        console.log('Extracted step groups:', this.allStepGroups.length);
+        console.log('Step groups:', this.allStepGroups);
       } else {
         this.hasData = false;
         this.allStepGroups = [];
-        console.log('No database data available');
+        console.log('No chemical data found');
       }
-      
-      this.isLoading = false;
-      this.applySearch();
-      
-    } catch (error) {
-      console.error('Error loading emergency steps:', error);
+    } else {
       this.hasData = false;
       this.allStepGroups = [];
-      this.isLoading = false;
-      this.applySearch();
+      console.log('No database data available');
     }
+    
+    this.isLoading = false;
+    this.applySearch();
+    
+  } catch (error) {
+    console.error('Error loading emergency steps:', error);
+    this.hasData = false;
+    this.allStepGroups = [];
+    this.isLoading = false;
+    this.applySearch();
   }
+}
 
-  private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
-    const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
-    const mainChemicalName = this.getMainChemicalName(this.chemicalName);
-    const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
+  private async findChemicalData(allData: AllDataItem[]): Promise<AllDataItem | null> {
+  const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
+  const mainChemicalName = await this.getMainChemicalName(this.chemicalName); // Now awaiting the promise
+  const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
 
-    return allData.find((item: AllDataItem) => {
-      if (item.type !== 'chemical') return false;
-      
-      const itemName = this.normalizeChemicalName(item.name || '');
-      const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-      
-      return itemId === this.chemicalId || 
-             itemId === `id#${this.chemicalId}` ||
-             itemName === normalizedSearchName ||
-             itemId === normalizedSearchName ||
-             itemName === normalizedMainName ||
-             itemId === normalizedMainName;
-    }) || null;
-  }
+  return allData.find((item: AllDataItem) => {
+    if (item.type !== 'chemical') return false;
+    
+    const itemName = this.normalizeChemicalName(item.name || '');
+    const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+    
+    return itemId === this.chemicalId || 
+           itemId === `id#${this.chemicalId}` ||
+           itemName === normalizedSearchName ||
+           itemId === normalizedSearchName ||
+           itemName === normalizedMainName ||
+           itemId === normalizedMainName;
+  }) || null;
+}
 
   private normalizeChemicalName(name: string): string {
     return name
@@ -292,9 +284,9 @@ private async setupIOSKeyboardHandling() {
       .trim();
   }
 
-  private getMainChemicalName(name: string): string {
-    return this.chemicalAliasesService.getMainChemicalName(name);
-  }
+  private async getMainChemicalName(name: string): Promise<string> {
+  return await this.chemicalAliasesService.getMainChemicalName(name);
+}
 
   private extractEmergencyProcedures(data: any): StepGroup[] {
     const stepGroups: StepGroup[] = [];

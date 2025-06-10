@@ -131,9 +131,10 @@ constructor(
     }
   }
 
-private getMainChemicalName(name: string): string {
-  return this.chemicalAliasesService.getMainChemicalName(name);
-}
+  // Fixed: Make this method async and await the service call
+  private async getMainChemicalName(name: string): Promise<string> {
+    return await this.chemicalAliasesService.getMainChemicalName(name);
+  }
 
   private getChemicalById(id: number): Chemical | null {
     const chemicals = this.databaseService.getChemicals();
@@ -146,19 +147,12 @@ private getMainChemicalName(name: string): string {
       console.log('All data length:', allData.length);
       
       if (allData && allData.length > 0 && this.chemical) {
-        let chemicalData = this.findChemicalData(allData, this.chemical.name);
+        // First try to find by exact name match
+        let chemicalData = this.findChemicalDataByExactMatch(allData, this.chemical.name);
  
         if (!chemicalData) {
-          const relatedChemicals = this.getAllPossibleNamesForChemical(this.chemical.name);
-          console.log('Looking for related chemicals:', relatedChemicals);
-          
-          for (const relatedName of relatedChemicals) {
-            chemicalData = this.findChemicalData(allData, relatedName);
-            if (chemicalData) {
-              console.log('Found data using related chemical:', relatedName);
-              break;
-            }
-          }
+          // Then try with aliases - now using async method
+          chemicalData = await this.findChemicalDataWithAliases(allData, this.chemical.name);
         }
         
         console.log('Found chemical data:', chemicalData);
@@ -181,10 +175,11 @@ private getMainChemicalName(name: string): string {
     }
   }
 
-  private findChemicalData(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
-    console.log('Looking for chemical with name:', chemicalName);
+  // Split the original findChemicalData into two methods
+  private findChemicalDataByExactMatch(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
+    console.log('Looking for chemical with exact name:', chemicalName);
 
-    let chemical = allData.find((item: AllDataItem) => 
+    const chemical = allData.find((item: AllDataItem) => 
       item.type === 'chemical' && 
       item.name && item.name.toLowerCase() === chemicalName.toLowerCase()
     );
@@ -194,10 +189,17 @@ private getMainChemicalName(name: string): string {
       return chemical;
     }
 
-    const allPossibleNames = this.getAllPossibleNamesForChemical(chemicalName);
+    return null;
+  }
+
+  // Keep this method async for alias lookups
+  private async findChemicalDataWithAliases(allData: AllDataItem[], chemicalName: string): Promise<AllDataItem | null> {
+    const allPossibleNames = await this.getAllPossibleNamesForChemical(chemicalName);
     console.log('All possible names for', chemicalName, ':', allPossibleNames);
+    
+    // Try exact matches with all possible names
     for (const possibleName of allPossibleNames) {
-      chemical = allData.find((item: AllDataItem) => 
+      const chemical = allData.find((item: AllDataItem) => 
         item.type === 'chemical' && 
         item.name && item.name.toLowerCase() === possibleName.toLowerCase()
       );
@@ -208,10 +210,11 @@ private getMainChemicalName(name: string): string {
       }
     }
 
+    // Try normalized name matching
     for (const possibleName of allPossibleNames) {
       const searchName = this.normalizeChemicalName(possibleName);
       
-      chemical = allData.find((item: AllDataItem) => {
+      const chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
         
         const itemName = this.normalizeChemicalName(item.name || '');
@@ -226,11 +229,12 @@ private getMainChemicalName(name: string): string {
       }
     }
 
+    // Try ID transformation matching
     for (const possibleName of allPossibleNames) {
       const potentialIds = this.generatePotentialIds(possibleName);
       
       for (const potentialId of potentialIds) {
-        chemical = allData.find((item: AllDataItem) => {
+        const chemical = allData.find((item: AllDataItem) => {
           if (item.type !== 'chemical') return false;
           const itemId = item.id?.replace('id#', '') || '';
           return this.normalizeChemicalName(itemId) === this.normalizeChemicalName(potentialId);
@@ -243,8 +247,9 @@ private getMainChemicalName(name: string): string {
       }
     }
 
+    // Try partial matching
     for (const possibleName of allPossibleNames) {
-      chemical = allData.find((item: AllDataItem) => {
+      const chemical = allData.find((item: AllDataItem) => {
         if (item.type !== 'chemical') return false;
         const itemName = item.name || '';
         const searchParts = possibleName.toLowerCase().split(/[\s,\[\]().]+/).filter(part => part.length > 2);
@@ -301,13 +306,18 @@ private getMainChemicalName(name: string): string {
   return potentialIds;
 }
 
- private getAllPossibleNamesForChemical(chemicalName: string): string[] {
-  return this.chemicalAliasesService.getAllPossibleNamesForChemical(chemicalName);
-}
+  // Fixed: Make this method async and await the service call
+  private async getAllPossibleNamesForChemical(chemicalName: string): Promise<string[]> {
+    return await this.chemicalAliasesService.getAllPossibleNamesForChemical(chemicalName);
+  }
 
-private normalizeChemicalName(name: string): string {
-  return this.chemicalAliasesService['normalizeChemicalName'](name);
-}
+  // Fixed: Create a local normalizeChemicalName method since the service method is private
+  private normalizeChemicalName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  }
 
   private extractChemicalInformation(data: any): ChemicalInfoSection[] {
     const sections: ChemicalInfoSection[] = [];
