@@ -283,9 +283,9 @@ export class ChemicalListPage implements OnInit, OnDestroy {
   }
 
   // iOS-specific utility methods
-  getIOSClass(): string {
-    return this.isIOS ? 'ios' : '';
-  }
+  getIOSClass() {
+  return this.platform.is('ios') ? 'ios-specific-class' : '';
+}
 
   async handleRefresh(event: any) {
     try {

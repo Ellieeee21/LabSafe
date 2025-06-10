@@ -29,15 +29,18 @@ ion-header ion-toolbar {
 }
 
 // iOS status bar handling
-.ios ion-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: env(safe-area-inset-top);
-  background: var(--ion-color-primary, #C00000);
-  z-index: 1;
+ion-header {
+  ion-toolbar {
+    --background: #C00000;
+    --color: white;
+    --border-width: 0;
+
+    // iOS-specific adjustments
+    .ios & {
+      padding-top: env(safe-area-inset-top);
+      --min-height: 44px;
+    }
+  }
 }
 
 // Search bar styling with iOS enhancements
