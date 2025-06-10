@@ -20,7 +20,8 @@ export class ChemicalAliasesService {
   
   public aliases$ = this.aliasesSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
- private hardcodedAliases: { [key: string]: string[] } = {
+
+  private hardcodedAliases: { [key: string]: string[] } = {
     'Acetone': ['2-propanone', 'Acetone and Nitric Acid', 'Dimethyl Ketone', 'Dimethylformaldehyde', 'Pyroacetic Acid'],
     'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
     'Acetic Acid': ['Glacial Acetic Acid'],
@@ -144,11 +145,15 @@ export class ChemicalAliasesService {
     'Acrylic Acid': [],
     'Allyl Chloride': ['Ally Chloride'],
     'Buffer Solution (pH 4.00)': []
-};
+  };
 
   constructor(private http: HttpClient) {
     this.sqlite = new SQLiteConnection(CapacitorSQLite);
     this.initializeDatabase();
+  }
+
+  getAliases(): { [key: string]: string[] } {
+    return this.hardcodedAliases;
   }
 
   private async initializeDatabase(): Promise<void> {
@@ -400,8 +405,7 @@ export class ChemicalAliasesService {
 
     try {
       const normalizedInput = this.normalizeChemicalName(name);
-      
-      // First check hardcoded aliases
+
       for (const [mainName, aliases] of Object.entries(this.hardcodedAliases)) {
         if (this.normalizeChemicalName(mainName) === normalizedInput) {
           return mainName;
@@ -413,7 +417,6 @@ export class ChemicalAliasesService {
         }
       }
 
-      // Then check database
       const mainNameResult = await this.db.query(
         'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(main_name, \' \', \'\')) = ? LIMIT 1',
         [normalizedInput]
@@ -431,8 +434,7 @@ export class ChemicalAliasesService {
       if (aliasResult?.values?.length) {
         return aliasResult.values[0].main_name;
       }
-      
-      // If not found, try more flexible matching
+
       const allAliases = this.aliasesSubject.value;
       for (const alias of allAliases) {
         if (this.normalizeChemicalName(alias.mainName) === normalizedInput) {
@@ -458,8 +460,7 @@ export class ChemicalAliasesService {
       const mainName = await this.getMainChemicalName(chemicalName);
      
       allNames.add(mainName);
-      
-      // Add all hardcoded aliases first
+
       for (const [hardcodedMain, hardcodedAliases] of Object.entries(this.hardcodedAliases)) {
         if (this.normalizeChemicalName(hardcodedMain) === this.normalizeChemicalName(mainName)) {
           hardcodedAliases.forEach(alias => {
@@ -469,7 +470,6 @@ export class ChemicalAliasesService {
         }
       }
 
-      // Get all aliases from database
       const result = await this.db.query(
         'SELECT alias_name FROM chemical_aliases WHERE LOWER(REPLACE(main_name, \' \', \'\')) = ?',
         [this.normalizeChemicalName(mainName)]
@@ -481,7 +481,6 @@ export class ChemicalAliasesService {
         });
       }
 
-      // Handle special formatting cases
       this.addFormattingVariations(chemicalName, allNames);
       this.addFormattingVariations(mainName, allNames);
 
