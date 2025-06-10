@@ -192,7 +192,6 @@ export class ChemicalAliasesService {
 
     await this.db.execute(createAliasesTable);
     
-    // Create index for better search performance
     await this.db.execute(`
       CREATE INDEX IF NOT EXISTS idx_main_name ON chemical_aliases(main_name);
     `);
@@ -211,7 +210,6 @@ export class ChemicalAliasesService {
       await this.loadHardcodedAliases();
       await this.loadAliasesFromJson();
     } else {
-
       const hardcodedCount = await this.db.query(
         'SELECT COUNT(*) as count FROM chemical_aliases WHERE source = ?', 
         ['hardcoded']
@@ -219,11 +217,9 @@ export class ChemicalAliasesService {
       const hardcodedExists = hardcodedCount.values?.[0]?.count || 0;
       
       if (hardcodedExists === 0) {
-
         await this.loadHardcodedAliases();
       }
       
-      // Load existing data from database
       await this.loadAllAliases();
     }
   }
@@ -326,7 +322,6 @@ export class ChemicalAliasesService {
               if (aliasName && aliasName !== mainName) {
                 const id = `json_${mainName}_${aliasName}`.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
                 
-                // Check if this alias already exists
                 const existingResult = await this.db.query(
                   'SELECT id FROM chemical_aliases WHERE main_name = ? AND alias_name = ?',
                   [mainName, aliasName]
@@ -410,37 +405,7 @@ export class ChemicalAliasesService {
     try {
       const normalizedInput = this.normalizeChemicalName(name);
       
-      // First check if it's already a main name
-      const mainNameResult = await this.db.query(
-        'SELECT main_name FROM chemical_aliases WHERE LOWER(main_name) = LOWER(?) LIMIT 1',
-        [name]
-      );
-      
-      if (mainNameResult?.values?.length) {
-        return mainNameResult.values[0].main_name;
-      }
-      
-      // Then check if it's an alias
-      const aliasResult = await this.db.query(
-        'SELECT main_name FROM chemical_aliases WHERE LOWER(alias_name) = LOWER(?) LIMIT 1',
-        [name]
-      );
-      
-      if (aliasResult?.values?.length) {
-        return aliasResult.values[0].main_name;
-      }
-      
-      // If not found in database, try with normalized name
-      const allAliases = this.aliasesSubject.value;
-      for (const alias of allAliases) {
-        if (this.normalizeChemicalName(alias.mainName) === normalizedInput) {
-          return alias.mainName;
-        }
-        if (this.normalizeChemicalName(alias.aliasName) === normalizedInput) {
-          return alias.mainName;
-        }
-      }
-
+      // First check hardcoded aliases
       for (const [mainName, aliases] of Object.entries(this.hardcodedAliases)) {
         if (this.normalizeChemicalName(mainName) === normalizedInput) {
           return mainName;
@@ -449,6 +414,36 @@ export class ChemicalAliasesService {
           if (this.normalizeChemicalName(alias) === normalizedInput) {
             return mainName;
           }
+        }
+      }
+
+      // Then check database
+      const mainNameResult = await this.db.query(
+        'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(main_name, \' \', \'\')) = ? LIMIT 1',
+        [normalizedInput]
+      );
+      
+      if (mainNameResult?.values?.length) {
+        return mainNameResult.values[0].main_name;
+      }
+      
+      const aliasResult = await this.db.query(
+        'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(alias_name, \' \', \'\')) = ? LIMIT 1',
+        [normalizedInput]
+      );
+      
+      if (aliasResult?.values?.length) {
+        return aliasResult.values[0].main_name;
+      }
+      
+      // If not found, try more flexible matching
+      const allAliases = this.aliasesSubject.value;
+      for (const alias of allAliases) {
+        if (this.normalizeChemicalName(alias.mainName) === normalizedInput) {
+          return alias.mainName;
+        }
+        if (this.normalizeChemicalName(alias.aliasName) === normalizedInput) {
+          return alias.mainName;
         }
       }
       
@@ -468,25 +463,31 @@ export class ChemicalAliasesService {
      
       allNames.add(mainName);
       
-      // Get all aliases from database
-      const result = await this.db.query(
-        'SELECT alias_name FROM chemical_aliases WHERE LOWER(main_name) = LOWER(?)',
-        [mainName]
-      );
-      
-      if (result?.values) {
-        result.values.forEach(row => allNames.add(row.alias_name));
-      }
-
+      // Add all hardcoded aliases first
       for (const [hardcodedMain, hardcodedAliases] of Object.entries(this.hardcodedAliases)) {
         if (this.normalizeChemicalName(hardcodedMain) === this.normalizeChemicalName(mainName)) {
-          hardcodedAliases.forEach(alias => allNames.add(alias));
+          hardcodedAliases.forEach(alias => {
+            if (alias) allNames.add(alias);
+          });
           break;
         }
       }
 
+      // Get all aliases from database
+      const result = await this.db.query(
+        'SELECT alias_name FROM chemical_aliases WHERE LOWER(REPLACE(main_name, \' \', \'\')) = ?',
+        [this.normalizeChemicalName(mainName)]
+      );
+      
+      if (result?.values) {
+        result.values.forEach(row => {
+          if (row.alias_name) allNames.add(row.alias_name);
+        });
+      }
+
       // Handle special formatting cases
       this.addFormattingVariations(chemicalName, allNames);
+      this.addFormattingVariations(mainName, allNames);
 
       return Array.from(allNames).filter(name => name && name.trim().length > 0);
       
@@ -565,7 +566,6 @@ export class ChemicalAliasesService {
     return this.hardcodedAliases;
   }
 
-  // Method to get statistics about the database
   public async getDatabaseStats(): Promise<{
     totalAliases: number;
     hardcodedCount: number;
