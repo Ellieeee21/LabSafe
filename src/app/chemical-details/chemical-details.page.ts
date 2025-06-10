@@ -131,7 +131,6 @@ constructor(
     }
   }
 
-  // Fixed: Make this method async and await the service call
   private async getMainChemicalName(name: string): Promise<string> {
     return await this.chemicalAliasesService.getMainChemicalName(name);
   }
@@ -143,39 +142,44 @@ constructor(
 
   private async loadChemicalInformation() {
     try {
-      const allData = this.databaseService.getCurrentAllData();
-      console.log('All data length:', allData.length);
-      
-      if (allData && allData.length > 0 && this.chemical) {
-        // First try to find by exact name match
-        let chemicalData = this.findChemicalDataByExactMatch(allData, this.chemical.name);
- 
-        if (!chemicalData) {
-          // Then try with aliases - now using async method
-          chemicalData = await this.findChemicalDataWithAliases(allData, this.chemical.name);
-        }
+        const allData = this.databaseService.getCurrentAllData();
+        console.log('All data length:', allData.length);
         
-        console.log('Found chemical data:', chemicalData);
-        
-        if (chemicalData && chemicalData.data) {
-          console.log('Chemical data keys:', Object.keys(chemicalData.data));
-          this.chemicalInfoSections = this.extractChemicalInformation(chemicalData.data);
-          console.log('Extracted chemical info sections:', this.chemicalInfoSections);
-        } else {
-          console.log('No chemical data found for', this.chemical.name);
-          this.chemicalInfoSections = [];
-        }
-      } else {
-        console.log('No database data available');
-        this.chemicalInfoSections = [];
-      }
-    } catch (error) {
-      console.error('Error loading chemical information:', error);
-      this.chemicalInfoSections = [];
-    }
-  }
+        if (allData && allData.length > 0 && this.chemical) {
 
-  // Split the original findChemicalData into two methods
+            let chemicalData = this.findChemicalDataByExactMatch(allData, this.chemical.name);
+ 
+            if (!chemicalData) {
+
+                const allPossibleNames = await this.getAllPossibleNamesForChemical(this.chemical.name);
+                console.log('All possible names:', allPossibleNames);
+                
+                for (const possibleName of allPossibleNames) {
+                    chemicalData = this.findChemicalDataByExactMatch(allData, possibleName);
+                    if (chemicalData) break;
+                }
+            }
+            
+            console.log('Found chemical data:', chemicalData);
+            
+            if (chemicalData && chemicalData.data) {
+                console.log('Chemical data keys:', Object.keys(chemicalData.data));
+                this.chemicalInfoSections = this.extractChemicalInformation(chemicalData.data);
+                console.log('Extracted chemical info sections:', this.chemicalInfoSections);
+            } else {
+                console.log('No chemical data found for', this.chemical.name);
+                this.chemicalInfoSections = [];
+            }
+        } else {
+            console.log('No database data available');
+            this.chemicalInfoSections = [];
+        }
+    } catch (error) {
+        console.error('Error loading chemical information:', error);
+        this.chemicalInfoSections = [];
+    }
+}
+ 
   private findChemicalDataByExactMatch(allData: AllDataItem[], chemicalName: string): AllDataItem | null {
     console.log('Looking for chemical with exact name:', chemicalName);
 
@@ -306,18 +310,17 @@ constructor(
   return potentialIds;
 }
 
-  // Fixed: Make this method async and await the service call
   private async getAllPossibleNamesForChemical(chemicalName: string): Promise<string[]> {
     return await this.chemicalAliasesService.getAllPossibleNamesForChemical(chemicalName);
   }
 
-  // Fixed: Create a local normalizeChemicalName method since the service method is private
-  private normalizeChemicalName(name: string): string {
+ private normalizeChemicalName(name: string): string {
+    if (!name) return '';
     return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .trim();
-  }
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+}
 
   private extractChemicalInformation(data: any): ChemicalInfoSection[] {
     const sections: ChemicalInfoSection[] = [];

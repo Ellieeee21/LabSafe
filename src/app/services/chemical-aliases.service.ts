@@ -25,7 +25,7 @@ export class ChemicalAliasesService {
     'Acetone and Nitric Acid': [],
     'Activated Carbon': ['Activated Charcoal', 'Activated Charcoal Powder'],
     'Acetic Acid': ['Glacial Acetic Acid'],
-    'Ethyl Acetate': ['AceticAcid..EthylEster', 'Acetic Acid | Ethyl Ester', 'Acetoxyethane', 'Ethyl Ethanoate'],
+    'Ethyl Acetate': ['Acetic Acid,Ethyl Ester', 'Acetoxyethane', 'Ethyl Ethanoate'],
     'Aluminum': ['Aluminum Powder'],
     'Aluminum and Diethyl Ether': [],
     'Aluminum Oxide': ['Alpha-alumina', 'Aluminia', 'Aluminum Oxide Powder'],
@@ -155,28 +155,33 @@ export class ChemicalAliasesService {
     this.initializeDatabase();
   }
 
+  private isInitialized = new BehaviorSubject<boolean>(false);
+  public isInitialized$ = this.isInitialized.asObservable();
+
   private async initializeDatabase(): Promise<void> {
     try {
-      this.loadingSubject.next(true);
-      
-      this.db = await this.sqlite.createConnection(
-        'chemical_aliases',
-        false,
-        'no-encryption',
-        1,
-        false
-      );
-      
-      await this.db.open();
-      await this.createTables();
-      await this.loadInitialData();
-      
-    } catch (error) {
-      console.error('Error initializing database:', error);
-    } finally {
-      this.loadingSubject.next(false);
-    }
+     this.loadingSubject.next(true);
+    
+     this.db = await this.sqlite.createConnection(
+      'chemical_aliases',
+      false,
+      'no-encryption',
+      1,
+      false
+    );
+    
+    await this.db.open();
+    await this.createTables();
+    await this.loadInitialData();
+    
+    this.isInitialized.next(true); // Add this line
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    this.isInitialized.next(false); // Add this line
+  } finally {
+    this.loadingSubject.next(false);
   }
+}
 
   private async createTables(): Promise<void> {
     if (!this.db) return;
@@ -201,28 +206,20 @@ export class ChemicalAliasesService {
   }
 
   private async loadInitialData(): Promise<void> {
-    if (!this.db) return;
+  if (!this.db) return;
 
-    const result = await this.db.query('SELECT COUNT(*) as count FROM chemical_aliases');
-    const count = result.values?.[0]?.count || 0;
-
-    if (count === 0) {
-      await this.loadHardcodedAliases();
-      await this.loadAliasesFromJson();
-    } else {
-      const hardcodedCount = await this.db.query(
-        'SELECT COUNT(*) as count FROM chemical_aliases WHERE source = ?', 
-        ['hardcoded']
-      );
-      const hardcodedExists = hardcodedCount.values?.[0]?.count || 0;
-      
-      if (hardcodedExists === 0) {
-        await this.loadHardcodedAliases();
-      }
-      
-      await this.loadAllAliases();
-    }
+  try {
+    this.loadingSubject.next(true);
+    await this.loadHardcodedAliases();
+    await this.loadAliasesFromJson();
+    await this.loadAllAliases();
+    
+  } catch (error) {
+    console.error('Error loading initial data:', error);
+  } finally {
+    this.loadingSubject.next(false);
   }
+}
 
   private async loadHardcodedAliases(): Promise<void> {
     if (!this.db) return;
@@ -400,59 +397,48 @@ export class ChemicalAliasesService {
   }
 
   public async getMainChemicalName(name: string): Promise<string> {
-    if (!name || !this.db) return name;
+    if (!name) return name;
 
     try {
-      const normalizedInput = this.normalizeChemicalName(name);
-      
-      // First check hardcoded aliases
-      for (const [mainName, aliases] of Object.entries(this.hardcodedAliases)) {
-        if (this.normalizeChemicalName(mainName) === normalizedInput) {
-          return mainName;
-        }
-        for (const alias of aliases) {
-          if (this.normalizeChemicalName(alias) === normalizedInput) {
-            return mainName;
-          }
-        }
-      }
+        const normalizedInput = this.normalizeChemicalName(name);
 
-      // Then check database
-      const mainNameResult = await this.db.query(
-        'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(main_name, \' \', \'\')) = ? LIMIT 1',
-        [normalizedInput]
-      );
-      
-      if (mainNameResult?.values?.length) {
-        return mainNameResult.values[0].main_name;
-      }
-      
-      const aliasResult = await this.db.query(
-        'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(alias_name, \' \', \'\')) = ? LIMIT 1',
-        [normalizedInput]
-      );
-      
-      if (aliasResult?.values?.length) {
-        return aliasResult.values[0].main_name;
-      }
-      
-      // If not found, try more flexible matching
-      const allAliases = this.aliasesSubject.value;
-      for (const alias of allAliases) {
-        if (this.normalizeChemicalName(alias.mainName) === normalizedInput) {
-          return alias.mainName;
+        for (const [mainName, aliases] of Object.entries(this.hardcodedAliases)) {
+            if (this.normalizeChemicalName(mainName) === normalizedInput) {
+                return mainName;
+            }
+            for (const alias of aliases) {
+                if (this.normalizeChemicalName(alias) === normalizedInput) {
+                    return mainName;
+                }
+            }
         }
-        if (this.normalizeChemicalName(alias.aliasName) === normalizedInput) {
-          return alias.mainName;
+        if (!this.db) {
+            return name;
         }
-      }
-      
+        const mainNameResult = await this.db.query(
+            'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(main_name, \' \', \'\')) = ? LIMIT 1',
+            [normalizedInput]
+        );
+        
+        if (mainNameResult?.values?.length) {
+            return mainNameResult.values[0].main_name;
+        }
+        
+        const aliasResult = await this.db.query(
+            'SELECT main_name FROM chemical_aliases WHERE LOWER(REPLACE(alias_name, \' \', \'\')) = ? LIMIT 1',
+            [normalizedInput]
+        );
+        
+        if (aliasResult?.values?.length) {
+            return aliasResult.values[0].main_name;
+        }
+        
     } catch (error) {
-      console.error('Error getting main chemical name:', error);
+        console.error('Error getting main chemical name:', error);
     }
     
     return name;
-  }
+}
 
   public async getAllPossibleNamesForChemical(chemicalName: string): Promise<string[]> {
     if (!chemicalName || !this.db) return [chemicalName];
@@ -462,8 +448,7 @@ export class ChemicalAliasesService {
       const mainName = await this.getMainChemicalName(chemicalName);
      
       allNames.add(mainName);
-      
-      // Add all hardcoded aliases first
+
       for (const [hardcodedMain, hardcodedAliases] of Object.entries(this.hardcodedAliases)) {
         if (this.normalizeChemicalName(hardcodedMain) === this.normalizeChemicalName(mainName)) {
           hardcodedAliases.forEach(alias => {

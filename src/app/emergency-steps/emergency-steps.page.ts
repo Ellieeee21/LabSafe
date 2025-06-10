@@ -258,31 +258,54 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
 }
 
   private async findChemicalData(allData: AllDataItem[]): Promise<AllDataItem | null> {
-  const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
-  const mainChemicalName = await this.getMainChemicalName(this.chemicalName); // Now awaiting the promise
-  const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
+    if (!this.chemicalName) return null;
 
-  return allData.find((item: AllDataItem) => {
-    if (item.type !== 'chemical') return false;
+    const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
+    const mainChemicalName = await this.chemicalAliasesService.getMainChemicalName(this.chemicalName);
+    const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
+    const exactMatch = allData.find((item: AllDataItem) => {
+        if (item.type !== 'chemical') return false;
+        
+        const itemName = this.normalizeChemicalName(item.name || '');
+        const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+        
+        return itemId === this.chemicalId || 
+               itemId === `id#${this.chemicalId}` ||
+               itemName === normalizedSearchName ||
+               itemId === normalizedSearchName ||
+               itemName === normalizedMainName ||
+               itemId === normalizedMainName;
+    });
+
+    if (exactMatch) return exactMatch;
+
+    const allPossibleNames = await this.chemicalAliasesService.getAllPossibleNamesForChemical(this.chemicalName);
     
-    const itemName = this.normalizeChemicalName(item.name || '');
-    const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
-    
-    return itemId === this.chemicalId || 
-           itemId === `id#${this.chemicalId}` ||
-           itemName === normalizedSearchName ||
-           itemId === normalizedSearchName ||
-           itemName === normalizedMainName ||
-           itemId === normalizedMainName;
-  }) || null;
+    for (const possibleName of allPossibleNames) {
+        const normalizedPossibleName = this.normalizeChemicalName(possibleName);
+        const possibleMatch = allData.find((item: AllDataItem) => {
+            if (item.type !== 'chemical') return false;
+            
+            const itemName = this.normalizeChemicalName(item.name || '');
+            const itemId = this.normalizeChemicalName(item.id?.replace('id#', '') || '');
+            
+            return itemName === normalizedPossibleName || 
+                   itemId === normalizedPossibleName;
+        });
+
+        if (possibleMatch) return possibleMatch;
+    }
+
+    return null;
 }
 
   private normalizeChemicalName(name: string): string {
+    if (!name) return '';
     return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .trim();
-  }
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+}
 
   private async getMainChemicalName(name: string): Promise<string> {
   return await this.chemicalAliasesService.getMainChemicalName(name);
