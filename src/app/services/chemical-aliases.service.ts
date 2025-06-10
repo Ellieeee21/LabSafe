@@ -204,7 +204,6 @@ export class ChemicalAliasesService {
   private async loadInitialData(): Promise<void> {
     if (!this.db) return;
 
-    // Check if data already exists
     const result = await this.db.query('SELECT COUNT(*) as count FROM chemical_aliases');
     const count = result.values?.[0]?.count || 0;
 
