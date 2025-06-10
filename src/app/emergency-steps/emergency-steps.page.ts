@@ -123,49 +123,40 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     }
   }
 
-  private loadEmergencySteps() {
-    this.isLoading = true;
+  private async loadEmergencySteps() {
+  this.isLoading = true;
+  
+  try {
+    const allData = this.databaseService.getCurrentAllData();
+    console.log('All data length:', allData.length);
     
-    try {
-      const allData = this.databaseService.getCurrentAllData();
-      console.log('All data length:', allData.length);
+    if (allData && allData.length > 0) {
+      const chemical = await this.findChemicalData(allData);
       
-      if (allData && allData.length > 0) {
-        const chemical = this.findChemicalData(allData);
-        console.log('Found chemical:', chemical);
-        
-        if (chemical && chemical.data) {
-          console.log('Chemical data keys:', Object.keys(chemical.data));
-          this.allStepGroups = this.extractEmergencyProcedures(chemical.data);
-          this.hasData = this.allStepGroups.length > 0;
-          console.log('Extracted step groups:', this.allStepGroups.length);
-          console.log('Step groups:', this.allStepGroups);
-        } else {
-          this.hasData = false;
-          this.allStepGroups = [];
-          console.log('No chemical data found');
-        }
+      if (chemical && chemical.data) {
+        this.allStepGroups = this.extractEmergencyProcedures(chemical.data);
+        this.hasData = this.allStepGroups.length > 0;
       } else {
         this.hasData = false;
         this.allStepGroups = [];
-        console.log('No database data available');
       }
-      
-      this.isLoading = false;
-      this.applySearch();
-      
-    } catch (error) {
-      console.error('Error loading emergency steps:', error);
+    } else {
       this.hasData = false;
       this.allStepGroups = [];
-      this.isLoading = false;
-      this.applySearch();
     }
+  } catch (error) {
+    console.error('Error loading emergency steps:', error);
+    this.hasData = false;
+    this.allStepGroups = [];
+  } finally {
+    this.isLoading = false;
+    this.applySearch();
   }
+}
 
-  private findChemicalData(allData: AllDataItem[]): AllDataItem | null {
+  private async findChemicalData(allData: AllDataItem[]): Promise<AllDataItem | null> {
   const normalizedSearchName = this.normalizeChemicalName(this.chemicalName);
-  const mainChemicalName = this.getMainChemicalName(this.chemicalName);
+  const mainChemicalName = await this.getMainChemicalName(this.chemicalName);
   const normalizedMainName = this.normalizeChemicalName(mainChemicalName);
 
   return allData.find((item: AllDataItem) => {
@@ -190,8 +181,8 @@ export class EmergencyStepsPage implements OnInit, OnDestroy {
     .trim();
 }
 
-  private getMainChemicalName(name: string): string {
-  return this.chemicalAliasesService.getMainChemicalName(name);
+  private async getMainChemicalName(name: string): Promise<string> {
+  return await this.chemicalAliasesService.getMainChemicalName(name);
 }
 
 
